@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --color-page: #0f172a; /* slate-900 */
+  --color-surface: #1e293b; /* slate-800 */
+  --color-surface-2: #16213a; /* slightly darker card variant */
+  --color-line: #334155; /* slate-700 */
+  --color-ink: #e2e8f0; /* slate-200 */
+  --color-muted: #94a3b8; /* slate-400 */
+  --color-accent: #38bdf8; /* sky-400 */
+  --color-accent-bg: #1e3a5f; /* ghost button bg */
+}
+
+@theme inline {
+  --color-page: var(--color-page);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-line: var(--color-line);
+  --color-ink: var(--color-ink);
+  --color-muted: var(--color-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-bg: var(--color-accent-bg);
+  --font-sans: var(--font-sarabun);
+  --font-mono: var(--font-space-mono);
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sarabun), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-num {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+}
+
+/* native select/date inputs need explicit dark styling to match the reference */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-page);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 8px;
+}
