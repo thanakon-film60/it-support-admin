@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createTicket } from "@/lib/db/tickets";
 import { findOrCreateUserByName, getUserByLineId, upsertLineUser } from "@/lib/db/users";
 import { deductStockForWithdrawTicket } from "@/lib/db/stock";
-import { getProfile } from "@/lib/line/client";
+import { verifyLiffIdToken } from "@/lib/line/id-token";
 import type { Ticket, TicketType } from "@/lib/types";
 
 export interface LiffTicketInput {
@@ -14,7 +14,7 @@ export interface LiffTicketInput {
   equipmentId?: string | null;
   items?: { name: string; qty: number }[];
   identity:
-    | { mode: "liff"; lineUserId: string }
+    | { mode: "liff"; idToken: string }
     | { mode: "manual"; name: string; employeeId?: string; department?: string };
 }
 
@@ -28,29 +28,68 @@ export interface LiffTicketResult {
 export async function createLiffTicketAction(
   input: LiffTicketInput
 ): Promise<LiffTicketResult> {
-  if (!input.description.trim()) {
+  const validTypes: TicketType[] = ["repair", "withdraw", "return", "it_service"];
+  if (!input || !validTypes.includes(input.type)) {
+    return { error: "ประเภทคำขอไม่ถูกต้อง" };
+  }
+
+  const description = typeof input.description === "string" ? input.description.trim() : "";
+  const location = typeof input.location === "string" ? input.location.trim() : "";
+  if (!description) {
     return { error: "กรุณากรอกรายละเอียดปัญหา" };
+  }
+  if (description.length > 4_000 || location.length > 200) {
+    return { error: "รายละเอียดหรือสถานที่ยาวเกินกำหนด" };
+  }
+  if (!input.identity || !["liff", "manual"].includes(input.identity.mode)) {
+    return { error: "ข้อมูลผู้แจ้งไม่ถูกต้อง" };
+  }
+  if (
+    input.identity.mode === "manual" &&
+    (process.env.NEXT_PUBLIC_LIFF_ID?.trim() || process.env.LINE_LOGIN_CHANNEL_ID?.trim())
+  ) {
+    return { error: "กรุณาเปิดฟอร์มนี้ผ่าน LINE เพื่อยืนยันตัวตน" };
   }
   if (input.identity.mode === "manual" && !input.identity.name.trim()) {
     return { error: "กรุณากรอกชื่อผู้แจ้ง" };
   }
 
+  const items = Array.isArray(input.items)
+    ? input.items
+        .slice(0, 20)
+        .map((item) => ({
+          name: typeof item?.name === "string" ? item.name.trim().slice(0, 200) : "",
+          qty: Number.isFinite(item?.qty) ? Math.trunc(item.qty) : 0,
+        }))
+        .filter((item) => item.name && item.qty > 0 && item.qty <= 999)
+    : [];
+
   let requesterId: string;
   if (input.identity.mode === "liff") {
-    const existing = await getUserByLineId(input.identity.lineUserId);
+    let identity;
+    try {
+      identity = await verifyLiffIdToken(input.identity.idToken);
+    } catch (error) {
+      console.error("[LINE LIFF] verification unavailable:", error);
+      return { error: "ระบบยืนยันตัวตน LINE ยังตั้งค่าไม่ครบ กรุณาติดต่อทีม IT" };
+    }
+    if (!identity) {
+      return { error: "ยืนยันตัวตน LINE ไม่สำเร็จ กรุณาปิดแล้วเปิดฟอร์มใหม่จาก LINE" };
+    }
+
+    const existing = await getUserByLineId(identity.userId);
     if (existing) {
       requesterId = existing.id;
     } else {
-      // เผื่อกรณีเปิด LIFF ตรงๆ โดยยังไม่เคยทักบอทมาก่อน (webhook เลยยังไม่เคย sync user นี้)
-      const profile = await getProfile(input.identity.lineUserId);
-      const user = await upsertLineUser(input.identity.lineUserId, profile?.displayName ?? "ผู้ใช้ LINE");
+      const user = await upsertLineUser(identity.userId, identity.displayName);
       requesterId = user.id;
     }
   } else {
+    const name = input.identity.name.trim().slice(0, 120);
     const user = await findOrCreateUserByName({
-      display_name: input.identity.name,
-      employee_id: input.identity.employeeId || null,
-      department: input.identity.department || null,
+      display_name: name,
+      employee_id: input.identity.employeeId?.trim().slice(0, 80) || null,
+      department: input.identity.department?.trim().slice(0, 120) || null,
     });
     requesterId = user.id;
   }
@@ -58,18 +97,21 @@ export async function createLiffTicketAction(
   const ticketInput: Omit<Ticket, "id" | "ticket_code" | "created_at" | "resolved_at"> = {
     type: input.type,
     status: "pending",
-    location: input.location.trim() || "ไม่ระบุสาขา",
+    location: location || "ไม่ระบุสาขา",
     requester_id: requesterId,
-    equipment_id: input.equipmentId ?? null,
-    description: input.description.trim(),
+    equipment_id:
+      typeof input.equipmentId === "string" && input.equipmentId.trim()
+        ? input.equipmentId.trim()
+        : null,
+    description,
     repair_cost: null,
-    meta: input.items && input.items.length > 0 ? { items: input.items } : null,
+    meta: items.length > 0 ? { items } : null,
   };
 
   const ticket = await createTicket(ticketInput);
 
-  if (ticket.type === "withdraw" && input.items && input.items.length > 0) {
-    await deductStockForWithdrawTicket(input.items, "LIFF (พนักงานแจ้งเอง)", ticket.ticket_code);
+  if (ticket.type === "withdraw" && items.length > 0) {
+    await deductStockForWithdrawTicket(items, "LIFF (พนักงานแจ้งเอง)", ticket.ticket_code);
   }
 
   revalidatePath("/tickets");

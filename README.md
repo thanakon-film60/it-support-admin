@@ -108,21 +108,25 @@ docker-compose.yml        ประกอบ 4 service เข้าด้วย�
 
 ## การตั้งค่า LINE OA Bot
 
-ต้องมี LINE Business Account + LINE Developers Console (ฟรี) ทำตามนี้:
+ขั้นตอนล่าสุดและค่าที่ใช้กับบัญชีนี้อยู่ใน [LINE_SETUP.md](./LINE_SETUP.md) สรุปโครงสร้างคือ:
 
-1. ไปที่ [LINE Developers Console](https://developers.line.biz/console/) → สร้าง Provider (ถ้ายังไม่มี) → สร้าง **Messaging API Channel**
-2. ในหน้า channel ที่สร้าง: แท็บ "Basic settings" จะมี **Channel secret** และแท็บ "Messaging API" จะมีปุ่มออก **Channel access token (long-lived)** — copy ทั้งสองค่าไปใส่ใน `.env.local` (`LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`)
-3. Deploy โปรเจกต์นี้ให้มี URL จริง (เช่น Vercel) แล้วนำ URL ไปตั้งใน "Webhook URL" ของแท็บ Messaging API เป็น `https://<โดเมน>/api/line/webhook` แล้วกด **Verify** (ปุ่มนี้จะยิง GET เข้ามา — route รองรับไว้แล้ว) จากนั้นเปิด **Use webhook**
-4. ปิด "Auto-reply messages" และ "Greeting messages" ของ LINE Official Account เริ่มต้น (ในหน้า [OA Manager](https://manager.line.biz/)) ไม่งั้นจะชนกับข้อความที่บอทของเราตอบเอง
-5. สร้าง **LIFF app** ในแท็บ "LIFF" ของ channel เดียวกัน: Size = `Full`, Endpoint URL = `https://<โดเมน>/liff/new-ticket` → copy **LIFF ID** ไปใส่ `NEXT_PUBLIC_LIFF_ID` ใน `.env.local` (ต้อง rebuild หลังแก้ค่านี้ เพราะเป็น build-time env)
+1. สร้าง LINE OA ใน [OA Manager](https://manager.line.biz/) แล้วเปิด **Messaging API** โดยเลือก Provider ที่ต้องการ
+2. จาก Messaging API channel เก็บ `LINE_CHANNEL_SECRET` และออก `LINE_CHANNEL_ACCESS_TOKEN`
+3. ตั้ง Webhook URL เป็น `https://<โดเมน>/api/line/webhook` กด **Verify** และเปิด **Use webhook** ปุ่ม Verify จะส่ง `POST` ที่มี `events: []`
+4. ปิด Auto-response และ Greeting message ของ OA เพื่อไม่ให้ตอบซ้ำกับบอท
+5. สร้าง **LINE Login channel** ใน Provider เดียวกัน ผูก OA ที่ Basic settings แล้วเก็บ `LINE_LOGIN_CHANNEL_ID`
+6. สร้าง LIFF app ใน LINE Login channel โดยใช้ scope `openid` + `profile` แล้วใส่ LIFF ID ใน `NEXT_PUBLIC_LIFF_ID`
+
+LIFF app ใหม่ไม่สามารถสร้างใน Messaging API channel ได้ และฝั่ง server จะตรวจ ID token กับ LINE
+ก่อนเชื่อ `userId` หรือสร้าง Ticket
 
 **พฤติกรรมของบอท** (`src/lib/line/faq-bot.ts`): เมื่อพนักงานพิมพ์อาการปัญหาเข้ามา บอทจะจับคู่ keyword กับ FAQ
 ในระบบก่อนเสมอ (`matchFaqByKeyword`) ถ้าเจอจะตอบวิธีแก้เบื้องต้น พร้อมปุ่มลิงก์ไปหน้า LIFF ให้แจ้งปัญหาต่อถ้ายังไม่หาย
 ถ้าไม่เจอ FAQ ที่ตรงกันเลยก็จะส่งปุ่มลิงก์ไปหน้าเดียวกันทันที — **การสร้าง ticket จริงเกิดที่หน้า LIFF เท่านั้น**
 (ตั้งใจออกแบบตามที่สังเกตจากต้นแบบ ไม่ให้บอทพยายามแกะรายละเอียด ticket จากข้อความแชทซึ่งแม่นยำน้อยกว่าฟอร์ม)
 
-ถ้ายังไม่ได้ตั้งค่า `NEXT_PUBLIC_LIFF_ID` หน้า `/liff/new-ticket` จะ**ไม่ล่ม** — ระบบ fallback เป็นฟอร์มให้กรอกชื่อผู้แจ้งเอง
-แทนการดึงชื่อจาก LINE Profile อัตโนมัติ ทำให้ทดสอบฟอร์มได้แม้ยังไม่มี LINE channel จริง (เปิด URL ตรงๆ ในเบราว์เซอร์ปกติได้เลย)
+ถ้ายังไม่ได้ตั้งค่า `NEXT_PUBLIC_LIFF_ID` หน้า `/liff/new-ticket` จะ fallback เป็นฟอร์มกรอกชื่อเพื่อใช้
+เฉพาะช่วงพัฒนา เมื่อเริ่มตั้งค่า LIFF แล้ว server จะไม่ยอมรับโหมด manual และต้องยืนยัน ID token จาก LINE
 
 ## Deploy ด้วย Docker + โดเมน
 
@@ -186,6 +190,7 @@ restart เฉยๆ จะไม่มีผล ถ้าต้องแก้ 
 | `DUCKDNS_TOKEN` | ใช้ Caddy/DuckDNS | token จาก duckdns.org ใช้ทั้งอัปเดต IP และตอบ DNS-01 challenge |
 | `LINE_CHANNEL_SECRET` | ใช้ LINE Bot | verify signature ของ webhook |
 | `LINE_CHANNEL_ACCESS_TOKEN` | ใช้ LINE Bot | เรียก LINE Messaging API (reply/push/profile) |
+| `LINE_LOGIN_CHANNEL_ID` | ใช้ LIFF | ตรวจ ID token ฝั่ง server ต้องเป็น Channel ID ของ LINE Login ไม่ใช่ Messaging API |
 | `NEXT_PUBLIC_LIFF_ID` | ใช้ LIFF auto-login | build-time env — ต้อง rebuild หลังแก้ |
 
 ## สิ่งที่ควรทำต่อก่อนขึ้น production (ติเพื่อก่อ)
@@ -195,7 +200,7 @@ restart เฉยๆ จะไม่มีผล ถ้าต้องแก้ 
 1. **ยังไม่มีระบบ backup อัตโนมัติ** — ข้อมูลอยู่ใน docker volume `pgdata` บนเครื่องเดียว ถ้าดิสก์เสียคือหายหมด ควรตั้ง `pg_dump` แบบตั้งเวลา (Task Scheduler) แล้วส่งไฟล์ออกไปเก็บนอกเครื่อง
 2. **`xlsx` (SheetJS) มีช่องโหว่ระดับ High ที่ยังไม่มี patch บน npm** (Prototype Pollution + ReDoS — `npm audit` เห็นได้) ความเสี่ยงจำกัดเพราะเป็นฟีเจอร์ Import Excel ที่ใช้ได้เฉพาะแอดมินที่ login แล้ว แต่ถ้าจะขึ้น production จริงควรพิจารณาย้ายไป `exceljs` หรือ sanitize ไฟล์ก่อน parse
 3. **`stock_items.category` ยังเป็น free text** (ไม่ใช่ enum เหมือน `equipment.category`) ตามที่สังเกตจากต้นแบบ — ปล่อยให้เหมือนต้นแบบไว้ก่อนตามที่ตกลง scope "เหมือนทุกรูปแบบ" แต่ถ้าจะแก้ในอนาคตควร normalize เป็น enum/lookup table
-4. **การผูกผู้ครอบครองทรัพย์สิน/ผู้แจ้งจาก LIFF (โหมด manual) ยังเป็นการพิมพ์ชื่ออิสระ** (`findOrCreateUserByName`) เหมือนต้นแบบ — เสี่ยงสร้าง user ซ้ำถ้าพิมพ์ชื่อไม่ตรงกันทุกตัวอักษร ควรทำ autocomplete จาก users ที่มีอยู่ในอนาคต
+4. **โหมด manual ของ LIFF มีไว้ทดสอบก่อนตั้งค่า LINE เท่านั้น** — เมื่อมี `NEXT_PUBLIC_LIFF_ID` หรือ `LINE_LOGIN_CHANNEL_ID` แล้ว server จะบังคับใช้ ID token จาก LINE
 5. **รหัสผ่านบัญชีทดสอบยังเป็นค่า default ที่รู้กันทั่วไป** (`ITadmin@2026`) — เปลี่ยนก่อน deploy จริงเสมอ และควรมีหน้า "จัดการบัญชีแอดมิน" เพิ่มถ้ามีผู้ใช้หลายคน (ตอนนี้ seed ไว้แค่ 1 บัญชี)
 6. **ยังไม่มี rate limiting / retry queue บน webhook** — ถ้า LINE ยิง event รัวๆ (เช่น broadcast) endpoint นี้ประมวลผล sync ทั้งหมด ถ้าจะรับโหลดสูงควรใส่ queue (เช่น Upstash QStash) คั่นกลาง
 

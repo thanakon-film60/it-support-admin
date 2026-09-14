@@ -1,167 +1,192 @@
-# คู่มือตั้งค่า LINE Bot + LIFF
+# ตั้งค่า LINE Official Account + Messaging API + LIFF
 
-ทำที่ [LINE Developers Console](https://developers.line.biz/console/) ใช้เวลาประมาณ 15 นาที
+คู่มือนี้ใช้กับโปรเจกต์ `it-support-admin` และบัญชี LINE OA `IT-Support-Admin`
 
-**สิ่งที่ต้องได้กลับมา 3 ค่า** (เอามาให้ผมใส่ `.env` แล้ว rebuild ให้):
+## สถานะปัจจุบัน
 
-1. `LINE_CHANNEL_SECRET`
-2. `LINE_CHANNEL_ACCESS_TOKEN`
-3. `NEXT_PUBLIC_LIFF_ID`
-
----
-
-## URL ของระบบที่ต้องใช้กรอก
-
-```
-https://win-qrb8cpgc62i.taila97ec8.ts.net
-```
-
-| ใช้ที่ไหน | URL เต็ม |
+| รายการ | สถานะ |
 | --- | --- |
+| LINE Official Account | สร้างแล้ว |
+| Messaging API | Enabled |
+| Messaging API Channel ID | `2011597498` (เก็บไว้อ้างอิง โปรเจกต์ไม่ต้องใช้ค่านี้) |
+| `LINE_CHANNEL_SECRET` | ใส่ใน `.env.local` แล้ว |
+| Webhook endpoint | ออนไลน์และตอบ HTTP 200 |
+| `LINE_CHANNEL_ACCESS_TOKEN` | ยังต้องออกใน LINE Developers Console |
+| LINE Login channel สำหรับ LIFF | ยังต้องสร้างใน Provider เดียวกัน |
+| `LINE_LOGIN_CHANNEL_ID` | ยังไม่มี |
+| `NEXT_PUBLIC_LIFF_ID` | ยังไม่มี |
+
+> Channel secret เคยปรากฏในภาพ/แชตแล้ว ก่อนใช้งานจริงให้ Reissue ที่ LINE Developers
+> Console แล้วเปลี่ยนค่าใน `.env.local` และ restart แอปทันที
+
+## URL ที่ใช้
+
+| ใช้ที่ไหน | URL |
+| --- | --- |
+| หน้าเข้าสู่ระบบ | `https://win-qrb8cpgc62i.taila97ec8.ts.net/login` |
 | Webhook URL | `https://win-qrb8cpgc62i.taila97ec8.ts.net/api/line/webhook` |
 | LIFF Endpoint URL | `https://win-qrb8cpgc62i.taila97ec8.ts.net/liff/new-ticket` |
 
-> ⚠️ **ถ้าจะเปลี่ยนชื่อ URL ให้สั้นลง ทำก่อนเริ่มขั้นตอนนี้**
-> ชื่อ `win-qrb8cpgc62i` มาจากชื่อเครื่อง Windows เปลี่ยนเป็น `it-support-admin` ได้ที่
-> [Tailscale admin console](https://login.tailscale.com/admin/machines) → จุดสามจุดที่เครื่อง → Edit machine name
-> จะได้ URL เป็น `https://it-support-admin.taila97ec8.ts.net`
-> ถ้าเปลี่ยนหลังตั้ง LINE เสร็จแล้ว ต้องกลับมาแก้ทั้ง Webhook URL และ LIFF Endpoint ใหม่ แล้ว rebuild อีกรอบ
+โดเมนนี้ผ่าน Tailscale Funnel เครื่องต้องเปิดอยู่ แอปต้องรันที่พอร์ต 3000 และ Funnel ต้องทำงาน
+จึงจะรับ Webhook จาก LINE ได้
 
----
+## 1. ตั้ง Webhook URL
 
-## ขั้นที่ 1 — สร้าง Messaging API channel
+เปิดหน้าตรงของบัญชีนี้:
+
+https://manager.line.biz/account/@891ujhzo/setting/messaging-api
+
+ใส่ค่าในช่อง **Webhook URL** แล้วกด **Save**:
+
+```text
+https://win-qrb8cpgc62i.taila97ec8.ts.net/api/line/webhook
+```
+
+จากนั้นเข้า https://developers.line.biz/console/ แล้วทำตามนี้:
+
+1. เลือก Provider `IT Support-Admin`
+2. เลือก Messaging API channel ของ `IT-Support-Admin`
+3. เปิดแท็บ **Messaging API**
+4. ที่ **Webhook settings** กด **Verify** ให้ขึ้น `Success`
+5. เปิด **Use webhook**
+
+ปุ่ม Verify ของ LINE จะส่ง `POST` ที่มี `events: []` เข้ามา โปรเจกต์รองรับไว้แล้วและตรวจ
+`x-line-signature` ด้วย Channel secret ก่อนตอบ HTTP 200
+
+## 2. ออก Channel access token
+
+ยังอยู่ที่ LINE Developers Console > Messaging API channel > แท็บ **Messaging API**:
+
+1. เลื่อนถึง **Channel access token (long-lived)**
+2. กด **Issue**
+3. คัดลอก Token ไปใส่ไฟล์ `.env.local` ที่บรรทัดนี้ด้วยตัวเอง
+
+```env
+LINE_CHANNEL_ACCESS_TOKEN=วาง_token_ตรงนี้
+```
+
+อย่าส่ง Token ในแชตและอย่า commit ไฟล์ `.env.local` ถ้ากด Reissue ค่าเดิมจะหยุดใช้งาน
+
+## 3. ปิดข้อความตอบอัตโนมัติของ OA
+
+เปิด LINE Official Account Manager > **Settings** > **Response settings** แล้วตั้งค่า:
+
+| รายการ | ค่า |
+| --- | --- |
+| Webhooks | Enabled |
+| Auto-response messages | Disabled |
+| Greeting message | Disabled |
+
+โปรเจกต์มีข้อความต้อนรับและคำตอบ FAQ ของตัวเอง ถ้าไม่ปิดสองรายการหลัง ผู้ใช้จะได้รับข้อความซ้ำ
+
+## 4. สร้าง LINE Login channel สำหรับ LIFF
+
+ห้ามสร้าง LIFF ใน Messaging API channel เพราะ LINE ไม่อนุญาตให้เพิ่ม LIFF app ใหม่ใน channel
+ประเภทนั้นแล้ว ให้สร้าง LINE Login channel แยก แต่ต้องอยู่ใน **Provider เดียวกัน** เพื่อให้ user ID
+ตรงกันระหว่างบอทและ LIFF
 
 1. เข้า https://developers.line.biz/console/
-2. ถ้ายังไม่มี **Provider** ให้กด **Create a new provider** ตั้งชื่อเป็นชื่อบริษัท/ทีม
-3. ในหน้า Provider กด **Create a Messaging API channel**
-4. กรอกข้อมูล:
+2. เลือก Provider `IT Support-Admin`
+3. กด **Create a new channel** > **LINE Login**
+4. ใช้ชื่อ channel `IT Support Portal` (ชื่อ channel ห้ามมีคำว่า LINE)
+5. เลือก **App types: Web app** และกรอกอีเมลติดต่อ
+6. สร้าง channel ให้เสร็จ
+7. แท็บ **Basic settings** > **Linked LINE Official Account** > **Edit**
+8. เลือก OA `IT-Support-Admin` แล้วกด **Update**
+9. คัดลอก **Channel ID** ของ LINE Login channel ไปใส่:
 
-| ช่อง | ใส่อะไร |
-| --- | --- |
-| Channel name | ชื่อที่พนักงานจะเห็นใน LINE เช่น `IT Support` |
-| Channel description | อธิบายสั้นๆ เช่น `แจ้งปัญหา IT / เบิกอุปกรณ์` |
-| Category / Subcategory | เลือกอะไรก็ได้ที่ใกล้เคียง เช่น `Business` |
-| Email address | อีเมลติดต่อ |
+```env
+LINE_LOGIN_CHANNEL_ID=วาง_channel_id_ของ_LINE_Login_ตรงนี้
+```
 
-5. ติ๊กยอมรับเงื่อนไข แล้วกด **Create**
+> ค่านี้ไม่ใช่ Messaging API Channel ID `2011597498`
 
----
+## 5. สร้าง LIFF app
 
-## ขั้นที่ 2 — เก็บค่าที่ 1: Channel secret
+ใน LINE Login channel ที่สร้างเมื่อสักครู่ เปิดแท็บ **LIFF** > **Add** แล้วกรอก:
 
-1. เข้า channel ที่เพิ่งสร้าง → แท็บ **Basic settings**
-2. เลื่อนหาหัวข้อ **Channel secret** → กด copy
-
-📋 **ค่าที่ 1 → `LINE_CHANNEL_SECRET`** (เป็นตัวอักษร+ตัวเลขยาวประมาณ 32 ตัว)
-
----
-
-## ขั้นที่ 3 — เก็บค่าที่ 2: Channel access token
-
-1. ไปแท็บ **Messaging API**
-2. เลื่อนลงล่างสุดหาหัวข้อ **Channel access token (long-lived)**
-3. กดปุ่ม **Issue** → กด copy
-
-📋 **ค่าที่ 2 → `LINE_CHANNEL_ACCESS_TOKEN`** (ยาวมาก ประมาณ 170 ตัวอักษร ลงท้ายด้วย `=`)
-
-> ถ้ากด Issue ซ้ำ token เดิมจะใช้ไม่ได้ทันที — กดครั้งเดียวพอ ถ้าเผลอกดซ้ำต้องเอาค่าใหม่มาให้ผมแทน
-
----
-
-## ขั้นที่ 4 — ตั้งค่า Webhook
-
-ยังอยู่ในแท็บ **Messaging API**
-
-1. หาหัวข้อ **Webhook settings** → กด **Edit** ที่ช่อง **Webhook URL** → วาง:
-
-   ```
-   https://win-qrb8cpgc62i.taila97ec8.ts.net/api/line/webhook
-   ```
-
-2. กด **Update** แล้วกด **Verify** → **ต้องขึ้น Success**
-
-   ถ้าขึ้น error ให้หยุดแล้วบอกผม อย่าเพิ่งทำขั้นต่อไป
-
-3. เปิดสวิตช์ **Use webhook** ✅
-
----
-
-## ขั้นที่ 5 — ปิดข้อความอัตโนมัติของ LINE
-
-**ข้อนี้ห้ามข้าม** ไม่งั้นพนักงานจะได้ข้อความซ้ำซ้อน — ของ LINE ตอบทับของบอทเรา
-
-ยังอยู่แท็บ **Messaging API** หาหัวข้อ **LINE Official Account features**
-
-| รายการ | ตั้งเป็น |
-| --- | --- |
-| Auto-reply messages | **Disabled** |
-| Greeting messages | **Disabled** |
-
-กด **Edit** ข้างแต่ละรายการ (จะเด้งไปหน้า LINE Official Account Manager) แล้วปิดสวิตช์
-
-> ระบบเรามีข้อความต้อนรับของตัวเองอยู่แล้ว จะส่งให้อัตโนมัติตอนมีคนกดเพิ่มเพื่อน
-
----
-
-## ขั้นที่ 6 — เก็บค่าที่ 3: สร้าง LIFF app
-
-LIFF คือหน้าเว็บฟอร์มที่เปิดในแอป LINE ให้พนักงานกรอกแจ้งปัญหา และดึงชื่อ-โปรไฟล์จาก LINE มาให้เอง
-
-1. ไปแท็บ **LIFF** → กด **Add**
-2. กรอก:
-
-| ช่อง | ใส่อะไร |
+| ช่อง | ค่า |
 | --- | --- |
 | LIFF app name | `แจ้งปัญหา IT` |
-| Size | **Full** |
+| Size | `Full` |
 | Endpoint URL | `https://win-qrb8cpgc62i.taila97ec8.ts.net/liff/new-ticket` |
-| Scopes | ติ๊ก **profile** และ **openid** |
+| Scopes | `openid` และ `profile` |
 | Bot link feature | `On (Normal)` |
 
-3. กด **Add**
-4. ในรายการที่สร้างเสร็จ จะมีช่อง **LIFF ID** (หน้าตาประมาณ `2006123456-AbCdEfGh`) → กด copy
+กด **Add** แล้วคัดลอก **LIFF ID** ไปใส่:
 
-📋 **ค่าที่ 3 → `NEXT_PUBLIC_LIFF_ID`**
-
-> อย่าสับสนระหว่าง **LIFF ID** กับ **LIFF URL** — เอาเฉพาะ **LIFF ID** ที่เป็นตัวเลข-ขีด-ตัวอักษร
-> ไม่ใช่ URL ที่ขึ้นต้นด้วย `https://liff.line.me/`
-
----
-
-## ขั้นที่ 7 — ส่งค่ากลับมาให้ผม
-
-ส่งมา 3 บรรทัดนี้ เดี๋ยวผมใส่ `.env` + rebuild + ทดสอบให้ครบ:
-
+```env
+NEXT_PUBLIC_LIFF_ID=วาง_LIFF_ID_ตรงนี้
 ```
-LINE_CHANNEL_SECRET=
+
+LIFF ID มีรูปแบบคล้าย `2006123456-AbCdEfGh` ไม่ใช่ URL `https://liff.line.me/...`
+
+ถ้า LINE Login channel ยังเป็น `Developing` จะมีเพียง Admin/Tester ของ channel ที่เปิด LIFF ได้
+ก่อนให้พนักงานทั่วไปใช้ ให้เพิ่ม Tester สำหรับการทดสอบหรือเปลี่ยน channel เป็น `Published`
+
+## 6. Environment ที่โปรเจกต์ต้องมี
+
+ไฟล์ `D:\GitHub-it\it-support-admin\.env.local`:
+
+```env
+SESSION_SECRET=มีค่าแล้ว
+LINE_CHANNEL_SECRET=มีค่าแล้ว
 LINE_CHANNEL_ACCESS_TOKEN=
+LINE_LOGIN_CHANNEL_ID=
 NEXT_PUBLIC_LIFF_ID=
 ```
 
-> ทั้ง 3 ค่านี้เป็นความลับ ใครได้ไปสามารถส่งข้อความในนามบอทของคุณได้
-> เก็บไว้ใน `.env` เท่านั้น (ไฟล์นี้ถูก gitignore ไว้แล้ว) อย่า commit ขึ้น git และอย่าส่งในแชทกลุ่ม
+มีข้อมูลที่ต้องนำจาก LINE มาเติมอีก 3 ค่า:
 
----
+1. `LINE_CHANNEL_ACCESS_TOKEN` จาก Messaging API channel
+2. `LINE_LOGIN_CHANNEL_ID` จาก LINE Login channel
+3. `NEXT_PUBLIC_LIFF_ID` จาก LIFF app
 
-## ขั้นที่ 8 — ทดสอบ (ทำหลังผม rebuild เสร็จ)
+`NEXT_PUBLIC_LIFF_ID` ถูกฝังตอน build หลังแก้ค่านี้ต้อง rebuild/restart แอป
 
-1. แท็บ **Messaging API** → สแกน **QR code** ด้วยแอป LINE เพื่อเพิ่มบอทเป็นเพื่อน
-   → ต้องได้ข้อความต้อนรับจากบอททันที
-2. พิมพ์ `ปริ้นเอกสารไม่ได้`
-   → บอทต้องตอบวิธีแก้จาก FAQ พร้อมปุ่ม **📝 แจ้งปัญหา / สร้าง Ticket**
-3. กดปุ่มนั้น → ฟอร์มต้องเปิดในแอป LINE และดึงชื่อคุณมาใส่ให้เอง
-4. กรอกแล้วส่ง → เปิดหน้าแอดมิน `/tickets` ต้องเห็น ticket ใหม่ผูกกับชื่อคุณถูกต้อง
+## 7. รันระบบและ Tailscale Funnel
 
----
+สำหรับทดสอบบนเครื่องนี้:
 
-## ถ้าติดปัญหา
+```powershell
+npm run dev
+tailscale funnel --bg 3000
+tailscale funnel status
+```
 
-| อาการ | สาเหตุที่เป็นไปได้ |
+ทดสอบจากอินเทอร์เน็ต:
+
+```powershell
+curl.exe https://win-qrb8cpgc62i.taila97ec8.ts.net/api/line/webhook
+```
+
+ต้องได้ HTTP 200 และ JSON ที่มี `"service":"line-webhook"`
+
+## 8. ทดสอบจริง
+
+1. Messaging API tab > สแกน QR เพื่อเพิ่ม OA เป็นเพื่อน
+2. ต้องได้รับข้อความต้อนรับจากบอทเพียงหนึ่งข้อความ
+3. พิมพ์ `ปริ้นเอกสารไม่ได้`
+4. ต้องได้คำแนะนำ FAQ และปุ่ม **แจ้งปัญหา / สร้าง Ticket**
+5. กดปุ่ม ต้องเปิด LIFF และแสดงชื่อ LINE ของผู้ใช้
+6. ส่งฟอร์ม แล้วเปิด `/tickets` ตรวจว่า Ticket และผู้แจ้งถูกต้อง
+
+## ตรวจปัญหา
+
+| อาการ | ตรวจอะไร |
 | --- | --- |
-| กด Verify แล้ว error | ระบบไม่ได้รัน หรือ URL พิมพ์ผิด — บอกผม เดี๋ยวเช็คให้ |
-| เพิ่มเพื่อนแล้วบอทเงียบ | ยังไม่ได้เปิด **Use webhook** หรือยังไม่ได้ใส่ `LINE_CHANNEL_SECRET` |
-| บอทตอบซ้ำ 2 ข้อความ | ยังไม่ได้ปิด **Auto-reply messages** (ขั้นที่ 5) |
-| กดปุ่มแล้วไม่มีอะไรขึ้น | `NEXT_PUBLIC_LIFF_ID` ยังไม่ได้ใส่ หรือใส่แล้วแต่ยังไม่ได้ rebuild |
-| ฟอร์มเปิดได้แต่ไม่ดึงชื่อ | Scopes ไม่ได้ติ๊ก `profile` / `openid` |
+| Verify ได้ 401 | Channel secret ใน process ที่รันไม่ตรงกับ LINE ให้ restart หลังแก้ env |
+| Verify เชื่อมต่อไม่ได้ | แอปหรือ Tailscale Funnel ไม่ได้รัน หรือ URL ผิด |
+| เพิ่มเพื่อนแล้วบอทเงียบ | `Use webhook` ปิด หรือยังไม่มี access token |
+| บอทตอบซ้ำ | ปิด Auto-response และ Greeting message |
+| ไม่มีปุ่มสร้าง Ticket | ยังไม่ได้ใส่ `NEXT_PUBLIC_LIFF_ID` และ rebuild |
+| LIFF แจ้งยืนยันตัวตนไม่ได้ | ตรวจ `openid`, `LINE_LOGIN_CHANNEL_ID` และ Provider ต้องตรงกัน |
+| พนักงานทั่วไปเปิด LIFF ไม่ได้ | Publish LINE Login channel หรือเพิ่มผู้ใช้เป็น Tester |
 
-ทุกข้อบอกผมได้ ผมดู log ฝั่งเซิร์ฟเวอร์ให้ได้ว่า LINE ยิงเข้ามาถึงไหม
+เอกสารอ้างอิงทางการ:
+
+- https://developers.line.biz/en/docs/messaging-api/verify-webhook-url/
+- https://developers.line.biz/en/docs/messaging-api/verify-webhook-signature/
+- https://developers.line.biz/en/docs/liff/getting-started/
+- https://developers.line.biz/en/docs/liff/using-user-profile/
+- https://developers.line.biz/en/docs/line-login/link-a-bot/

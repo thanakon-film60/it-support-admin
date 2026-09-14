@@ -21,8 +21,11 @@ export function LiffTicketForm({
 }: {
   equipmentOptions: { id: string; label: string }[];
 }) {
-  const [liffState, setLiffState] = useState<"loading" | "liff" | "manual">("loading");
+  const [liffState, setLiffState] = useState<"loading" | "liff" | "manual" | "error">(
+    "loading"
+  );
   const [profile, setProfile] = useState<LineProfile | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
 
   const [type, setType] = useState<TicketType>("it_service");
   const [location, setLocation] = useState("");
@@ -51,14 +54,22 @@ export function LiffTicketForm({
           liff.login();
           return;
         }
+        const token = liff.getIDToken();
+        if (!token) {
+          throw new Error("LIFF did not provide an ID token; check the openid scope");
+        }
         const p = await liff.getProfile();
         if (!cancelled) {
           setProfile({ userId: p.userId, displayName: p.displayName });
+          setIdToken(token);
           setLiffState("liff");
         }
       } catch (err) {
-        console.error("[LIFF] init ไม่สำเร็จ ใช้โหมดกรอกเองแทน:", err);
-        if (!cancelled) setLiffState("manual");
+        console.error("[LIFF] init ไม่สำเร็จ:", err);
+        if (!cancelled) {
+          setLiffState("error");
+          setError("เชื่อมต่อ LINE ไม่สำเร็จ กรุณาปิดแล้วเปิดฟอร์มใหม่จากห้องแชต");
+        }
       }
     }
 
@@ -92,8 +103,8 @@ export function LiffTicketForm({
       equipmentId: type === "repair" && equipmentId ? equipmentId : null,
       items: type === "withdraw" ? items.filter((it) => it.name.trim() && it.qty > 0) : undefined,
       identity:
-        liffState === "liff" && profile
-          ? { mode: "liff", lineUserId: profile.userId }
+        liffState === "liff" && idToken
+          ? { mode: "liff", idToken }
           : { mode: "manual", name: manualName.trim() },
     };
 
@@ -132,6 +143,7 @@ export function LiffTicketForm({
             profile &&
             `แจ้งในนาม: ${profile.displayName} (เชื่อมต่อผ่าน LINE)`}
           {liffState === "manual" && "กรอกข้อมูลผู้แจ้งด้านล่าง"}
+          {liffState === "error" && "ไม่สามารถยืนยันตัวตนกับ LINE ได้"}
         </p>
       </div>
 
@@ -232,7 +244,10 @@ export function LiffTicketForm({
         <p className="rounded-lg bg-red-950/40 px-3 py-2 text-sm text-red-400">{error}</p>
       )}
 
-      <Button type="submit" disabled={submitting || liffState === "loading"}>
+      <Button
+        type="submit"
+        disabled={submitting || liffState === "loading" || liffState === "error"}
+      >
         {submitting ? "กำลังส่ง..." : "ส่งเรื่อง"}
       </Button>
     </form>

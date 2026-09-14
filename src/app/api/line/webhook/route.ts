@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// LINE Developers Console จะยิง GET เข้ามาตอนกด "Verify" ที่หน้าตั้งค่า Webhook URL บางครั้ง
+// Health check สำหรับเปิดทดสอบจาก browser/curl; ปุ่ม Verify ของ LINE จะส่ง POST events: []
 export async function GET() {
   return NextResponse.json({ ok: true, service: "line-webhook" });
 }
