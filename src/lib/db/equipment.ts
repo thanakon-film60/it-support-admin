@@ -6,12 +6,12 @@ import type { Equipment, EquipmentSummary } from "../types";
 
 const COLLECTION = "equipment";
 
-function seed(): Equipment[] {
+async function seed(): Promise<Equipment[]> {
   const now = new Date();
   const iso = (daysAgo: number) =>
     new Date(now.getTime() - daysAgo * 86400000).toISOString();
   const dateOnly = (daysAgo: number) => iso(daysAgo).slice(0, 10);
-  const users = listUsers();
+  const users = await listUsers();
   const uid = (i: number) => users[i % users.length].id;
 
   const rows: Omit<Equipment, "id" | "created_at">[] = [
@@ -44,34 +44,38 @@ function seed(): Equipment[] {
   return rows.map((r) => ({ ...r, id: newId(), created_at: iso(0) }));
 }
 
-export function listEquipment(): Equipment[] {
+export async function listEquipment(): Promise<Equipment[]> {
   return readCollection<Equipment>(COLLECTION, seed);
 }
 
-export function getEquipmentById(id: string): Equipment | null {
-  return listEquipment().find((e) => e.id === id) ?? null;
+export async function getEquipmentById(id: string): Promise<Equipment | null> {
+  const all = await listEquipment();
+  return all.find((e) => e.id === id) ?? null;
 }
 
-export function createEquipment(
+export async function createEquipment(
   input: Omit<Equipment, "id" | "created_at">
-): Equipment {
+): Promise<Equipment> {
   const item: Equipment = { ...input, id: newId(), created_at: new Date().toISOString() };
-  upsertOne<Equipment>(COLLECTION, item, seed);
+  await upsertOne<Equipment>(COLLECTION, item, seed);
   return item;
 }
 
-export function updateEquipment(
+export async function updateEquipment(
   id: string,
   patch: Partial<Equipment>
-): Equipment | null {
+): Promise<Equipment | null> {
   return patchOne<Equipment>(COLLECTION, id, patch, seed);
 }
 
 /** เทียบเท่า view `equipment_summary` ของต้นแบบ — join ผู้ครอบครอง + นับจำนวนครั้งที่ส่งซ่อม */
-export function listEquipmentSummary(): EquipmentSummary[] {
-  const users = listUsers();
-  const tickets = listTickets();
-  return listEquipment().map((e) => {
+export async function listEquipmentSummary(): Promise<EquipmentSummary[]> {
+  const [users, tickets, equipment] = await Promise.all([
+    listUsers(),
+    listTickets(),
+    listEquipment(),
+  ]);
+  return equipment.map((e) => {
     const owner = e.current_holder_id
       ? users.find((u) => u.id === e.current_holder_id) ?? null
       : null;
@@ -87,6 +91,7 @@ export function listEquipmentSummary(): EquipmentSummary[] {
   });
 }
 
-export function listCustodianRows(): EquipmentSummary[] {
-  return listEquipmentSummary().filter((e) => e.current_holder_id !== null);
+export async function listCustodianRows(): Promise<EquipmentSummary[]> {
+  const summary = await listEquipmentSummary();
+  return summary.filter((e) => e.current_holder_id !== null);
 }

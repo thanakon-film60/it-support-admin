@@ -1,0 +1,26 @@
+# Caddy ทำหน้าที่รับ HTTPS จากภายนอกแล้วส่งต่อเข้า Next.js (container "app" port 3000)
+# ตัว Next.js เองไม่ต้องรู้เรื่องใบรับรอง/โดเมนเลย
+
+{$DOMAIN} {
+	# ขอใบรับรองแบบ DNS-01 (สร้าง TXT record ผ่าน DuckDNS API) แทน HTTP-01 แบบปกติ
+	# เพราะ HTTP-01 บังคับว่า Let's Encrypt ต้องต่อเข้า port 80 ของเครื่องนี้จากอินเทอร์เน็ตได้
+	# ซึ่งบนเครื่องนี้ port 80 ถูก http.sys ของ Windows จับไว้อยู่แล้ว และยังต้องพึ่ง port
+	# forward ที่เราเตอร์อีก — DNS-01 ไม่ต้องเปิด port เข้ามาเลย ต่อออกไปหา DuckDNS อย่างเดียว
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+
+	encode zstd gzip
+
+	# ไฟล์ Excel ที่แอดมิน import เข้าหน้าทรัพย์สินอาจใหญ่กว่า default ของ Caddy
+	request_body {
+		max_size 25MB
+	}
+
+	reverse_proxy app:3000
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
           // sync ผู้ใช้ LINE เข้า users table ก่อนเสมอ (ผูกด้วย line_user_id) เพื่อให้ ticket
           // ที่สร้างจาก LIFF ในภายหลังอ้างถึง requester คนเดียวกัน
           await ensureLineUser(event.source.userId);
-          const messages = buildFaqReply(event.message.text ?? "");
+          const messages = await buildFaqReply(event.message.text ?? "");
           await replyMessage(event.replyToken, messages);
         }
       } catch (err) {

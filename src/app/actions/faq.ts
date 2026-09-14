@@ -53,7 +53,7 @@ export async function createFaqItemAction(
   const files = formData.getAll("images").filter((f): f is File => f instanceof File);
   const image_urls = await saveImages(files);
 
-  createFaqItem({
+  await createFaqItem({
     title,
     keywords,
     content,
@@ -67,6 +67,6 @@ export async function createFaqItemAction(
 
 export async function deleteFaqItemAction(id: string) {
   await requireSession();
-  deleteFaqItem(id);
+  await deleteFaqItem(id);
   revalidatePath("/faq");
 }

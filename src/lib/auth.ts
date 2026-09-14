@@ -29,7 +29,7 @@ export async function signIn(
   username: string,
   password: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const account = getStaffByUsername(username);
+  const account = await getStaffByUsername(username);
   if (!account || !verifyPassword(password, account.password_hash)) {
     return { ok: false, error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
   }

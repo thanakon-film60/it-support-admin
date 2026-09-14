@@ -23,15 +23,16 @@ function seed(): StaffAccount[] {
   ];
 }
 
-export function listStaffAccounts(): StaffAccount[] {
+export async function listStaffAccounts(): Promise<StaffAccount[]> {
   return readCollection<StaffAccount>(COLLECTION, seed);
 }
 
-export function getStaffByUsername(username: string): StaffAccount | null {
+export async function getStaffByUsername(
+  username: string
+): Promise<StaffAccount | null> {
+  const all = await listStaffAccounts();
   return (
-    listStaffAccounts().find(
-      (s) => s.username.toLowerCase() === username.toLowerCase()
-    ) ?? null
+    all.find((s) => s.username.toLowerCase() === username.toLowerCase()) ?? null
   );
 }
 
@@ -39,12 +40,12 @@ export function verifyPassword(plain: string, hash: string): boolean {
   return bcrypt.compareSync(plain, hash);
 }
 
-export function createStaffAccount(input: {
+export async function createStaffAccount(input: {
   username: string;
   password: string;
   display_name: string;
   role: StaffAccount["role"];
-}): StaffAccount {
+}): Promise<StaffAccount> {
   const account: StaffAccount = {
     id: newId(),
     username: input.username,
@@ -53,6 +54,6 @@ export function createStaffAccount(input: {
     role: input.role,
     created_at: new Date().toISOString(),
   };
-  upsertOne<StaffAccount>(COLLECTION, account, seed);
+  await upsertOne<StaffAccount>(COLLECTION, account, seed);
   return account;
 }

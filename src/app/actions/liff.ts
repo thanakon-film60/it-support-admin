@@ -37,17 +37,17 @@ export async function createLiffTicketAction(
 
   let requesterId: string;
   if (input.identity.mode === "liff") {
-    const existing = getUserByLineId(input.identity.lineUserId);
+    const existing = await getUserByLineId(input.identity.lineUserId);
     if (existing) {
       requesterId = existing.id;
     } else {
       // เผื่อกรณีเปิด LIFF ตรงๆ โดยยังไม่เคยทักบอทมาก่อน (webhook เลยยังไม่เคย sync user นี้)
       const profile = await getProfile(input.identity.lineUserId);
-      const user = upsertLineUser(input.identity.lineUserId, profile?.displayName ?? "ผู้ใช้ LINE");
+      const user = await upsertLineUser(input.identity.lineUserId, profile?.displayName ?? "ผู้ใช้ LINE");
       requesterId = user.id;
     }
   } else {
-    const user = findOrCreateUserByName({
+    const user = await findOrCreateUserByName({
       display_name: input.identity.name,
       employee_id: input.identity.employeeId || null,
       department: input.identity.department || null,
@@ -66,10 +66,10 @@ export async function createLiffTicketAction(
     meta: input.items && input.items.length > 0 ? { items: input.items } : null,
   };
 
-  const ticket = createTicket(ticketInput);
+  const ticket = await createTicket(ticketInput);
 
   if (ticket.type === "withdraw" && input.items && input.items.length > 0) {
-    deductStockForWithdrawTicket(input.items, "LIFF (พนักงานแจ้งเอง)", ticket.ticket_code);
+    await deductStockForWithdrawTicket(input.items, "LIFF (พนักงานแจ้งเอง)", ticket.ticket_code);
   }
 
   revalidatePath("/tickets");

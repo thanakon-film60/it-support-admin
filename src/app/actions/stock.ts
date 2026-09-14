@@ -34,7 +34,7 @@ export async function createStockItemAction(
     safety_stock: Number.isFinite(safety) ? Math.max(0, safety) : 0,
   };
 
-  createStockItem(input);
+  await createStockItem(input);
   revalidatePath("/stock");
   revalidatePath("/");
   return { success: true };
@@ -48,7 +48,7 @@ export async function stockInAction(
   staffName: string
 ) {
   await requireSession();
-  recordStockTransaction({
+  await recordStockTransaction({
     stock_item_id: itemId,
     type: "in",
     quantity,
@@ -68,7 +68,7 @@ export async function adjustStockQuantityAction(
   staffName: string
 ) {
   await requireSession();
-  recordStockTransaction({
+  await recordStockTransaction({
     stock_item_id: itemId,
     type: "adjust",
     quantity: newQuantity,
@@ -82,7 +82,7 @@ export async function adjustStockQuantityAction(
 
 export async function updateSafetyStockAction(itemId: string, safetyStock: number) {
   await requireSession();
-  updateSafetyStock(itemId, safetyStock);
+  await updateSafetyStock(itemId, safetyStock);
   revalidatePath("/stock");
   revalidatePath("/");
 }

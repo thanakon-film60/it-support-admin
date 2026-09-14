@@ -27,12 +27,13 @@ function seedTxns(): StockTransaction[] {
   return [];
 }
 
-export function listStockItems(): StockItem[] {
+export async function listStockItems(): Promise<StockItem[]> {
   return readCollection<StockItem>(ITEMS_COLLECTION, seedItems);
 }
 
-export function getStockItemById(id: string): StockItem | null {
-  return listStockItems().find((s) => s.id === id) ?? null;
+export async function getStockItemById(id: string): Promise<StockItem | null> {
+  const all = await listStockItems();
+  return all.find((s) => s.id === id) ?? null;
 }
 
 export function computeStockStatus(item: StockItem): StockItemWithComputed["stock_status"] {
@@ -41,27 +42,32 @@ export function computeStockStatus(item: StockItem): StockItemWithComputed["stoc
   return "ปกติ";
 }
 
-export function listStockItemsWithStatus(): StockItemWithComputed[] {
-  return listStockItems()
+export async function listStockItemsWithStatus(): Promise<StockItemWithComputed[]> {
+  const items = await listStockItems();
+  return items
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, "th"))
     .map((item) => ({ ...item, stock_status: computeStockStatus(item) }));
 }
 
-export function createStockItem(
+export async function createStockItem(
   input: Omit<StockItem, "id" | "created_at">
-): StockItem {
+): Promise<StockItem> {
   const item: StockItem = { ...input, id: newId(), created_at: new Date().toISOString() };
-  upsertOne<StockItem>(ITEMS_COLLECTION, item, seedItems);
+  await upsertOne<StockItem>(ITEMS_COLLECTION, item, seedItems);
   return item;
 }
 
-export function listStockTransactions(): (StockTransaction & {
-  item_name: string;
-  item_unit: string;
-})[] {
-  const items = listStockItems();
-  const txns = readCollection<StockTransaction>(TXN_COLLECTION, seedTxns);
+export async function listStockTransactions(): Promise<
+  (StockTransaction & {
+    item_name: string;
+    item_unit: string;
+  })[]
+> {
+  const [items, txns] = await Promise.all([
+    listStockItems(),
+    readCollection<StockTransaction>(TXN_COLLECTION, seedTxns),
+  ]);
   return txns
     .slice()
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -73,14 +79,14 @@ export function listStockTransactions(): (StockTransaction & {
 
 /** บันทึก transaction + ปรับยอดคงเหลือของ stock_items ให้ atomically ในฟังก์ชันเดียว
  *  (ใน Supabase จริง ส่วนนี้ควรทำเป็น Postgres function/transaction ฝั่ง DB — ดู PROJECT.md) */
-export function recordStockTransaction(input: {
+export async function recordStockTransaction(input: {
   stock_item_id: string;
   type: StockTxnType;
   quantity: number;
   staff_name?: string | null;
   reference_no?: string | null;
   note?: string | null;
-}): StockTransaction {
+}): Promise<StockTransaction> {
   const txn: StockTransaction = {
     id: newId(),
     stock_item_id: input.stock_item_id,
@@ -91,35 +97,38 @@ export function recordStockTransaction(input: {
     note: input.note ?? null,
     created_at: new Date().toISOString(),
   };
-  const txns = readCollection<StockTransaction>(TXN_COLLECTION, seedTxns);
-  txns.push(txn);
-  upsertOne<StockTransaction>(TXN_COLLECTION, txn, seedTxns);
+  await upsertOne<StockTransaction>(TXN_COLLECTION, txn, seedTxns);
 
-  const item = getStockItemById(input.stock_item_id);
+  const item = await getStockItemById(input.stock_item_id);
   if (item) {
     const delta = input.type === "out" ? -Math.abs(input.quantity) : Math.abs(input.quantity);
     const nextQty = input.type === "adjust" ? input.quantity : item.quantity_available + delta;
-    patchOne<StockItem>(ITEMS_COLLECTION, item.id, { quantity_available: Math.max(0, nextQty) }, seedItems);
+    await patchOne<StockItem>(ITEMS_COLLECTION, item.id, { quantity_available: Math.max(0, nextQty) }, seedItems);
   }
   return txn;
 }
 
-export function updateSafetyStock(id: string, safetyStock: number): StockItem | null {
+export async function updateSafetyStock(
+  id: string,
+  safetyStock: number
+): Promise<StockItem | null> {
   return patchOne<StockItem>(ITEMS_COLLECTION, id, { safety_stock: safetyStock }, seedItems);
 }
 
 /** หักสต็อกอัตโนมัติเมื่อ ticket ประเภท "เบิกอุปกรณ์" ถูกปิดงาน — ผูก business logic ไว้จุดเดียว
  *  ตามข้อสังเกตในผลวิเคราะห์ (ของต้นแบบดูเหมือนคำนวณฝั่ง client ซึ่งเสี่ยงข้อมูลไม่ตรงกัน) */
-export function deductStockForWithdrawTicket(
+export async function deductStockForWithdrawTicket(
   items: { name: string; qty: number }[],
   staffName: string,
   referenceNo?: string
-) {
-  const stockItems = listStockItems();
-  items.forEach(({ name, qty }) => {
+): Promise<void> {
+  const stockItems = await listStockItems();
+  // ทำทีละรายการตามลำดับ (ไม่ใช่ Promise.all) เพราะแต่ละรอบอ่านยอดคงเหลือล่าสุดมาคำนวณยอดใหม่
+  // ถ้ายิงขนานกันแล้วบังเอิญมีของชื่อเดียวกันซ้ำในรายการเบิก ยอดจะหักหายไปรอบหนึ่ง
+  for (const { name, qty } of items) {
     const match = stockItems.find((s) => s.name === name);
     if (match) {
-      recordStockTransaction({
+      await recordStockTransaction({
         stock_item_id: match.id,
         type: "out",
         quantity: qty,
@@ -128,5 +137,5 @@ export function deductStockForWithdrawTicket(
         note: "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
       });
     }
-  });
+  }
 }

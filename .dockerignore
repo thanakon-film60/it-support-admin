@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+data
+public/uploads
+.env
+.env.*
+!.env.example
+npm-debug.log*
+*.md
+db
+docker-compose.yml
+Dockerfile
+Caddyfile
+.claude-prompt.md
+domains.png

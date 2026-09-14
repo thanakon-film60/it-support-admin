@@ -31,7 +31,7 @@ export async function createEquipmentAction(
     if (!owner_name) {
       return { error: "กรุณากรอกชื่อผู้ครอบครอง" };
     }
-    const user = findOrCreateUserByName({
+    const user = await findOrCreateUserByName({
       display_name: owner_name,
       employee_id: String(formData.get("owner_employee_id") ?? "").trim() || null,
       department: String(formData.get("owner_department") ?? "").trim() || null,
@@ -58,7 +58,7 @@ export async function createEquipmentAction(
     current_holder_since,
   };
 
-  createEquipment(input);
+  await createEquipment(input);
   revalidatePath("/assets");
   revalidatePath("/custodian");
   revalidatePath("/");
@@ -88,7 +88,7 @@ export async function bulkImportEquipmentAction(
       skipped++;
       continue;
     }
-    createEquipment({
+    await createEquipment({
       ...row,
       current_holder_id: null,
       current_holder_since: null,

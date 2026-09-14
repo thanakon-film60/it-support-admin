@@ -1,0 +1,84 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # รันครั้งแรกครั้งเดียว ตอน pgdata ยังว่าง — ดูหมายเหตุหัวไฟล์ db/init/001_schema.sql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    # เปิดแค่ 127.0.0.1 เพื่อให้แอดมินต่อ psql/DBeaver จากเครื่องนี้เองได้ตอน debug
+    # ไม่เปิดสู่ LAN/อินเทอร์เน็ต (5433 ถูกโปรเจกต์ checkin-system ใช้อยู่แล้ว เลยใช้ 5434)
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_LIFF_ID: ${NEXT_PUBLIC_LIFF_ID}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
+      NEXT_PUBLIC_LIFF_ID: ${NEXT_PUBLIC_LIFF_ID}
+      NODE_ENV: production
+    volumes:
+      # รูปที่อัปโหลดผ่านฟอร์ม FAQ ถูกเขียนลงดิสก์จริง (src/app/actions/faq.ts) ถ้าไม่แยกเป็น
+      # volume รูปทั้งหมดจะหายทุกครั้งที่ build image ใหม่ เพราะอยู่ในชั้น filesystem ของ container
+      - uploads:/app/public/uploads
+    ports:
+      # ไว้ทดสอบ http://localhost:3000 ตรงๆ จากเครื่องนี้ก่อนพึ่งพา Caddy/โดเมน
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    build:
+      context: ./caddy
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Caddyfile อ่าน 2 ค่านี้: DOMAIN = ชื่อ site block, DUCKDNS_TOKEN = ใช้ตอบ DNS-01 challenge
+      DOMAIN: ${DOMAIN}
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN}
+    ports:
+      # 443 บนเครื่องนี้ว่าง จับตรงๆ ได้เลย (ต้อง forward 443 ที่เราเตอร์มาที่เครื่องนี้)
+      - "443:443"
+      # HTTP/3 (QUIC) วิ่งบน UDP 443 — ไม่มีก็ยังใช้งานได้ แค่ falls back ไป HTTP/2
+      - "443:443/udp"
+      # port 80 ของเครื่องถูก http.sys ของ Windows จับอยู่ เลยแมป 8080 แทนไว้ทดสอบ/redirect
+      - "8080:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # เก็บใบรับรองที่ออกแล้วไว้ ไม่ให้ไปขอใหม่ทุกครั้งที่ restart (Let's Encrypt มี rate limit)
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    restart: unless-stopped
+    environment:
+      - SUBDOMAINS=${DUCKDNS_SUBDOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - LOG_FILE=false
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:
