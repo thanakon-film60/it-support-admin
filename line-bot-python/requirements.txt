@@ -1,0 +1,19 @@
+# ---- LINE / เว็บเซิร์ฟเวอร์ ----
+line-bot-sdk==3.25.0
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+httpx==0.28.1
+pydantic-settings==2.15.0
+
+# ---- ชั้น AI ----
+# pythainlp: ตัดคำไทย (จำเป็น — ถ้าไม่มี บอทจะ fallback เป็นการตัดคำแบบหยาบ ความแม่นยำ FAQ จะลดลงมาก)
+# rapidfuzz: จับคำที่พิมพ์ผิดเล็กน้อย เช่น สาขา/ชื่ออุปกรณ์
+pythainlp==5.3.7
+rapidfuzz==3.14.6
+
+# ---- state store สำหรับ production ----
+redis==8.1.0
+
+# ---- สำหรับรันเทสต์เท่านั้น (production ไม่ต้องติดตั้งก็ได้) ----
+pytest==9.1.1
+pytest-asyncio==1.4.0

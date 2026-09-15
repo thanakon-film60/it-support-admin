@@ -23,28 +23,25 @@ function seed(): User[] {
   return rows.map((r) => ({ ...r, id: newId(), created_at: now }));
 }
 
-export async function listUsers(): Promise<User[]> {
+export function listUsers(): User[] {
   return readCollection<User>(COLLECTION, seed);
 }
 
-export async function getUserById(id: string): Promise<User | null> {
-  const all = await listUsers();
-  return all.find((u) => u.id === id) ?? null;
+export function getUserById(id: string): User | null {
+  return listUsers().find((u) => u.id === id) ?? null;
 }
 
-export async function getUserByLineId(lineUserId: string): Promise<User | null> {
-  const all = await listUsers();
-  return all.find((u) => u.line_user_id === lineUserId) ?? null;
+export function getUserByLineId(lineUserId: string): User | null {
+  return listUsers().find((u) => u.line_user_id === lineUserId) ?? null;
 }
 
 /** หา user จากชื่อ+รหัสพนักงาน ถ้าไม่เจอให้สร้างใหม่ (ใช้ตอนแอดมินพิมพ์ชื่อผู้ครอบครองอิสระในฟอร์มทรัพย์สิน) */
-export async function findOrCreateUserByName(input: {
+export function findOrCreateUserByName(input: {
   display_name: string;
   employee_id?: string | null;
   department?: string | null;
-}): Promise<User> {
-  const all = await listUsers();
-  const existing = all.find(
+}): User {
+  const existing = listUsers().find(
     (u) =>
       u.display_name.trim() === input.display_name.trim() &&
       (input.employee_id ? u.employee_id === input.employee_id : true)
@@ -59,17 +56,14 @@ export async function findOrCreateUserByName(input: {
     email: null,
     created_at: new Date().toISOString(),
   };
-  await upsertOne<User>(COLLECTION, user, seed);
+  upsertOne<User>(COLLECTION, user, seed);
   return user;
 }
 
 /** หา user จาก line_user_id ถ้าไม่เจอให้สร้างใหม่ (ใช้โดย LINE webhook / LIFF เพื่อผูกผู้ใช้ LINE
  *  เข้ากับ users table เดียวกับที่แอดมินเห็น — ให้ ticket ที่มาจาก LINE อ้างถึง requester ถูกคน) */
-export async function upsertLineUser(
-  lineUserId: string,
-  displayName: string
-): Promise<User> {
-  const existing = await getUserByLineId(lineUserId);
+export function upsertLineUser(lineUserId: string, displayName: string): User {
+  const existing = getUserByLineId(lineUserId);
   if (existing) return existing;
 
   const user: User = {
@@ -81,6 +75,6 @@ export async function upsertLineUser(
     email: null,
     created_at: new Date().toISOString(),
   };
-  await upsertOne<User>(COLLECTION, user, seed);
+  upsertOne<User>(COLLECTION, user, seed);
   return user;
 }

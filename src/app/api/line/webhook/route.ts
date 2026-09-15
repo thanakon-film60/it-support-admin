@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
           // sync ผู้ใช้ LINE เข้า users table ก่อนเสมอ (ผูกด้วย line_user_id) เพื่อให้ ticket
           // ที่สร้างจาก LIFF ในภายหลังอ้างถึง requester คนเดียวกัน
           await ensureLineUser(event.source.userId);
-          const messages = await buildFaqReply(event.message.text ?? "");
+          const messages = buildFaqReply(event.message.text ?? "");
           await replyMessage(event.replyToken, messages);
         }
       } catch (err) {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// Health check สำหรับเปิดทดสอบจาก browser/curl; ปุ่ม Verify ของ LINE จะส่ง POST events: []
+// LINE Developers Console จะยิง GET เข้ามาตอนกด "Verify" ที่หน้าตั้งค่า Webhook URL บางครั้ง
 export async function GET() {
   return NextResponse.json({ ok: true, service: "line-webhook" });
 }

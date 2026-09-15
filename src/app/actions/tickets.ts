@@ -14,7 +14,7 @@ export async function changeTicketStatusAction(
   status: TicketStatus
 ) {
   await requireSession();
-  const updated = await updateTicketStatus(ticketId, status);
+  const updated = updateTicketStatus(ticketId, status);
   revalidatePath("/tickets");
   revalidatePath("/repair-history");
   revalidatePath("/");

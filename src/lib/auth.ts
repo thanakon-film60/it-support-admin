@@ -25,11 +25,31 @@ export interface SessionPayload {
   role: StaffAccount["role"];
 }
 
+/** ปิดระบบล็อกอินทั้งระบบเมื่อ AUTH_DISABLED=true (ตั้งใน docker-compose.yml / .env)
+ *
+ *  ⚠️ เปิดโหมดนี้แล้ว "ทุกคนที่เปิด URL ได้ จะเห็นข้อมูลทั้งหมด" — ข้อมูลพนักงาน ค่าซ่อม
+ *  ทรัพย์สิน สต็อก ทั้งหมด เพราะเว็บนี้เปิดสู่อินเทอร์เน็ตผ่าน Tailscale Funnel อยู่
+ *  เลือกเปิดโดยเจ้าของระบบเมื่อ 2026-09-15 หลังได้รับแจ้งความเสี่ยงแล้ว
+ *
+ *  ไม่ได้ลบโค้ด auth ทิ้ง เพื่อให้กลับมาเปิดใหม่ได้ด้วยการเปลี่ยนค่าตัวแปรเดียว:
+ *  ตั้ง AUTH_DISABLED=false ใน .env แล้ว `docker compose up -d --build app`
+ */
+export const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
+
+/** ตัวตนที่ใช้แทนตอนปิดล็อกอิน — ต้องมี เพราะทุกหน้า/Server Action อ่าน session ไปแสดงผล */
+const GUEST_SESSION: SessionPayload = {
+  staffId: "guest",
+  username: "guest",
+  displayName: "ผู้ใช้ทั่วไป",
+  role: "admin",
+};
+
+
 export async function signIn(
   username: string,
   password: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const account = await getStaffByUsername(username);
+  const account = getStaffByUsername(username);
   if (!account || !verifyPassword(password, account.password_hash)) {
     return { ok: false, error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
   }
@@ -63,6 +83,7 @@ export async function signOut(): Promise<void> {
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
+  if (AUTH_DISABLED) return GUEST_SESSION;
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;

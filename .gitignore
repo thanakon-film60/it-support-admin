@@ -45,4 +45,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-!.env.example
+
+# Python LINE bot
+line-bot-python/.venv/
+line-bot-python/.env
+__pycache__/
+*.pyc
+.pytest_cache/

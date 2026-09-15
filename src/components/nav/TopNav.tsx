@@ -14,7 +14,14 @@ const NAV_ITEMS = [
   { href: "/faq", icon: "🤖", label: "FAQ Bot" },
 ];
 
-export function TopNav({ displayName }: { displayName: string }) {
+export function TopNav({
+  displayName,
+  showLogout = true,
+}: {
+  displayName: string;
+  /** ปิดล็อกอินอยู่ -> ไม่ต้องมีปุ่มออกจากระบบ เพราะกดแล้วก็ไม่มีอะไรให้ออก */
+  showLogout?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -48,14 +55,16 @@ export function TopNav({ displayName }: { displayName: string }) {
 
         <div className="flex shrink-0 items-center gap-3 pl-2">
           <span className="hidden text-sm text-muted sm:inline">{displayName}</span>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="rounded-lg border border-line px-3 py-2 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400"
-            >
-              ออกจากระบบ
-            </button>
-          </form>
+          {showLogout && (
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="rounded-lg border border-line px-3 py-2 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400"
+              >
+                ออกจากระบบ
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </header>

@@ -17,8 +17,8 @@ export const WELCOME_MESSAGE: LineMessage = {
 
 /** แกนหลักของบอท: จับคู่ข้อความผู้ใช้กับ FAQ ก่อนเสมอ (ตามที่วิเคราะห์จากต้นแบบ — มี FAQ Bot
  *  แนะนำวิธีแก้ก่อนสร้าง ticket) แล้วแนบปุ่มลิงก์ไป LIFF ให้แจ้งปัญหาต่อถ้ายังไม่หาย/ไม่เจอคำตอบ */
-export async function buildFaqReply(userText: string): Promise<LineMessage[]> {
-  const matches = await matchFaqByKeyword(userText);
+export function buildFaqReply(userText: string): LineMessage[] {
+  const matches = matchFaqByKeyword(userText);
   const messages: LineMessage[] = [];
   const url = liffUrl();
 

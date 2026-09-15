@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>แจ้งซ่อม/เบิกอุปกรณ์ IT ผ่าน LINE — QR สำหรับติดบอร์ด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  /* ตั้งค่าหน้ากระดาษ A4 — สั่งพิมพ์จากเบราว์เซอร์ได้เลย (Ctrl+P) โดยไม่ต้องปรับอะไร
+     ปิด header/footer ของเบราว์เซอร์ในหน้าต่างพิมพ์ด้วย จะได้ไม่มี URL ติดมุมกระดาษ */
+  @page { size: A4; margin: 14mm; }
+
+  :root {
+    --line-green: #06C755;
+    --ink: #10221a;
+    --muted: #5b6b63;
+    --rule: #dfe7e3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Sarabun", "Leelawadee UI", "Tahoma", sans-serif;
+    color: var(--ink);
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .sheet {
+    width: 182mm;            /* A4 กว้าง 210mm - ขอบ 14mm สองข้าง */
+    margin: 0 auto;
+    padding: 4mm 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-size: 13pt;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: var(--line-green);
+    margin: 0 0 2mm;
+  }
+
+  h1 {
+    font-size: 30pt;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0 0 3mm;
+  }
+
+  .lead {
+    font-size: 14pt;
+    color: var(--muted);
+    margin: 0 0 7mm;
+    line-height: 1.5;
+  }
+
+  /* กรอบ QR — เว้นขอบขาวรอบโค้ดไว้เยอะๆ (quiet zone) ไม่งั้นกล้องบางรุ่นอ่านไม่ออก */
+  .qr-card {
+    border: 3px solid var(--line-green);
+    border-radius: 6mm;
+    padding: 7mm;
+    background: #fff;
+    line-height: 0;
+  }
+  .qr-card svg { width: 78mm; height: 78mm; display: block; }
+
+  .oa-id {
+    margin: 5mm 0 0;
+    font-size: 20pt;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+  .oa-id small {
+    display: block;
+    font-size: 11pt;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0;
+    margin-top: 1mm;
+  }
+
+  .steps {
+    display: flex;
+    gap: 6mm;
+    margin: 8mm 0 0;
+    width: 100%;
+  }
+  .step {
+    flex: 1;
+    border-top: 2px solid var(--rule);
+    padding-top: 3mm;
+    text-align: left;
+  }
+  .step b {
+    display: block;
+    font-size: 11pt;
+    color: var(--line-green);
+    margin-bottom: 1mm;
+  }
+  .step span { font-size: 12pt; line-height: 1.45; }
+
+  .services {
+    margin: 8mm 0 0;
+    width: 100%;
+    border-top: 2px solid var(--rule);
+    padding-top: 5mm;
+  }
+  .services h2 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 0 0 3mm;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3mm;
+  }
+  .chip {
+    border: 1.5px solid var(--rule);
+    border-radius: 999px;
+    padding: 2mm 5mm;
+    font-size: 13pt;
+    font-weight: 600;
+  }
+
+  .foot {
+    margin-top: 7mm;
+    font-size: 10pt;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="eyebrow">แผนก IT</p>
+  <h1>แจ้งซ่อม &amp; เบิกอุปกรณ์<br>ผ่าน LINE ได้ 24 ชั่วโมง</h1>
+  <p class="lead">สแกน QR เพื่อเพิ่มเพื่อน แล้วพิมพ์ทักได้เลย<br>ระบบจะถามทีละขั้นจนออกเลขที่เรื่องให้อัตโนมัติ</p>
+
+  <div class="qr-card">
+    <!-- QR ฝังเป็นเวกเตอร์ (SVG) ไม่ใช่รูป PNG — ขยายเท่าไหร่ก็คม และไฟล์นี้เปิดได้เองโดยไม่ต้องแนบรูป
+         เนื้อหาที่เข้ารหัส: https://line.me/R/ti/p/@891ujhzo (ลิงก์เพิ่มเพื่อนมาตรฐานของ LINE)
+         สร้างจาก qr/make_qr.py — ถ้าเปลี่ยน OA ให้รันสคริปต์นั้นใหม่แล้ววาง <svg> ก้อนใหม่แทนที่ตรงนี้ -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" class="segno"><path fill="#fff" d="M0 0h41v41h-41z"/><path stroke="#000" stroke-width="1" d="M4 4.5h7m1 0h1m2 0h1m1 0h2m2 0h2m2 0h2m1 0h1m1 0h7m-33 1h1m5 0h1m2 0h1m2 0h6m1 0h1m2 0h1m1 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m3 0h4m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m2 0h2m2 0h1m3 0h1m1 0h6m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m3 0h3m3 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m3 0h2m1 0h3m2 0h1m1 0h1m5 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m1 0h1m1 0h2m1 0h1m2 0h1m1 0h1m2 0h1m-19 1h2m2 0h3m1 0h1m1 0h2m1 0h3m2 0h2m1 0h1m1 0h1m1 0h1m1 0h1m-33 1h1m1 0h3m2 0h1m3 0h2m1 0h1m2 0h4m4 0h1m1 0h3m-30 1h1m2 0h2m1 0h4m2 0h1m3 0h1m2 0h3m3 0h1m1 0h1m1 0h1m1 0h1m-32 1h3m1 0h2m4 0h1m1 0h1m1 0h1m1 0h3m4 0h1m1 0h1m1 0h1m1 0h2m-31 1h1m1 0h1m2 0h4m1 0h2m1 0h2m6 0h2m1 0h4m-27 1h2m1 0h1m2 0h6m1 0h2m1 0h1m2 0h2m1 0h1m2 0h2m2 0h1m1 0h1m-30 1h1m2 0h3m3 0h1m1 0h1m1 0h1m5 0h1m2 0h7m-32 1h2m1 0h2m2 0h1m1 0h1m3 0h1m4 0h2m5 0h1m3 0h2m1 0h1m-33 1h8m6 0h2m3 0h2m2 0h1m1 0h1m1 0h3m-30 1h1m6 0h1m1 0h3m5 0h1m3 0h1m1 0h4m4 0h2m-33 1h2m3 0h3m3 0h2m1 0h1m4 0h2m2 0h1m1 0h1m2 0h5m-32 1h1m2 0h1m2 0h1m4 0h2m1 0h1m2 0h2m2 0h3m3 0h4m-30 1h2m1 0h2m1 0h1m1 0h1m1 0h2m2 0h2m3 0h2m1 0h2m1 0h3m2 0h1m-33 1h1m4 0h1m1 0h4m1 0h3m1 0h1m3 0h2m1 0h1m1 0h1m1 0h2m-29 1h1m3 0h4m1 0h2m2 0h1m4 0h1m2 0h1m2 0h1m2 0h4m-31 1h1m2 0h1m1 0h1m3 0h2m2 0h1m2 0h1m1 0h2m3 0h2m2 0h4m1 0h1m-33 1h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h1m1 0h1m1 0h6m1 0h2m-25 1h2m2 0h2m3 0h1m2 0h3m1 0h1m3 0h3m1 0h1m-33 1h7m5 0h3m1 0h4m2 0h3m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h1m1 0h1m2 0h2m1 0h2m3 0h2m1 0h1m3 0h4m-32 1h1m1 0h3m1 0h1m2 0h1m1 0h2m2 0h2m1 0h5m1 0h5m2 0h2m-33 1h1m1 0h3m1 0h1m2 0h1m1 0h2m2 0h1m1 0h1m1 0h2m3 0h2m1 0h4m1 0h1m-33 1h1m1 0h3m1 0h1m2 0h1m1 0h1m5 0h1m3 0h1m1 0h2m3 0h1m1 0h3m-33 1h1m5 0h1m2 0h1m2 0h1m2 0h3m1 0h2m1 0h1m2 0h2m2 0h2m-31 1h7m2 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h2m1 0h1m4 0h1"/></svg>
+  </div>
+
+  <p class="oa-id">@891ujhzo
+    <small>ค้นหา ID นี้ในแอป LINE ได้ ถ้าสแกนไม่ได้</small>
+  </p>
+
+  <div class="steps">
+    <div class="step"><b>1</b><span>เปิดแอป LINE แล้วสแกน QR ด้านบน</span></div>
+    <div class="step"><b>2</b><span>กด “เพิ่มเพื่อน” แล้วพิมพ์ทักอะไรก็ได้</span></div>
+    <div class="step"><b>3</b><span>ตอบคำถามทีละข้อ: สาขา → ประเภทเรื่อง → รายละเอียด</span></div>
+    <div class="step"><b>4</b><span>รับเลขที่เรื่อง แล้วพิมพ์ถามสถานะได้ตลอดเวลา</span></div>
+  </div>
+
+  <div class="services">
+    <h2>แจ้งได้ 4 ประเภท</h2>
+    <div class="chips">
+      <span class="chip">🖊 แจ้งซ่อม</span>
+      <span class="chip">📦 เบิกอุปกรณ์</span>
+      <span class="chip">🔄 คืนอุปกรณ์</span>
+      <span class="chip">🛠 ขอใช้บริการ IT</span>
+    </div>
+  </div>
+
+  <p class="foot">ถามสต็อกคงเหลือ ทรัพย์สินในครอบครอง และสถานะเรื่องที่แจ้งไว้ ได้จากแชทเดียวกัน</p>
+
+</div>
+</body>
+</html>

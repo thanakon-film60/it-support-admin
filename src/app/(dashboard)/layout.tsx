@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { requireSession } from "@/lib/auth";
+import { AUTH_DISABLED, requireSession } from "@/lib/auth";
 import { TopNav } from "@/components/nav/TopNav";
 
 export default async function DashboardLayout({
@@ -11,7 +11,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen">
-      <TopNav displayName={session.displayName} />
+      <TopNav displayName={session.displayName} showLogout={!AUTH_DISABLED} />
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
     </div>
   );

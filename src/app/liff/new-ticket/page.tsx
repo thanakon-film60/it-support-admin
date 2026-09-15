@@ -6,9 +6,8 @@ import { LiffTicketForm } from "@/components/liff/LiffTicketForm";
 // รายการทรัพย์สินในฟอร์มจะถูก "แช่แข็ง" ไว้ที่ตอน build แทนที่จะเป็นข้อมูลล่าสุดทุกครั้งที่มีคนเปิดหน้านี้
 export const dynamic = "force-dynamic";
 
-export default async function NewTicketLiffPage() {
-  const allEquipment = await listEquipment();
-  const equipmentOptions = allEquipment
+export default function NewTicketLiffPage() {
+  const equipmentOptions = listEquipment()
     .filter((e) => e.status !== "เลิกใช้งาน")
     .map((e) => ({ id: e.id, label: `${e.asset_code} — ${e.brand_model ?? ""}` }));
 

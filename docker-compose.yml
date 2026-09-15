@@ -26,6 +26,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_LIFF_ID: ${NEXT_PUBLIC_LIFF_ID}
+        AUTH_DISABLED: ${AUTH_DISABLED:-false}
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -34,11 +35,22 @@ services:
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
       LINE_LOGIN_CHANNEL_ID: ${LINE_LOGIN_CHANNEL_ID}
       NEXT_PUBLIC_LIFF_ID: ${NEXT_PUBLIC_LIFF_ID}
+      # ให้ /api/internal/* ยอมรับ request จาก service "bot" ได้ (เดิมไม่เคยส่งค่านี้เข้ามาเลย
+      # ทำให้ทุก request จากบอทโดนปฏิเสธ 401 มาตลอด — verifyInternalKey() fail-closed ถ้าไม่ตั้งค่า)
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      # AUTH_DISABLED=true = ปิดหน้า login ทั้งระบบ ใครเปิด URL ได้ก็เห็นข้อมูลทั้งหมด
+      # (ดูคำเตือนเต็มที่ src/lib/auth.ts) เปลี่ยนค่าแล้วต้อง build ใหม่ ไม่ใช่แค่ restart
+      AUTH_DISABLED: ${AUTH_DISABLED:-false}
       NODE_ENV: production
     volumes:
       # รูปที่อัปโหลดผ่านฟอร์ม FAQ ถูกเขียนลงดิสก์จริง (src/app/actions/faq.ts) ถ้าไม่แยกเป็น
       # volume รูปทั้งหมดจะหายทุกครั้งที่ build image ใหม่ เพราะอยู่ในชั้น filesystem ของ container
       - uploads:/app/public/uploads
+      # เดิมไม่มีบรรทัดนี้เลย — src/lib/db/store.ts เขียน ticket/user/stock/equipment ทั้งหมดเป็น
+      # JSON ลง /app/data ตรงๆ (ยังไม่ได้ย้ายไป Postgres จริง แม้จะมี service db/pg.ts เตรียมไว้แล้ว)
+      # ถ้าไม่ mount เป็น volume ข้อมูลทั้งหมดจะหายทุกครั้งที่ `docker compose build app` ใหม่ —
+      # พบว่าเป็นแบบนี้มาตลอดตอนแก้บั๊ก EACCES 2026-09-14 (ดู it-support-admin-analysis.md)
+      - app_data:/app/data
     ports:
       # ไว้ทดสอบ http://localhost:3000 ตรงๆ จากเครื่องนี้ก่อนพึ่งพา Caddy/โดเมน
       - "127.0.0.1:3000:3000"
@@ -78,8 +90,40 @@ services:
       - TOKEN=${DUCKDNS_TOKEN}
       - LOG_FILE=false
 
+  # เก็บ state บทสนทนาของบอท (session ที่คุยค้างอยู่) — ไม่ใส่ตัวนี้บอทจะใช้ความจำในโปรเซสแทน
+  # ซึ่งหายทุกครั้งที่ container restart (ดูเหตุผลเต็มใน line-bot-python/README.md)
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  bot:
+    build:
+      context: ./line-bot-python
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
+      # ต้องตรงกับ INTERNAL_API_KEY ของ service "app" ด้านบนเป๊ะๆ — มาจากตัวแปรตัวเดียวกันใน
+      # .env จึงตรงกันเสมอ ไม่มีทางลืมอัปเดตแค่ฝั่งเดียว
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      # ชื่อ service ในเครือข่ายของ compose เอง ไม่ใช่ localhost — localhost ในคอนเทนเนอร์คือ
+      # ตัวคอนเทนเนอร์เอง ไม่ใช่คอนเทนเนอร์ "app" ข้างๆ (ข้อผิดพลาดคลาสสิกเวลาย้ายจาก dev ตรงๆ เข้า compose)
+      BACKEND_BASE_URL: http://app:3000
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      # ไว้ทดสอบ http://localhost:8000/health ตรงๆ จากเครื่องนี้ และให้ `tailscale serve` ชี้มาที่นี่
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      - app
+      - redis
+
 volumes:
   pgdata:
   uploads:
+  app_data:
   caddy_data:
   caddy_config:
+  redis_data:

@@ -3,12 +3,10 @@ import { ticketCountsByStatus } from "@/lib/db/tickets";
 import { listEquipment } from "@/lib/db/equipment";
 import { listStockItemsWithStatus } from "@/lib/db/stock";
 
-export default async function OverviewPage() {
-  const [ticketCounts, equipment, stockItems] = await Promise.all([
-    ticketCountsByStatus(),
-    listEquipment(),
-    listStockItemsWithStatus(),
-  ]);
+export default function OverviewPage() {
+  const ticketCounts = ticketCountsByStatus();
+  const equipment = listEquipment();
+  const stockItems = listStockItemsWithStatus();
 
   const inRepairCount = equipment.filter((e) => e.status === "ส่งซ่อม").length;
   const lowStockCount = stockItems.filter((s) => s.stock_status !== "ปกติ").length;

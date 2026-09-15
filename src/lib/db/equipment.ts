@@ -6,12 +6,12 @@ import type { Equipment, EquipmentSummary } from "../types";
 
 const COLLECTION = "equipment";
 
-async function seed(): Promise<Equipment[]> {
+function seed(): Equipment[] {
   const now = new Date();
   const iso = (daysAgo: number) =>
     new Date(now.getTime() - daysAgo * 86400000).toISOString();
   const dateOnly = (daysAgo: number) => iso(daysAgo).slice(0, 10);
-  const users = await listUsers();
+  const users = listUsers();
   const uid = (i: number) => users[i % users.length].id;
 
   const rows: Omit<Equipment, "id" | "created_at">[] = [
@@ -44,38 +44,56 @@ async function seed(): Promise<Equipment[]> {
   return rows.map((r) => ({ ...r, id: newId(), created_at: iso(0) }));
 }
 
-export async function listEquipment(): Promise<Equipment[]> {
+export function listEquipment(): Equipment[] {
   return readCollection<Equipment>(COLLECTION, seed);
 }
 
-export async function getEquipmentById(id: string): Promise<Equipment | null> {
-  const all = await listEquipment();
-  return all.find((e) => e.id === id) ?? null;
+/** normalize รหัสทรัพย์สินให้เทียบกันได้ เช่น "nb-001", "NB 001", "NB001" -> "NB001"
+ *  (คนพิมพ์ใน LINE มักใส่ขีด/เว้นวรรค/พิมพ์เล็ก ไม่ตรงกับที่เก็บใน DB เป๊ะๆ) */
+function normalizeAssetCode(code: string): string {
+  return code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 }
 
-export async function createEquipment(
+/** ค้นทรัพย์สินจากรหัสที่ผู้ใช้พิมพ์เข้ามา — ยอมรับรูปแบบที่ไม่เป๊ะได้ระดับหนึ่ง
+ *  ลำดับการค้น: ตรงเป๊ะ -> ลงท้ายด้วย -> มีคำนี้อยู่ข้างใน (กันเคสพิมพ์ย่อ เช่น NB-001) */
+export function getEquipmentByAssetCode(input: string): Equipment | null {
+  const needle = normalizeAssetCode(input);
+  if (!needle) return null;
+  const all = listEquipment();
+
+  const exact = all.find((e) => normalizeAssetCode(e.asset_code) === needle);
+  if (exact) return exact;
+
+  const endsWith = all.find((e) => normalizeAssetCode(e.asset_code).endsWith(needle));
+  if (endsWith) return endsWith;
+
+  return all.find((e) => normalizeAssetCode(e.asset_code).includes(needle)) ?? null;
+}
+
+export function getEquipmentById(id: string): Equipment | null {
+  return listEquipment().find((e) => e.id === id) ?? null;
+}
+
+export function createEquipment(
   input: Omit<Equipment, "id" | "created_at">
-): Promise<Equipment> {
+): Equipment {
   const item: Equipment = { ...input, id: newId(), created_at: new Date().toISOString() };
-  await upsertOne<Equipment>(COLLECTION, item, seed);
+  upsertOne<Equipment>(COLLECTION, item, seed);
   return item;
 }
 
-export async function updateEquipment(
+export function updateEquipment(
   id: string,
   patch: Partial<Equipment>
-): Promise<Equipment | null> {
+): Equipment | null {
   return patchOne<Equipment>(COLLECTION, id, patch, seed);
 }
 
 /** เทียบเท่า view `equipment_summary` ของต้นแบบ — join ผู้ครอบครอง + นับจำนวนครั้งที่ส่งซ่อม */
-export async function listEquipmentSummary(): Promise<EquipmentSummary[]> {
-  const [users, tickets, equipment] = await Promise.all([
-    listUsers(),
-    listTickets(),
-    listEquipment(),
-  ]);
-  return equipment.map((e) => {
+export function listEquipmentSummary(): EquipmentSummary[] {
+  const users = listUsers();
+  const tickets = listTickets();
+  return listEquipment().map((e) => {
     const owner = e.current_holder_id
       ? users.find((u) => u.id === e.current_holder_id) ?? null
       : null;
@@ -91,7 +109,6 @@ export async function listEquipmentSummary(): Promise<EquipmentSummary[]> {
   });
 }
 
-export async function listCustodianRows(): Promise<EquipmentSummary[]> {
-  const summary = await listEquipmentSummary();
-  return summary.filter((e) => e.current_holder_id !== null);
+export function listCustodianRows(): EquipmentSummary[] {
+  return listEquipmentSummary().filter((e) => e.current_holder_id !== null);
 }

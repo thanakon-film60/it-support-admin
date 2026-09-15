@@ -1,4 +1,4 @@
-import { readCollection, upsertOne, deleteOne } from "./store";
+import { readCollection, upsertOne, writeCollection } from "./store";
 import { newId } from "../utils";
 import type { FaqItem, FaqCategory } from "../types";
 
@@ -74,31 +74,30 @@ function seed(): FaqItem[] {
   return rows.map((r) => ({ ...r, id: newId(), created_at: now }));
 }
 
-export async function listFaqItems(): Promise<FaqItem[]> {
-  const all = await readCollection<FaqItem>(COLLECTION, seed);
-  return all.sort(
+export function listFaqItems(): FaqItem[] {
+  return readCollection<FaqItem>(COLLECTION, seed).sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 }
 
-export async function createFaqItem(
+export function createFaqItem(
   input: Omit<FaqItem, "id" | "created_at">
-): Promise<FaqItem> {
+): FaqItem {
   const item: FaqItem = { ...input, id: newId(), created_at: new Date().toISOString() };
-  await upsertOne<FaqItem>(COLLECTION, item, seed);
+  upsertOne<FaqItem>(COLLECTION, item, seed);
   return item;
 }
 
-export async function deleteFaqItem(id: string): Promise<void> {
-  await deleteOne(COLLECTION, id);
+export function deleteFaqItem(id: string): void {
+  const all = readCollection<FaqItem>(COLLECTION, seed).filter((f) => f.id !== id);
+  writeCollection(COLLECTION, all);
 }
 
 /** จับคู่ FAQ จาก keyword แบบง่าย ๆ ให้ LINE bot แนะนำก่อนสร้าง ticket จริง */
-export async function matchFaqByKeyword(userMessage: string): Promise<FaqItem[]> {
+export function matchFaqByKeyword(userMessage: string): FaqItem[] {
   const normalized = userMessage.toLowerCase().trim();
   if (!normalized) return [];
-  const all = await listFaqItems();
-  return all
+  return listFaqItems()
     .filter((faq) =>
       faq.keywords.some((k) => normalized.includes(k.toLowerCase()) || k.toLowerCase().includes(normalized))
     )

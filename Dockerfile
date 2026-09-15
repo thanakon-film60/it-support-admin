@@ -17,6 +17,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # build arg ตรงนี้ — ถ้าแก้ค่านี้ทีหลังต้อง build image ใหม่เสมอ แค่ restart container ไม่พอ
 ARG NEXT_PUBLIC_LIFF_ID=""
 ENV NEXT_PUBLIC_LIFF_ID=$NEXT_PUBLIC_LIFF_ID
+# proxy.ts (middleware ของ Next) อาจ inline ค่า env ตั้งแต่ตอน build ไม่ได้อ่านตอน runtime
+# จึงต้องส่ง AUTH_DISABLED เข้ามาตรงนี้ด้วย ไม่ใช่แค่ใน environment ของ compose
+ARG AUTH_DISABLED="false"
+ENV AUTH_DISABLED=$AUTH_DISABLED
 RUN npm run build
 
 # ---- runner: image สุดท้ายที่ใช้รันจริง เอาเฉพาะ standalone output ทำให้ image เล็กลงมาก ----
@@ -36,6 +40,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # มา mount ทับตรงนี้ — volume ที่ยังว่างจะ "สืบทอด" สิทธิ์ของโฟลเดอร์เดิมใน image ถ้าไม่มี
 # โฟลเดอร์อยู่ก่อน docker จะสร้างให้โดยเจ้าของเป็น root แล้ว user nextjs จะเขียนรูป FAQ ไม่ได้
 RUN mkdir -p ./public/uploads/faq && chown -R nextjs:nodejs ./public/uploads
+
+# เหตุผลเดียวกับข้างบนเป๊ะๆ แต่สำหรับ src/lib/db/store.ts ซึ่งเป็น mock data store จริงที่ใช้งาน
+# อยู่ตอนนี้ (ticket/user/stock/equipment ทั้งหมด — pg.ts ยังไม่ได้ต่อใช้งานจริง) เขียนไฟล์ JSON ลง
+# process.cwd()/data คือ /app/data ใน container นี้ — เดิมไม่มีบรรทัดนี้เลย ทำให้ user nextjs (non-root)
+# mkdir ไม่ได้ (EACCES) แอปพังทันทีทุก endpoint ที่แตะข้อมูล ต้องมี mount เป็น named volume ด้วยเสมอ
+# (ดู docker-compose.yml ตัวแปร app_data) ไม่งั้นข้อมูลทั้งหมดหายทุกครั้งที่ build image ใหม่
+RUN mkdir -p ./data && chown -R nextjs:nodejs ./data
 
 USER nextjs
 EXPOSE 3000

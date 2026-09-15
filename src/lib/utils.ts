@@ -4,7 +4,11 @@ export function newId(): string {
   return randomUUID();
 }
 
-/** ตั้งชื่อ ticket_code ให้ตรงรูปแบบต้นแบบ: PREFIX + YYYYMM (พ.ศ.) + running number 3 หลัก */
+/** ตั้งชื่อ ticket_code ให้ตรงรูปแบบต้นแบบ: PREFIX + YYYYMM (ค.ศ.) + running number 4 หลัก
+ *
+ *  หลักฐานที่ใช้อ้างอิง: ticket จริงจากบอทต้นแบบคือ "ITRQ2026090158"
+ *    ITRQ | 2026 | 09 | 0158  ->  prefix | ปี ค.ศ. | เดือน | running 4 หลัก
+ *  (เดิมโค้ดนี้ใช้ พ.ศ. + 3 หลัก ซึ่งจะได้ ITRQ256909001 — ไม่ตรงกับต้นแบบ) */
 const TICKET_PREFIX: Record<string, string> = {
   repair: "ITSR",
   withdraw: "ITRQ",
@@ -17,8 +21,7 @@ export function generateTicketCode(
   existingCodesOfType: string[]
 ): string {
   const now = new Date();
-  const buddhistYear = now.getFullYear() + 543;
-  const yyyymm = `${buddhistYear}${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
   const prefix = TICKET_PREFIX[type];
   const stem = `${prefix}${yyyymm}`;
   const runningNumbers = existingCodesOfType
@@ -26,7 +29,7 @@ export function generateTicketCode(
     .map((c) => parseInt(c.slice(stem.length), 10))
     .filter((n) => !Number.isNaN(n));
   const next = (runningNumbers.length ? Math.max(...runningNumbers) : 0) + 1;
-  return `${stem}${String(next).padStart(3, "0")}`;
+  return `${stem}${String(next).padStart(4, "0")}`;
 }
 
 /** แปลง Date/ISO string เป็นรูปแบบวันที่ไทย (พ.ศ.) แบบสั้น เช่น "11 ก.ย. 69 18:51" ให้ตรงต้นแบบ */

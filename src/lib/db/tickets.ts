@@ -14,11 +14,12 @@ const BRANCHES = [
   "สาขาขอนแก่น",
 ];
 
-async function seed(): Promise<Ticket[]> {
+function seed(): Ticket[] {
   const now = new Date();
   const iso = (daysAgo: number, hourOffset = 0) =>
     new Date(now.getTime() - daysAgo * 86400000 + hourOffset * 3600000).toISOString();
-  const [users, equipment] = await Promise.all([listUsers(), listEquipment()]);
+  const users = listUsers();
+  const equipment = listEquipment();
   const repairable = equipment.filter((e) => e.category !== "server");
 
   const plan: {
@@ -100,37 +101,32 @@ async function seed(): Promise<Ticket[]> {
   );
 }
 
-export async function listTickets(): Promise<Ticket[]> {
+export function listTickets(): Ticket[] {
   return readCollection<Ticket>(COLLECTION, seed);
 }
 
-export async function getTicketById(id: string): Promise<Ticket | null> {
-  const all = await listTickets();
-  return all.find((t) => t.id === id) ?? null;
+export function getTicketById(id: string): Ticket | null {
+  return listTickets().find((t) => t.id === id) ?? null;
 }
 
-export async function listTicketsWithRelations(): Promise<TicketWithRelations[]> {
-  // listTickets() ต้องมาก่อน เพราะ seed ของ tickets อ้างถึง users/equipment — ถ้ายิงขนานกัน
-  // ตอน DB ยังว่าง seed ของทั้งสามตารางจะชนกันเอง
-  const tickets = await listTickets();
-  const [users, equipment] = await Promise.all([listUsers(), listEquipment()]);
-  return tickets.map((t) => ({
+export function listTicketsWithRelations(): TicketWithRelations[] {
+  const users = listUsers();
+  const equipment = listEquipment();
+  return listTickets().map((t) => ({
     ...t,
     requester: users.find((u) => u.id === t.requester_id) ?? null,
     equipment: t.equipment_id ? equipment.find((e) => e.id === t.equipment_id) ?? null : null,
   }));
 }
 
-export async function listRepairHistory(): Promise<TicketWithRelations[]> {
-  const all = await listTicketsWithRelations();
-  return all.filter((t) => t.type === "repair");
+export function listRepairHistory(): TicketWithRelations[] {
+  return listTicketsWithRelations().filter((t) => t.type === "repair");
 }
 
-export async function createTicket(
+export function createTicket(
   input: Omit<Ticket, "id" | "ticket_code" | "created_at" | "resolved_at">
-): Promise<Ticket> {
-  const all = await listTickets();
-  const existingOfType = all
+): Ticket {
+  const existingOfType = listTickets()
     .filter((t) => t.type === input.type)
     .map((t) => t.ticket_code);
   const ticket: Ticket = {
@@ -140,14 +136,14 @@ export async function createTicket(
     created_at: new Date().toISOString(),
     resolved_at: null,
   };
-  await upsertOne<Ticket>(COLLECTION, ticket, seed);
+  upsertOne<Ticket>(COLLECTION, ticket, seed);
   return ticket;
 }
 
-export async function updateTicketStatus(
+export function updateTicketStatus(
   id: string,
   status: TicketStatus
-): Promise<Ticket | null> {
+): Ticket | null {
   const resolvedStatuses: TicketStatus[] = ["resolved", "closed"];
   return patchOne<Ticket>(
     COLLECTION,
@@ -160,10 +156,8 @@ export async function updateTicketStatus(
   );
 }
 
-export async function ticketCountsByStatus(): Promise<
-  Record<TicketStatus | "all", number>
-> {
-  const tickets = await listTickets();
+export function ticketCountsByStatus(): Record<TicketStatus | "all", number> {
+  const tickets = listTickets();
   const counts: Record<TicketStatus | "all", number> = {
     all: tickets.length,
     pending: 0,

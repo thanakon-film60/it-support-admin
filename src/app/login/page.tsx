@@ -1,10 +1,15 @@
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { AUTH_DISABLED } from "@/lib/auth";
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ from?: string }>;
 }) {
+  // ปิดล็อกอินอยู่ -> ไม่ต้องมีหน้านี้ ใครเปิด /login ตรงๆ ให้เด้งเข้าหน้าแรกเลย
+  if (AUTH_DISABLED) redirect("/");
+
   const { from } = await searchParams;
 
   return (
