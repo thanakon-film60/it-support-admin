@@ -1,14 +1,24 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────────────────
+   ธีม "ไฮเทค" — พื้นดำน้ำเงินเข้ม + แผงกระจก (glass) + แสงฟ้า/ม่วงเรืองอ่อนๆ
+   ชื่อตัวแปรสีทั้งหมดใช้ชื่อเดิมทุกตัว (page / surface / line / ink / muted /
+   accent / accent-bg) จึงไม่ต้องไปแก้ className ในหน้าใดๆ ที่เขียนไว้แล้ว
+   ────────────────────────────────────────────────────────────────────────── */
 :root {
-  --color-page: #0f172a; /* slate-900 */
-  --color-surface: #1e293b; /* slate-800 */
-  --color-surface-2: #16213a; /* slightly darker card variant */
-  --color-line: #334155; /* slate-700 */
-  --color-ink: #e2e8f0; /* slate-200 */
-  --color-muted: #94a3b8; /* slate-400 */
-  --color-accent: #38bdf8; /* sky-400 */
-  --color-accent-bg: #1e3a5f; /* ghost button bg */
+  --color-page: #060910;
+  --color-surface: #0d1524;        /* แผงหลัก */
+  --color-surface-2: #111b2e;      /* แผงซ้อน เช่น หัวตาราง แถบ filter */
+  --color-line: #1d2a40;
+  --color-ink: #e8eefb;
+  --color-muted: #8b9cb6;
+  --color-accent: #22d3ee;         /* cyan — สีหลักของระบบ */
+  --color-accent-2: #7c8cff;       /* indigo — ใช้คู่กันในไล่เฉด */
+  --color-accent-bg: rgba(34, 211, 238, 0.1);
+
+  --radius-panel: 18px;
+  --ring-accent: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 0 22px -6px rgba(34, 211, 238, 0.55);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -19,34 +29,199 @@
   --color-ink: var(--color-ink);
   --color-muted: var(--color-muted);
   --color-accent: var(--color-accent);
+  --color-accent-2: var(--color-accent-2);
   --color-accent-bg: var(--color-accent-bg);
-  --font-sans: var(--font-sarabun);
-  --font-mono: var(--font-space-mono);
+
+  /* Inter = ละติน/ตัวเลข · IBM Plex Sans Thai = ไทย (Inter ไม่มีสระ-วรรณยุกต์ไทย
+     ถ้าใส่ Inter อย่างเดียวเบราว์เซอร์จะไปหยิบฟอนต์ระบบมาแทน ซึ่งคุมหน้าตาไม่ได้)
+     เบราว์เซอร์เลือกฟอนต์ราย "ตัวอักษร" อยู่แล้ว ประโยคที่ปนไทย-อังกฤษจึงออกมาถูกทั้งคู่ */
+  --font-sans: var(--font-inter), var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
-body {
-  background: var(--color-page);
-  color: var(--color-ink);
-  font-family: var(--font-sarabun), ui-sans-serif, system-ui, sans-serif;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-inter), var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+    letter-spacing: -0.006em;
+  }
+
+  /* ชั้นแสงเรือง — fixed ไว้หลังทุกอย่าง ไม่รับคลิก ไม่กระทบ layout */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(56rem 34rem at 12% -12%, rgba(34, 211, 238, 0.13), transparent 62%),
+      radial-gradient(48rem 30rem at 100% -6%, rgba(124, 140, 255, 0.13), transparent 58%),
+      radial-gradient(40rem 40rem at 50% 118%, rgba(34, 211, 238, 0.06), transparent 60%);
+  }
+
+  /* ชั้นตารางเส้น (HUD grid) จางๆ ให้ความรู้สึกเป็นแดชบอร์ดเทคนิค */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.45;
+    background-image:
+      linear-gradient(to right, rgba(148, 176, 214, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148, 176, 214, 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 85%);
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.28);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--ring-accent);
+    border-radius: 10px;
+  }
+
+  /* ช่องกรอกทั้งหมดให้หน้าตาเดียวกันโดยไม่ต้องไล่แก้ทีละหน้า */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background: color-mix(in oklab, var(--color-surface-2) 85%, transparent);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    color: var(--color-ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  input:hover:not([type="checkbox"]):not([type="radio"]),
+  select:hover,
+  textarea:hover {
+    border-color: color-mix(in oklab, var(--color-accent) 35%, var(--color-line));
+  }
+  input:focus:not([type="checkbox"]):not([type="radio"]),
+  select:focus,
+  textarea:focus {
+    border-color: color-mix(in oklab, var(--color-accent) 55%, var(--color-line));
+    box-shadow: var(--ring-accent);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: color-mix(in oklab, var(--color-muted) 80%, transparent);
+  }
+  select option {
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.75) sepia(1) saturate(4) hue-rotate(150deg);
+    cursor: pointer;
+  }
+
+  /* ตารางข้อมูล — หัวตารางแบบ HUD, แถวสลับเฉด, ชี้แล้วเรืองฟ้าจาง */
+  table thead tr {
+    background: color-mix(in oklab, var(--color-surface-2) 92%, transparent);
+  }
+  table thead th {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.68rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+  table tbody tr {
+    transition: background 0.12s ease, box-shadow 0.12s ease;
+  }
+  table tbody tr:nth-child(even) {
+    background: rgba(148, 176, 214, 0.022);
+  }
+  table tbody tr:hover {
+    background: rgba(34, 211, 238, 0.06);
+    box-shadow: inset 2px 0 0 var(--color-accent);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-line) 88%, var(--color-accent));
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--color-line) 55%, var(--color-accent));
+  }
 }
 
-.font-num {
-  font-family: var(--font-space-mono), ui-monospace, monospace;
+@layer utilities {
+  /* แผงกระจก — ใช้แทน bg-surface ตรงๆ เมื่ออยากได้ความลึก */
+  .glass {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--color-surface) 92%, transparent),
+      color-mix(in oklab, var(--color-page) 88%, transparent)
+    );
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid var(--color-line);
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+      0 18px 40px -28px rgba(0, 0, 0, 0.9);
+  }
+
+  /* เส้นขอบบนเรืองแสง ใช้กับการ์ดสถิติ/แถบหัวข้อ */
+  .edge-glow {
+    position: relative;
+    overflow: hidden;
+  }
+  .edge-glow::before {
+    content: "";
+    position: absolute;
+    inset-inline: 12%;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    opacity: 0.55;
+  }
+
+  .text-gradient {
+    background: linear-gradient(92deg, var(--color-ink), var(--color-accent) 55%, var(--color-accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ตัวเลขทุกที่ในระบบ — ความกว้างเท่ากันทุกหลัก ตัวเลขในตารางจะไม่ขยับตอนค่าเปลี่ยน */
+  .font-num {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ซ่อนแถบเลื่อนของแถวเมนู/ตัวกรองบนมือถือ แต่ยังปัดได้ */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-/* native select/date inputs need explicit dark styling to match the reference */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.8);
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-page);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--color-line);
-  border-radius: 8px;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

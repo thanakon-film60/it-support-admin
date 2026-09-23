@@ -18,7 +18,7 @@ from app import messages as M  # noqa: E402
 from app.flow import Incoming, handle  # noqa: E402
 from app.store import MemoryStore  # noqa: E402
 
-from test_flow import STOCK, FakeBackend, postback, text  # noqa: E402
+from test_flow import BRANCH_COMPANY, COMPANIES, STOCK, FakeBackend, postback, text  # noqa: E402
 
 USER = "U_test_0001"
 
@@ -58,6 +58,13 @@ def build_knowledge() -> ai.Knowledge:
     ]
     return ai.Knowledge(
         branches=BRANCHES,
+        # ชั้น AI ต้องรู้ด้วยว่าสาขาไหนอยู่บริษัทไหน ไม่งั้นจับสาขาจากประโยคได้แต่เติมบริษัทไม่ได้
+        # แล้วบอทจะหยุดถามบริษัทซ้ำทั้งที่ผู้ใช้บอกสาขามาแล้ว
+        branch_items=[
+            {"company": BRANCH_COMPANY[name], "name": name, "group": None, "floor": None}
+            for name in BRANCHES
+        ],
+        companies=COMPANIES,
         stock_items=STOCK,
         equipment=EQUIPMENT,
         faq=FAQ,
@@ -175,7 +182,7 @@ async def test_ประโยคเดียวจบ_ไม่ถามซ้�
     # บอทต้องบอกว่าเข้าใจอะไรบ้าง แล้วข้ามคำถามสาขา/ประเภทไปถามรหัสทรัพย์สินเลย
     assert "รับทราบครับ" in replies[0].text
     assert "สาขา: สาขาเชียงใหม่" in replies[0].text
-    assert "ระบุหมายเลขทรัพย์สินครับ" in replies[1].text
+    assert "เลือกประเภททรัพย์สิน" in replies[1].text  # เดิมเป็นข้อความให้พิมพ์รหัสเอง ตอนนี้เป็นเมนูเลือกทีละชั้น
 
     session = await s.get(USER)
     assert session.ticket_type == "repair"
@@ -190,7 +197,7 @@ async def test_เบิกของด้วยประโยคเดีย�
 
     r = await handle(text("ขอเบิกเมาส์ 2 อัน ที่สำนักงานใหญ่"), s, backend, knowledge=kc)
     assert "อุปกรณ์: เมาส์ x2" in r[0].text
-    assert "ระบุหมายเลขทรัพย์สินครับ" in r[1].text
+    assert "เลือกประเภททรัพย์สิน" in r[1].text  # เดิมเป็นข้อความให้พิมพ์รหัสเอง ตอนนี้เป็นเมนูเลือกทีละชั้น
 
     # ข้ามรหัสทรัพย์สิน -> ต้องไม่ถามเลือกของซ้ำ เพราะรู้แล้วว่าเบิกเมาส์ 2 อัน
     r = await handle(postback({"a": "skip_asset"}), s, backend, knowledge=kc)

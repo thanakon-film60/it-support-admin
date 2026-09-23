@@ -1,0 +1,112 @@
+[
+  {
+    "name": "ROUTER (เราเตอร์)",
+    "category": "hardware",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 7,
+    "safety_stock": 5,
+    "id": "261203cc-511c-4cb9-9483-3dd8a474caa0",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "USB Hub",
+    "category": "hardware",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 9,
+    "safety_stock": 5,
+    "id": "5daa51c2-9d2c-429c-b63b-bee7ca3e117d",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "USB Type C",
+    "category": "อุปกรณ์ต่อพ่วง",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 12,
+    "safety_stock": 10,
+    "id": "d35bc38e-11af-42cf-a212-86a9bbff5b54",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "กล้องวงจรปิด",
+    "category": "hardware",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 6,
+    "safety_stock": 5,
+    "id": "36784a13-b2e2-4efe-94e5-6022c1ab984c",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "ขาตั้ง Tablet",
+    "category": "อุปกรณ์ต่อพ่วง",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 5,
+    "safety_stock": 5,
+    "id": "8f234222-9896-4b17-9714-4a8d8142458b",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "คีย์บอร์ด",
+    "category": "hardware",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 0,
+    "safety_stock": 5,
+    "id": "614757f1-dd4e-4c30-85e2-12b9188c2e79",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "เมาส์",
+    "category": "อุปกรณ์ต่อพ่วง",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 6,
+    "safety_stock": 5,
+    "id": "3b86c9b4-4abc-4240-ad5d-6985ee1d0e5a",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "เมาส์มีสาย",
+    "category": "อุปกรณ์ต่อพ่วง",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 4,
+    "safety_stock": 5,
+    "id": "eab969f5-3afb-4771-a378-713b703b2c2a",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "เครื่องสำรองไฟ",
+    "category": "hardware",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 2,
+    "safety_stock": 5,
+    "id": "52375386-8eb6-4b2a-8680-874b72a378a1",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "สมุดเคลมสินค้า",
+    "category": "อื่นๆ",
+    "unit": "เล่ม",
+    "location": "สำนักงานใหญ่",
+    "quantity_available": 2,
+    "safety_stock": 10,
+    "id": "fa7689fa-aebf-4d2e-9b3c-f0fc4dfc9f68",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  },
+  {
+    "name": "หมึกเครื่อง M3870FW",
+    "category": "หมึกปริ้นเตอร์",
+    "unit": "ชิ้น",
+    "location": "IT",
+    "quantity_available": 1,
+    "safety_stock": 2,
+    "id": "1a1cf94f-d2ff-4404-aefe-9e282aed9ec9",
+    "created_at": "2026-09-14T16:25:49.284Z"
+  }
+]

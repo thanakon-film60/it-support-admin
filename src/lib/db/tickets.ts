@@ -1,4 +1,8 @@
 import { readCollection, upsertOne, patchOne } from "./store";
+import { byNewestFirst } from "../sorting";
+import { resolveBranch } from "./branches";
+import { companyLabel } from "../companies";
+import { recordTicketEvent } from "./ticketEvents";
 import { newId, generateTicketCode } from "../utils";
 import { listUsers } from "./users";
 import { listEquipment } from "./equipment";
@@ -77,7 +81,8 @@ function seed(): Ticket[] {
       p.equipmentIdx !== undefined ? equipmentPool[p.equipmentIdx % equipmentPool.length] : undefined;
     const user: User = users[p.userIdx % users.length];
     const createdAt = iso(p.daysAgo);
-    const resolvedStatuses: TicketStatus[] = ["resolved", "closed"];
+    // completed นับเป็น "จบงาน" ด้วย เพราะมันคือขั้นถัดจาก resolved (ผู้แจ้งยืนยันแล้ว)
+  const resolvedStatuses: TicketStatus[] = ["resolved", "completed", "closed"];
     return {
       id: newId(),
       ticket_code: code,
@@ -102,7 +107,21 @@ function seed(): Ticket[] {
 }
 
 export function listTickets(): Ticket[] {
-  return readCollection<Ticket>(COLLECTION, seed);
+  // เรียงใหม่→เก่าตั้งแต่ชั้นนี้ ไม่ใช่ไปเรียงเอาทีหลังในแต่ละหน้า
+  //
+  // เดิมคืนตามลำดับในไฟล์ JSON ตรงๆ ซึ่ง store.ts ต่อท้ายด้วย all.push(item)
+  // ผลคือ ticket ที่พนักงานเพิ่งแจ้งผ่าน LINE ไปอยู่ "แถวล่างสุด" ของตาราง
+  // ข้อมูลชุดตั้งต้น (seed) บังเอิญเรียงมาแล้วเลยดูเหมือนถูกต้องมาตลอด
+  // จนกระทั่งมีเรื่องแจ้งเข้ามาจริง แอดมินถึงจะเจอว่าเรื่องใหม่หาไม่เจอ
+  return byNewestFirst(readCollection<Ticket>(COLLECTION, seed), "created_at");
+}
+
+/** หา ticket จากเลขที่ — ไม่สนตัวพิมพ์เล็กใหญ่และช่องว่างหัวท้าย
+ *  (เลขที่ตั๋วเดินทางผ่านแชท LINE ซึ่งผู้ใช้ก็อปวางเองได้ จึงเจอช่องว่างติดมาบ่อย) */
+export function getTicketByCode(code: string): Ticket | null {
+  const target = code.trim().toUpperCase();
+  if (!target) return null;
+  return listTickets().find((t) => t.ticket_code.toUpperCase() === target) ?? null;
 }
 
 export function getTicketById(id: string): Ticket | null {
@@ -112,48 +131,209 @@ export function getTicketById(id: string): Ticket | null {
 export function listTicketsWithRelations(): TicketWithRelations[] {
   const users = listUsers();
   const equipment = listEquipment();
-  return listTickets().map((t) => ({
-    ...t,
-    requester: users.find((u) => u.id === t.requester_id) ?? null,
-    equipment: t.equipment_id ? equipment.find((e) => e.id === t.equipment_id) ?? null : null,
-  }));
+  return listTickets().map((t) => {
+    // Preserve the reporting company; infer only for legacy rows without the field.
+    const resolved = t.company === undefined ? resolveBranch(t.location) : null;
+    return {
+      ...t,
+      requester: users.find((u) => u.id === t.requester_id) ?? null,
+      equipment: t.equipment_id ? equipment.find((e) => e.id === t.equipment_id) ?? null : null,
+      company: t.company === undefined ? resolved?.company ?? null : t.company,
+      company_label: t.company ? companyLabel(t.company) : t.company === undefined ? resolved?.companyLabel ?? null : null,
+    };
+  });
 }
 
 export function listRepairHistory(): TicketWithRelations[] {
   return listTicketsWithRelations().filter((t) => t.type === "repair");
 }
 
-export function createTicket(
-  input: Omit<Ticket, "id" | "ticket_code" | "created_at" | "resolved_at">
-): Ticket {
+export type NewTicketInput = Omit<Ticket, "id" | "ticket_code" | "created_at" | "resolved_at">;
+
+export function createTicket(input: NewTicketInput): Ticket {
   const existingOfType = listTickets()
     .filter((t) => t.type === input.type)
     .map((t) => t.ticket_code);
   const ticket: Ticket = {
     ...input,
+    company: input.company === undefined ? resolveBranch(input.location)?.company ?? null : input.company,
     id: newId(),
     ticket_code: generateTicketCode(input.type, existingOfType),
     created_at: new Date().toISOString(),
     resolved_at: null,
   };
   upsertOne<Ticket>(COLLECTION, ticket, seed);
+
+  // ต้นเรื่องของไทม์ไลน์ — ถ้าไม่บันทึกตรงนี้ หน้า log จะเริ่มจากกลางเรื่องเสมอ
+  recordTicketEvent({
+    ticket_id: ticket.id,
+    ticket_code: ticket.ticket_code,
+    type: "created",
+    to_status: ticket.status,
+    actor: listUsers().find((u) => u.id === ticket.requester_id)?.display_name ?? "ผู้แจ้ง",
+    actor_role: "requester",
+    note: ticket.description || null,
+  });
+
   return ticket;
 }
 
-export function updateTicketStatus(
-  id: string,
-  status: TicketStatus
-): Ticket | null {
-  const resolvedStatuses: TicketStatus[] = ["resolved", "closed"];
-  return patchOne<Ticket>(
+/** บันทึกว่า "ผู้แจ้งรับทราบแล้ว" — เก็บลง meta ไม่เปลี่ยน status
+ *
+ *  จงใจไม่แตะ status เพราะ status เป็นของทีม IT ("งานถึงไหนแล้ว")
+ *  ส่วนการที่ผู้แจ้งเปิดดูเป็นคนละเรื่องกัน ("เขารู้แล้วหรือยัง")
+ *  ถ้าเอามารวมกัน ticket ที่ยังซ่อมไม่เสร็จจะเปลี่ยนสถานะเองเพียงเพราะมีคนกดดู ซึ่งผิด
+ *
+ *  บันทึกเฉพาะ "ครั้งแรก" ที่รับทราบ (acknowledged_at ไม่ทับของเดิม)
+ *  เพราะสิ่งที่ทีม IT อยากรู้คือ "เขาเห็นตั้งแต่เมื่อไหร่" ไม่ใช่ "เขาเปิดดูล่าสุดเมื่อไหร่"
+ *  (อย่างหลังดูได้จากตาราง ticket_views อยู่แล้ว)
+ */
+export function markTicketAcknowledged(id: string, viewerName: string): Ticket | null {
+  const ticket = getTicketById(id);
+  if (!ticket) return null;
+
+  const meta = ticket.meta ?? {};
+  if (typeof meta.acknowledged_at === "string" && meta.acknowledged_at) return ticket;
+
+  return patchOne<Ticket>(COLLECTION, id, {
+    meta: {
+      ...meta,
+      acknowledged_at: new Date().toISOString(),
+      acknowledged_by: viewerName,
+    },
+  });
+}
+
+export interface ChangeStatusInput {
+  id: string;
+  status: TicketStatus;
+  /** ใครเป็นคนเปลี่ยน — ชื่อแอดมิน หรือชื่อผู้แจ้งตอนกดตกลงในแชท */
+  actor: string;
+  actorRole: "admin" | "requester" | "system";
+  /** วิธีแก้ไข / หมายเหตุของช่าง — ติดไปกับไทม์ไลน์ของขั้นนั้น */
+  note?: string | null;
+}
+
+/** เปลี่ยนสถานะพร้อมบันทึกไทม์ไลน์ในคราวเดียว
+ *
+ *  จงใจรวมไว้ที่ฟังก์ชันเดียว ไม่แยกเป็น "แก้สถานะ" กับ "บันทึก log"
+ *  เพราะถ้าแยก วันหนึ่งจะมีที่ที่เรียกอย่างเดียวแล้วไทม์ไลน์ขาดช่วงโดยไม่มีใครรู้
+ *  — ซึ่งทำให้ log การแก้ปัญหาเชื่อถือไม่ได้ทั้งระบบ
+ */
+export function changeTicketStatus(input: ChangeStatusInput): Ticket | null {
+  const before = getTicketById(input.id);
+  if (!before) return null;
+
+  // completed นับเป็น "จบงาน" ด้วย เพราะมันคือขั้นถัดจาก resolved (ผู้แจ้งยืนยันแล้ว)
+  const resolvedStatuses: TicketStatus[] = ["resolved", "completed", "closed"];
+
+  const meta = { ...(before.meta ?? {}) };
+  const at = new Date(Math.max(Date.now(), Date.parse(before.status_updated_at ?? "") + 1 || 0)).toISOString();
+  meta.status_history = [...readStatusHistory(before), {
+    id: newId(), from: before.status, to: input.status, by: input.actor,
+    at, note: input.note?.trim() || "", notified: null,
+  } satisfies StatusHistoryEntry];
+  if (input.note?.trim()) {
+    // เก็บวิธีแก้ล่าสุดไว้บน ticket ด้วย หน้า log จะได้ไม่ต้องไล่ไทม์ไลน์เพื่อโชว์บรรทัดเดียว
+    meta.resolution_note = input.note.trim();
+  }
+  if (input.status === "completed") {
+    meta.completed_at = new Date().toISOString();
+    meta.completed_by = input.actor;
+  }
+
+  const updated = patchOne<Ticket>(
     COLLECTION,
-    id,
+    input.id,
     {
-      status,
-      resolved_at: resolvedStatuses.includes(status) ? new Date().toISOString() : null,
+      status: input.status,
+      ...(input.actorRole === "admin" && input.actor.trim() ? {
+        status_updated_by: input.actor.trim(), status_updated_at: at,
+      } : {}),
+      // resolved_at = "ทีม IT ทำเสร็จเมื่อไหร่" ไม่ใช่ "ปิดเรื่องเมื่อไหร่"
+      // ตอนผู้แจ้งกดตกลงจึงต้องคงค่าเดิมไว้ ไม่ทับด้วยเวลาที่เพิ่งกด
+      resolved_at:
+        !resolvedStatuses.includes(input.status)
+          ? null
+          : input.status === before.status || input.status === "completed"
+            ? before.resolved_at ?? at
+            : at,
+      meta,
     },
     seed
   );
+
+  recordTicketEvent({
+    ticket_id: before.id,
+    ticket_code: before.ticket_code,
+    type: input.status === "completed" && input.actorRole === "requester" ? "confirmed" : "status",
+    from_status: before.status,
+    to_status: input.status,
+    actor: input.actor,
+    actor_role: input.actorRole,
+    note: input.note ?? null,
+  });
+
+  return updated;
+}
+
+/** รูปแบบเดิม เก็บไว้ให้โค้ดเก่าเรียกได้ — บันทึกไทม์ไลน์ให้ด้วยเสมอ */
+export function updateTicketStatus(id: string, status: TicketStatus, editor?: string, options?: { note?: string }): Ticket | null {
+  return changeTicketStatus({ id, status, actor: editor?.trim() || "ระบบ", actorRole: editor?.trim() ? "admin" : "system", note: options?.note });
+}
+
+export interface StatusHistoryEntry {
+  id: string;
+  from: TicketStatus;
+  to: TicketStatus;
+  by: string;
+  at: string;
+  note: string;
+  notified: boolean | null;
+}
+
+export function readStatusHistory(ticket: Pick<Ticket, "meta">): StatusHistoryEntry[] {
+  const raw = ticket.meta?.status_history;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((e): e is StatusHistoryEntry => e && typeof e === "object" && typeof e.at === "string" && typeof e.by === "string" && typeof e.to === "string");
+}
+
+export function recordStatusNotification(id: string, historyId: string, notified: boolean): Ticket | null {
+  const ticket = getTicketById(id);
+  if (!ticket) return null;
+  return patchOne<Ticket>(COLLECTION, id, { meta: { ...ticket.meta,
+    status_history: readStatusHistory(ticket).map(e => e.id === historyId ? { ...e, notified } : e),
+  } });
+}
+
+export function listStatusEditors(): string[] {
+  const seen = new Set<string>();
+  return listTickets().sort((a, b) => (b.status_updated_at ?? "").localeCompare(a.status_updated_at ?? ""))
+    .flatMap(t => {
+      const name = t.status_updated_by?.trim();
+      if (!name || seen.has(name.toLowerCase())) return [];
+      seen.add(name.toLowerCase());
+      return [name];
+    });
+}
+
+export function listCompletedTickets(): TicketWithRelations[] {
+  return listTicketsWithRelations().filter(t => t.status === "completed");
+}
+
+export function confirmTicketByRequester(input: {
+  ticketId: string; confirmed: boolean; by: string; lineUserId?: string; note?: string;
+}): Ticket | null {
+  const before = getTicketById(input.ticketId);
+  if (!before || !["resolved", "completed"].includes(before.status)) return null;
+  if (before.status === "completed" && input.confirmed) return before;
+  const updated = changeTicketStatus({ id: before.id, status: input.confirmed ? "completed" : "in_progress",
+    actor: input.by, actorRole: "requester", note: input.note });
+  if (!updated) return null;
+  return patchOne<Ticket>(COLLECTION, before.id, { meta: { ...updated.meta, confirmation: {
+    confirmed: input.confirmed, by: input.by, line_user_id: input.lineUserId ?? null,
+    at: new Date().toISOString(), note: input.note?.trim() || null,
+  } } });
 }
 
 export function ticketCountsByStatus(): Record<TicketStatus | "all", number> {
@@ -165,6 +345,7 @@ export function ticketCountsByStatus(): Record<TicketStatus | "all", number> {
     waiting_info: 0,
     waiting_delivery: 0,
     resolved: 0,
+    completed: 0,
     closed: 0,
     cancelled: 0,
   };

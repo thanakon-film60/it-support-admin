@@ -39,7 +39,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # ต้องสร้างโฟลเดอร์นี้พร้อมตั้งเจ้าของไว้ใน image ก่อน เพราะ docker-compose.yml เอา named volume
 # มา mount ทับตรงนี้ — volume ที่ยังว่างจะ "สืบทอด" สิทธิ์ของโฟลเดอร์เดิมใน image ถ้าไม่มี
 # โฟลเดอร์อยู่ก่อน docker จะสร้างให้โดยเจ้าของเป็น root แล้ว user nextjs จะเขียนรูป FAQ ไม่ได้
-RUN mkdir -p ./public/uploads/faq && chown -R nextjs:nodejs ./public/uploads
+# uploads/tickets = รูปที่ผู้ใช้ส่งมาในแชท LINE (POST /api/internal/attachments เป็นคนเขียน)
+RUN mkdir -p ./public/uploads/faq ./public/uploads/tickets && chown -R nextjs:nodejs ./public/uploads
 
 # เหตุผลเดียวกับข้างบนเป๊ะๆ แต่สำหรับ src/lib/db/store.ts ซึ่งเป็น mock data store จริงที่ใช้งาน
 # อยู่ตอนนี้ (ticket/user/stock/equipment ทั้งหมด — pg.ts ยังไม่ได้ต่อใช้งานจริง) เขียนไฟล์ JSON ลง

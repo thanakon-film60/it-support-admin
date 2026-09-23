@@ -1,14 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createTicket } from "@/lib/db/tickets";
+import { createTicket, type NewTicketInput } from "@/lib/db/tickets";
 import { findOrCreateUserByName, getUserByLineId, upsertLineUser } from "@/lib/db/users";
 import { deductStockForWithdrawTicket } from "@/lib/db/stock";
 import { getProfile } from "@/lib/line/client";
-import type { Ticket, TicketType } from "@/lib/types";
+import { findBranchesByName, isCompanyCode } from "@/lib/db/branches";
+import type { CompanyCode, TicketType } from "@/lib/types";
 
 export interface LiffTicketInput {
   type: TicketType;
+  /** บริษัทที่แจ้ง — ฟอร์มบังคับให้เลือกก่อน แล้วค่อยกรองสาขาตามบริษัทนั้น */
+  company: CompanyCode | "";
   location: string;
   description: string;
   equipmentId?: string | null;
@@ -34,6 +37,18 @@ export async function createLiffTicketAction(
   if (input.identity.mode === "manual" && !input.identity.name.trim()) {
     return { error: "กรุณากรอกชื่อผู้แจ้ง" };
   }
+  if (!isCompanyCode(input.company)) {
+    return { error: "กรุณาเลือกบริษัท" };
+  }
+  const location = input.location.trim();
+  if (!location) {
+    return { error: "กรุณาเลือกสาขา" };
+  }
+  // ตรวจว่าสาขาที่ส่งมาอยู่ในบริษัทที่เลือกจริง — ฟอร์มกรองให้แล้ว แต่ Server Action
+  // ถูกเรียกตรงจากที่อื่นได้ ห้ามเชื่อค่าที่มาจากฝั่ง client อย่างเดียว
+  if (findBranchesByName(location, input.company).length === 0) {
+    return { error: `ไม่พบสาขา "${location}" ในบริษัทที่เลือก` };
+  }
 
   let requesterId: string;
   if (input.identity.mode === "liff") {
@@ -55,10 +70,11 @@ export async function createLiffTicketAction(
     requesterId = user.id;
   }
 
-  const ticketInput: Omit<Ticket, "id" | "ticket_code" | "created_at" | "resolved_at"> = {
+  const ticketInput: NewTicketInput = {
     type: input.type,
     status: "pending",
-    location: input.location.trim() || "ไม่ระบุสาขา",
+    company: input.company,
+    location,
     requester_id: requesterId,
     equipment_id: input.equipmentId ?? null,
     description: input.description.trim(),

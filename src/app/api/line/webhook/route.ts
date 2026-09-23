@@ -17,6 +17,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
+  // Keep the existing public URL while delegating the conversation to the Python bot.
+  // Forward the exact signed bytes; parsing and serializing would invalidate the signature.
+  const botWebhook = process.env.LINE_BOT_WEBHOOK_URL?.trim();
+  if (botWebhook) {
+    try {
+      const response = await fetch(botWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-line-signature": signature! },
+        body: rawBody,
+        signal: AbortSignal.timeout(25000),
+        cache: "no-store",
+        redirect: "error",
+      });
+      if (!response.ok) return NextResponse.json({ error: "bot unavailable" }, { status: 503 });
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json({ error: "bot unavailable" }, { status: 503 });
+    }
+  }
+
   let body: LineWebhookBody;
   try {
     body = JSON.parse(rawBody) as LineWebhookBody;

@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { createLiffTicketAction, type LiffTicketInput } from "@/app/actions/liff";
 import { TICKET_TYPE_LABEL } from "@/lib/labels";
 import { Button } from "@/components/ui/Button";
-import type { TicketType } from "@/lib/types";
+import type { Company, CompanyCode, TicketType } from "@/lib/types";
 
 const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID;
 
@@ -18,13 +18,20 @@ interface LineProfile {
 
 export function LiffTicketForm({
   equipmentOptions,
+  companies,
+  branches,
 }: {
   equipmentOptions: { id: string; label: string }[];
+  companies: Company[];
+  /** สาขาทั้งหมดที่เปิดใช้งาน — ฟอร์มกรองตามบริษัทที่เลือกฝั่ง client
+   *  (ทั้งระบบมีร้อยกว่าสาขา ส่งมาทีเดียวถูกกว่ายิง request ใหม่ทุกครั้งที่เปลี่ยนบริษัท) */
+  branches: { company: CompanyCode; name: string; group: string | null; floor: string | null }[];
 }) {
   const [liffState, setLiffState] = useState<"loading" | "liff" | "manual">("loading");
   const [profile, setProfile] = useState<LineProfile | null>(null);
 
   const [type, setType] = useState<TicketType>("it_service");
+  const [company, setCompany] = useState<CompanyCode | "">("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [equipmentId, setEquipmentId] = useState("");
@@ -84,9 +91,18 @@ export function LiffTicketForm({
       setError("กรุณากรอกชื่อผู้แจ้ง");
       return;
     }
+    if (!company) {
+      setError("กรุณาเลือกบริษัท");
+      return;
+    }
+    if (!location) {
+      setError("กรุณาเลือกสาขา");
+      return;
+    }
 
     const input: LiffTicketInput = {
       type,
+      company,
       location: location.trim(),
       description: description.trim(),
       equipmentId: type === "repair" && equipmentId ? equipmentId : null,
@@ -106,6 +122,16 @@ export function LiffTicketForm({
       return;
     }
     setResultCode(result.ticketCode ?? null);
+  }
+
+  // จัดสาขาเป็นกลุ่ม (ภูมิภาค / ทีม) ให้ <optgroup> ใช้ — เลือกจากร้อยกว่าสาขาในลิสต์แบนๆ หายาก
+  const branchGroups: [string, typeof branches][] = [];
+  for (const b of branches) {
+    if (b.company !== company) continue;
+    const key = b.group ?? "";
+    const bucket = branchGroups.find(([g]) => g === key);
+    if (bucket) bucket[1].push(b);
+    else branchGroups.push([key, [b]]);
   }
 
   if (resultCode) {
@@ -162,13 +188,47 @@ export function LiffTicketForm({
         </select>
       </Field>
 
-      <Field label="สาขา / สถานที่">
-        <input
+      <Field label="บริษัท *">
+        <select
+          value={company}
+          onChange={(e) => {
+            setCompany(e.target.value as CompanyCode | "");
+            // ล้างสาขาทิ้งเมื่อเปลี่ยนบริษัท ไม่งั้นจะส่งสาขาของบริษัทเดิมติดไปด้วย
+            setLocation("");
+          }}
+          required
+          className={inputClass}
+        >
+          <option value="">-- เลือกบริษัท --</option>
+          {companies.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label="สาขา *">
+        <select
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="เช่น สำนักงานใหญ่, สาขาเซ็นทรัล"
+          required
+          disabled={!company}
           className={inputClass}
-        />
+        >
+          <option value="">
+            {company ? "-- เลือกสาขา --" : "-- เลือกบริษัทก่อน --"}
+          </option>
+          {branchGroups.map(([group, rows]) => (
+            <optgroup key={group || "-"} label={group || "สาขา"}>
+              {rows.map((b) => (
+                <option key={b.name} value={b.name}>
+                  {b.floor ? `${b.name} (ชั้น ${b.floor})` : b.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </Field>
 
       {type === "repair" && (

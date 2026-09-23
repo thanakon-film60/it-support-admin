@@ -6,12 +6,16 @@
 
 from __future__ import annotations
 
+import json
 import logging
 
+import httpx
 from linebot.v3.messaging import (
     AsyncApiClient,
     AsyncMessagingApi,
     Configuration,
+    FlexMessage,
+    FlexContainer,
     PostbackAction,
     QuickReply,
     QuickReplyItem,
@@ -27,8 +31,17 @@ logger = logging.getLogger(__name__)
 MAX_MESSAGES_PER_REPLY = 5
 
 
+class ImageTooLarge(Exception):
+    """รูปใหญ่เกินลิมิตที่ตั้งไว้ — flow จะเอาไปแปลงเป็นข้อความบอกผู้ใช้"""
+
+
 class LineApi:
-    def __init__(self, access_token: str, host: str = "") -> None:
+    def __init__(
+        self,
+        access_token: str,
+        host: str = "",
+        blob_host: str = "https://api-data.line.me",
+    ) -> None:
         # host ว่าง = ยิงไป https://api.line.me ตามปกติ
         # ใส่ค่าได้เมื่อต้องการชี้ไปเซิร์ฟเวอร์จำลองตอนทดสอบ end-to-end โดยไม่ยิงของจริง
         # host เป็น read-only property ของ Configuration ต้องส่งตอนสร้างเท่านั้น (set ทีหลังไม่ได้)
@@ -40,8 +53,55 @@ class LineApi:
         self._client = AsyncApiClient(config)
         self._api = AsyncMessagingApi(self._client)
 
+        # ดาวน์โหลดไฟล์ใช้ httpx ตรงๆ แทน SDK โดยตั้งใจ 2 เหตุผล:
+        #   1. ต้องอ่านแบบ stream เพื่อ "ตัดจบกลางทาง" เมื่อไฟล์ใหญ่เกินลิมิต
+        #      SDK โหลดทั้งก้อนเข้าหน่วยความจำก่อนเสมอ ซึ่งลิมิตจะไม่ทันกิน
+        #   2. ชี้ host เองได้ ทำให้เทสต์ e2e ยิงไปเซิร์ฟเวอร์จำลองได้เหมือนฝั่งส่งข้อความ
+        # ถ้า host ถูก override (โหมดทดสอบ) ให้ blob ใช้ host เดียวกัน จะได้ไม่หลุดไปยิงของจริง
+        effective_blob_host = host.strip() or blob_host.strip() or "https://api-data.line.me"
+        self._blob = httpx.AsyncClient(
+            base_url=effective_blob_host.rstrip("/"),
+            timeout=20.0,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
     async def aclose(self) -> None:
         await self._client.close()
+        await self._blob.aclose()
+
+    async def get_message_content(
+        self, message_id: str, max_bytes: int
+    ) -> tuple[bytes, str]:
+        """ดาวน์โหลดไฟล์ที่ผู้ใช้ส่งมา (รูป/วิดีโอ/ไฟล์) จาก LINE Content API
+
+        คืน (ไบต์ของไฟล์, content-type)
+
+        หมายเหตุ: LINE เก็บไฟล์ไว้ให้ดาวน์โหลดได้ระยะเวลาจำกัดหลังผู้ใช้ส่ง
+        ถ้าโหลดช้าเกินไปจะได้ 404 — จึงต้องโหลดทันทีตอนรับ event ไม่ใช่ทิ้งไว้โหลดทีหลัง
+        """
+        async with self._blob.stream(
+            "GET", f"/v2/bot/message/{message_id}/content"
+        ) as response:
+            response.raise_for_status()
+
+            # เช็ค Content-Length ก่อนถ้ามี — ประหยัดกว่ารอโหลดจนเกินแล้วค่อยรู้
+            declared = response.headers.get("content-length")
+            if declared and declared.isdigit() and int(declared) > max_bytes:
+                raise ImageTooLarge(declared)
+
+            chunks: list[bytes] = []
+            total = 0
+            async for chunk in response.aiter_bytes():
+                total += len(chunk)
+                # LINE ไม่ได้ส่ง content-length มาทุกครั้ง จึงต้องนับระหว่างโหลดด้วย
+                if total > max_bytes:
+                    raise ImageTooLarge(str(total))
+                chunks.append(chunk)
+
+            content_type = (
+                response.headers.get("content-type", "image/jpeg").split(";")[0].strip()
+            )
+            return b"".join(chunks), content_type
 
     async def reply(self, reply_token: str, replies: list[Reply]) -> None:
         messages = to_line_messages(replies)
@@ -65,12 +125,16 @@ class LineApi:
             return None
 
 
-def to_line_messages(replies: list[Reply]) -> list[TextMessage]:
-    """แปลง Reply ของเราเป็น TextMessage ของ LINE
+def to_line_messages(replies: list[Reply]):
+    """แปลง Reply ของเราเป็นข้อความของ LINE (TextMessage หรือ FlexMessage)
 
     จุดที่พลาดกันบ่อย: LINE จะแสดง quick reply ของ "ข้อความสุดท้าย" เท่านั้น
     ถ้าใส่ปุ่มไว้ที่บับเบิลกลางๆ ผู้ใช้จะไม่เห็นปุ่มนั้นเลย ฟังก์ชันนี้จึงรวบปุ่มทั้งหมด
     ไปไว้ที่ข้อความสุดท้ายให้อัตโนมัติ
+
+    Reply ที่มี flex จะถูกส่งเป็นการ์ด โดยใช้ `text` เป็น altText เสมอ —
+    altText คือสิ่งที่โผล่ในหน้าจอแจ้งเตือนและในแอปที่แสดง Flex ไม่ได้
+    ถ้าปล่อยว่างผู้ใช้จะเห็นแค่ "ข้อความ" ลอยๆ ไม่รู้ว่าเรื่องอะไร
     """
     trimmed = replies[:MAX_MESSAGES_PER_REPLY]
     if not trimmed:
@@ -83,7 +147,7 @@ def to_line_messages(replies: list[Reply]) -> list[TextMessage]:
             quick_items = reply.quick
             break
 
-    messages: list[TextMessage] = []
+    messages = []
     for index, reply in enumerate(trimmed):
         is_last = index == len(trimmed) - 1
         quick_reply = None
@@ -97,11 +161,38 @@ def to_line_messages(replies: list[Reply]) -> list[TextMessage]:
                             # display_text = ข้อความที่จะโชว์ฝั่งผู้ใช้เหมือนเขาพิมพ์เอง
                             # ใส่ไว้เพื่อให้ประวัติแชทอ่านรู้เรื่องว่ากดอะไรไป
                             display_text=label,
+                            input_option="openKeyboard" if data == "a=describe_request" else None,
                         )
                     )
                     for label, data in quick_items[:MAX_QUICK_REPLY_ITEMS]
                 ]
             )
+
+        if reply.flex:
+            try:
+                messages.append(
+                    FlexMessage(
+                        alt_text=_alt_text(reply.text),
+                        contents=FlexContainer.from_json(json.dumps(reply.flex, ensure_ascii=False)),
+                        quick_reply=quick_reply,
+                    )
+                )
+                continue
+            except Exception:  # noqa: BLE001
+                # การ์ดพังไม่ควรทำให้ผู้ใช้ไม่ได้รับคำตอบอะไรเลย — ตกกลับไปเป็นข้อความธรรมดา
+                logger.exception("สร้าง FlexMessage ไม่สำเร็จ — ตกกลับไปใช้ข้อความธรรมดา")
+
         messages.append(TextMessage(text=reply.text, quick_reply=quick_reply))
 
     return messages
+
+
+# altText ของ LINE ยาวได้ไม่เกิน 400 ตัวอักษร ถ้าเกินจะถูกปฏิเสธทั้ง request
+MAX_ALT_TEXT = 400
+
+
+def _alt_text(text: str) -> str:
+    cleaned = (text or "").strip() or "มีข้อความใหม่จากระบบ IT Support"
+    if len(cleaned) <= MAX_ALT_TEXT:
+        return cleaned
+    return cleaned[: MAX_ALT_TEXT - 1] + "…"

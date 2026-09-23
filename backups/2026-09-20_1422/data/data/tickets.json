@@ -1,0 +1,593 @@
+[
+  {
+    "id": "0c2a93bf-05dd-4fa3-9b21-a3df1059de6f",
+    "ticket_code": "ITRQ2026090003",
+    "type": "withdraw",
+    "status": "pending",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "fedc08b3-1e5f-4219-a234-bb2636aa02c4",
+    "equipment_id": null,
+    "description": "ขอเบิก Adapter สำรองเผื่อเครื่องสำรองไฟดับกะทันหัน",
+    "repair_cost": null,
+    "created_at": "2026-09-14T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": {
+      "items": [
+        {
+          "name": "เครื่องสำรองไฟ",
+          "qty": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "c1f40b10-b4ad-4ccb-b21d-b7ab17b36774",
+    "ticket_code": "ITSV2026090003",
+    "type": "it_service",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "01cc2029-30c6-46f8-95a7-28a820dfdec3",
+    "equipment_id": null,
+    "description": "ขอเข้าถึงระบบ VPN สำหรับทำงานนอกสถานที่",
+    "repair_cost": null,
+    "created_at": "2026-09-14T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "5668f14f-ce35-4f59-abbb-e019623d31c4",
+    "ticket_code": "ITSR2026090004",
+    "type": "repair",
+    "status": "pending",
+    "location": "สาขาแฟชั่นไอส์แลนด์",
+    "requester_id": "574f93a8-3bf4-4beb-b407-607d893a4195",
+    "equipment_id": null,
+    "description": "จอไม่ติดซ้ำอีกครั้งหลังซ่อมไปเมื่อเดือนก่อน",
+    "repair_cost": null,
+    "created_at": "2026-09-13T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "798d87fd-8c97-42e1-bfac-8f86fd64aa54",
+    "ticket_code": "ITSV2026090005",
+    "type": "it_service",
+    "status": "in_progress",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "fedc08b3-1e5f-4219-a234-bb2636aa02c4",
+    "equipment_id": null,
+    "description": "ขอย้ายข้อมูลจากเครื่องเก่าไปเครื่องใหม่",
+    "repair_cost": null,
+    "created_at": "2026-09-13T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "fb094cc6-2b14-44f4-8052-9ee300b0dde9",
+    "ticket_code": "ITSR2026090005",
+    "type": "repair",
+    "status": "in_progress",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "69c2e1e3-37c7-43c3-91ef-3d8e0bc14373",
+    "equipment_id": null,
+    "description": "เครื่องพิมพ์ใบเสร็จที่สาขากระดาษติดบ่อย",
+    "repair_cost": null,
+    "created_at": "2026-09-12T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "6280dcca-eaf7-43f3-be63-867990e56095",
+    "ticket_code": "ITSV2026090004",
+    "type": "it_service",
+    "status": "waiting_info",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "39a7559c-c46c-4e1a-b171-1f458b31832e",
+    "equipment_id": null,
+    "description": "อีเมลส่งไม่ออก ต้องการให้ตรวจสอบเพิ่มเติม (รอข้อมูล error เพิ่มจากผู้แจ้ง)",
+    "repair_cost": null,
+    "created_at": "2026-09-12T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "ca401221-ea5f-49e2-96fb-19750374fdf1",
+    "ticket_code": "ITSV2026090001",
+    "type": "it_service",
+    "status": "resolved",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "acd60361-6739-452d-99c2-d48487eda43d",
+    "equipment_id": null,
+    "description": "ขอให้ติดตั้งโปรแกรมบัญชีเพิ่มในเครื่องใหม่",
+    "repair_cost": null,
+    "created_at": "2026-09-11T16:22:45.061Z",
+    "resolved_at": "2026-09-12T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "27e98dc3-4a6e-40f4-afef-fe7a7e7e7fd0",
+    "ticket_code": "ITSR2026090007",
+    "type": "repair",
+    "status": "waiting_delivery",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "39a7559c-c46c-4e1a-b171-1f458b31832e",
+    "equipment_id": null,
+    "description": "เครื่องพิมพ์ลูกกลิ้งดึงกระดาษเสีย ส่งซ่อมนอกสถานที่ รออะไหล่",
+    "repair_cost": null,
+    "created_at": "2026-09-09T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "5e24ab15-9a93-44b8-861c-95eb14746eef",
+    "ticket_code": "ITRQ2026090006",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "ขอเบิกสมุดเคลมสินค้าเพิ่ม",
+    "repair_cost": null,
+    "created_at": "2026-09-09T16:22:45.061Z",
+    "resolved_at": "2026-09-10T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "สมุดเคลมสินค้า",
+          "qty": 3
+        }
+      ]
+    }
+  },
+  {
+    "id": "02b92595-4be0-479c-bee7-2ad282ad08cf",
+    "ticket_code": "ITSV2026090007",
+    "type": "it_service",
+    "status": "resolved",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "a1f9ff69-8b66-4cc3-b858-f62c283f6268",
+    "equipment_id": null,
+    "description": "wifi ที่สาขาหลุดบ่อย ขอให้เข้าตรวจสอบ",
+    "repair_cost": null,
+    "created_at": "2026-09-08T16:22:45.061Z",
+    "resolved_at": "2026-09-09T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "feda4c0d-c57f-4c48-bc4b-a6de58cca23e",
+    "ticket_code": "ITRQ2026090004",
+    "type": "withdraw",
+    "status": "resolved",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "69c2e1e3-37c7-43c3-91ef-3d8e0bc14373",
+    "equipment_id": null,
+    "description": "ขอเบิกหมึกปริ้นเตอร์ M3870FW",
+    "repair_cost": null,
+    "created_at": "2026-09-06T16:22:45.061Z",
+    "resolved_at": "2026-09-07T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "หมึกเครื่อง M3870FW",
+          "qty": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "6ea2bdc2-d8a7-4878-a8c7-b2e8ac0c1714",
+    "ticket_code": "ITSV2026090002",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "ขอรีเซ็ตรหัสผ่านระบบ POS",
+    "repair_cost": null,
+    "created_at": "2026-09-04T16:22:45.061Z",
+    "resolved_at": "2026-09-05T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "61b0dbd3-0202-4030-9579-4346d7ea07bc",
+    "ticket_code": "ITSR2026090003",
+    "type": "repair",
+    "status": "resolved",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "เครื่องสแกนบาร์โค้ดอ่านไม่ติด ต้องเปลี่ยนสาย USB",
+    "repair_cost": 250,
+    "created_at": "2026-09-02T16:22:45.061Z",
+    "resolved_at": "2026-09-03T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "318d280b-0a3e-46d1-a7e8-46a2f23fdcf0",
+    "ticket_code": "ITRQ2026090005",
+    "type": "withdraw",
+    "status": "cancelled",
+    "location": "สาขาแฟชั่นไอส์แลนด์",
+    "requester_id": "574f93a8-3bf4-4beb-b407-607d893a4195",
+    "equipment_id": null,
+    "description": "ขอเบิกจอมอนิเตอร์เพิ่ม 1 จอ (ยกเลิกเนื่องจากมีของเดิมเพียงพอ)",
+    "repair_cost": null,
+    "created_at": "2026-08-30T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "d05d0a9c-8252-4420-ad91-f2275c9567f5",
+    "ticket_code": "ITSV2026090006",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1258068a-7fc0-4a76-9b34-c591dd5d26bb",
+    "equipment_id": null,
+    "description": "ขอเพิ่มสิทธิ์เข้าถึงโฟลเดอร์ใช้งานร่วมกันของแผนก",
+    "repair_cost": null,
+    "created_at": "2026-08-27T16:22:45.061Z",
+    "resolved_at": "2026-08-28T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "e628d2b8-fe72-444d-bb01-cf44fa630ef5",
+    "ticket_code": "ITSR2026090006",
+    "type": "repair",
+    "status": "cancelled",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "01cc2029-30c6-46f8-95a7-28a820dfdec3",
+    "equipment_id": null,
+    "description": "แจ้งซ่อมคีย์บอร์ด แต่พบว่าใช้งานได้ปกติ ปิดงาน",
+    "repair_cost": null,
+    "created_at": "2026-08-25T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "6332feec-d241-4560-af70-6cf3e8c39bfe",
+    "ticket_code": "ITSV2026090008",
+    "type": "it_service",
+    "status": "cancelled",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "10013bc0-ee34-4cbb-b266-d04131926bc0",
+    "equipment_id": null,
+    "description": "ขอเปลี่ยนเมาส์ (ซ้ำกับ ticket เบิกอุปกรณ์ที่แจ้งไปแล้ว)",
+    "repair_cost": null,
+    "created_at": "2026-08-23T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "9deb4ad2-d6ad-4d23-aa49-889903a51b6e",
+    "ticket_code": "ITRQ2026090002",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "10013bc0-ee34-4cbb-b266-d04131926bc0",
+    "equipment_id": null,
+    "description": "ขอเบิกสาย USB Type-C สำหรับเครื่อง POS",
+    "repair_cost": null,
+    "created_at": "2026-08-20T16:22:45.061Z",
+    "resolved_at": "2026-08-21T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "USB Type C",
+          "qty": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "a5867f61-2e3b-4b8f-86d0-450be7fee984",
+    "ticket_code": "ITRQ2026090001",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "acd60361-6739-452d-99c2-d48487eda43d",
+    "equipment_id": null,
+    "description": "ขอเบิกเมาส์และคีย์บอร์ดสำรอง 1 ชุด",
+    "repair_cost": null,
+    "created_at": "2026-08-15T16:22:45.061Z",
+    "resolved_at": "2026-08-16T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "เมาส์",
+          "qty": 1
+        },
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "ef7051f8-739d-428a-8891-325775c1d5fb",
+    "ticket_code": "ITRT2026090002",
+    "type": "return",
+    "status": "closed",
+    "location": "สาขาแฟชั่นไอส์แลนด์",
+    "requester_id": "f1ba82fb-9c5c-42fe-af79-dc511f25dddb",
+    "equipment_id": null,
+    "description": "คืนอุปกรณ์หลังพนักงานลาออก",
+    "repair_cost": null,
+    "created_at": "2026-08-10T16:22:45.061Z",
+    "resolved_at": "2026-08-11T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "967346d1-60f8-4dc0-a452-814d22d92ec1",
+    "ticket_code": "ITSR2026090002",
+    "type": "repair",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "equipment_id": null,
+    "description": "จอโน้ตบุ๊คมีเส้นแนวตั้ง คาดว่าสายแพจอหลวม",
+    "repair_cost": 1800,
+    "created_at": "2026-08-05T16:22:45.061Z",
+    "resolved_at": "2026-08-06T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "fee5fcea-eb53-4b87-8272-354012bf3241",
+    "ticket_code": "ITSR2026090001",
+    "type": "repair",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1258068a-7fc0-4a76-9b34-c591dd5d26bb",
+    "equipment_id": null,
+    "description": "โน้ตบุ๊คเปิดไม่ติด กดปุ่ม power ไม่มีไฟเข้า",
+    "repair_cost": 1200,
+    "created_at": "2026-07-31T16:22:45.061Z",
+    "resolved_at": "2026-08-01T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "42434040-f2f5-4b30-a20e-604f6d1f23ca",
+    "ticket_code": "ITRT2026090001",
+    "type": "return",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "equipment_id": null,
+    "description": "คืนโน้ตบุ๊คเครื่องเก่าหลังได้เครื่องใหม่",
+    "repair_cost": null,
+    "created_at": "2026-07-16T16:22:45.061Z",
+    "resolved_at": "2026-07-17T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "5c9c91cf-5c86-4132-ad2d-868af5665579",
+    "ticket_code": "ITSR2026090008",
+    "type": "repair",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "โปรเจคเตอร์ภาพเพี้ยนสี",
+    "repair_cost": 0,
+    "created_at": "2026-07-06T16:22:45.061Z",
+    "resolved_at": "2026-07-07T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "2d0257b3-3183-4581-a874-d58bce343c14",
+    "ticket_code": "ITSV2026090009",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "equipment_id": null,
+    "description": "ขอให้ตั้งค่าเครื่องพิมพ์เครือข่ายใหม่หลังย้ายออฟฟิศ",
+    "repair_cost": null,
+    "created_at": "2026-06-16T16:22:45.061Z",
+    "resolved_at": "2026-06-17T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "type": "withdraw",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film"
+    },
+    "id": "10fd4fa2-062b-4c67-8a1e-30a8bef2da47",
+    "ticket_code": "ITRQ2026090007",
+    "created_at": "2026-09-14T16:26:03.152Z",
+    "resolved_at": null
+  },
+  {
+    "type": "withdraw",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film"
+    },
+    "id": "d08429c9-316f-4242-8f65-ff7e6202ec6a",
+    "ticket_code": "ITRQ2026090008",
+    "created_at": "2026-09-14T16:27:02.146Z",
+    "resolved_at": null
+  },
+  {
+    "type": "withdraw",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film"
+    },
+    "id": "c8585a4c-4806-4b82-8c69-6f11adb36643",
+    "ticket_code": "ITRQ2026090009",
+    "created_at": "2026-09-14T16:28:26.650Z",
+    "resolved_at": null
+  },
+  {
+    "type": "withdraw",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film"
+    },
+    "id": "0a4930f2-b60b-4434-8574-dd6deafc7d11",
+    "ticket_code": "ITRQ2026090010",
+    "created_at": "2026-09-14T16:28:40.324Z",
+    "resolved_at": null
+  },
+  {
+    "type": "repair",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "a475ea24-60b2-41ec-9362-ac0772096294",
+    "equipment_id": null,
+    "description": "จอมีเส้น",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "line_user_id": "U4b1f0cde4a4cfa3ab2333bf6dd92575d",
+      "line_display_name": "Lydia➰🌹"
+    },
+    "id": "cf3fd144-6808-4bfc-b13d-0d887c790f02",
+    "ticket_code": "ITSR2026090009",
+    "created_at": "2026-09-15T08:47:13.990Z",
+    "resolved_at": null
+  },
+  {
+    "type": "repair",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1bb9c0c8-be5d-404a-b76c-d03e6348ca89",
+    "equipment_id": null,
+    "description": "จอมีเส้น",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film"
+    },
+    "id": "c278ba42-a3d3-407e-a721-13c7a56d0f85",
+    "ticket_code": "ITSR2026090010",
+    "created_at": "2026-09-16T01:45:16.403Z",
+    "resolved_at": null
+  },
+  {
+    "type": "repair",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "d4ce8034-5407-4968-815d-38f3e8556cdc",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nเปิดไม่ติด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "863a0985-fbfd-441c-9262-bf24eb1410dc",
+      "requester_name": "ธนากร​ โฮงทอง",
+      "requester_department": null,
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "acknowledged_at": "2026-09-16T09:38:22.835Z",
+      "acknowledged_by": "Film"
+    },
+    "id": "46f10fa4-77c2-4a66-9fb9-065a598602e0",
+    "ticket_code": "ITSR2026090011",
+    "created_at": "2026-09-16T05:27:58.423Z",
+    "resolved_at": null
+  },
+  {
+    "type": "repair",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "d4ce8034-5407-4968-815d-38f3e8556cdc",
+    "equipment_id": "2972ae0b-1660-4a9c-9041-6aaa83463aa0",
+    "description": "เสียงดังผิดปกติ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ โฮงทอง",
+      "requester_department": null,
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "asset_code_input": "PT2101001",
+      "acknowledged_at": "2026-09-16T12:41:05.608Z",
+      "acknowledged_by": "Film"
+    },
+    "id": "93dc1291-2057-42e2-a111-13329e131637",
+    "ticket_code": "ITSR2026090012",
+    "created_at": "2026-09-16T12:40:37.656Z",
+    "resolved_at": null
+  },
+  {
+    "type": "repair",
+    "status": "pending",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "046ac3a8-776d-4b49-b842-efb3f5347dce",
+    "equipment_id": "0d39a613-17be-49a8-934a-61f6376cf99c",
+    "description": "จอมีเส้นๆ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ โฮงทอง​",
+      "requester_department": "​สารสนเทศ​",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "asset_code_input": "NB2604003",
+      "acknowledged_at": "2026-09-16T15:16:07.398Z",
+      "acknowledged_by": "Film"
+    },
+    "id": "a97c45e8-0c33-4ef2-8f45-4daf9cbdc2e5",
+    "ticket_code": "ITSR2026090013",
+    "created_at": "2026-09-16T15:15:59.421Z",
+    "resolved_at": null
+  }
+]

@@ -4,6 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { StockItemWithComputed } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { Field, MODAL_INPUT, Modal } from "@/components/ui/Modal";
 import {
   stockInAction,
   adjustStockQuantityAction,
@@ -53,71 +54,69 @@ export function StockActionModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      title={TITLE[action]}
+      size="sm"
+      description={`${item.name} — คงเหลือปัจจุบัน ${item.quantity_available} ${item.unit}`}
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
+            ยกเลิก
+          </Button>
+          <Button
+            type="submit"
+            form="stock-action-form"
+            disabled={isPending}
+            className="w-full sm:w-auto"
+          >
+            {isPending ? "กำลังบันทึก..." : "บันทึก"}
+          </Button>
+        </>
+      }
     >
-      <form
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-line bg-surface p-5"
-      >
-        <div>
-          <p className="text-sm font-semibold text-ink">{TITLE[action]}</p>
-          <p className="text-xs text-muted">
-            {item.name} — คงเหลือปัจจุบัน {item.quantity_available} {item.unit}
-          </p>
-        </div>
-
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-muted">
-            {action === "in"
+      <form id="stock-action-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field
+          label={
+            action === "in"
               ? "จำนวนที่รับเข้า"
               : action === "adjust"
                 ? "จำนวนคงเหลือใหม่"
-                : "Safety Stock ใหม่"}
-          </span>
+                : "Safety Stock ใหม่"
+          }
+          required
+        >
           <input
             type="number"
             min={0}
             required
             value={quantity}
             onChange={(e) => setQuantity(Number(e.target.value))}
-            className="rounded-lg border border-line bg-page px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+            className={`${MODAL_INPUT} font-num`}
           />
-        </label>
+        </Field>
 
         {action === "in" && (
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-muted">เลขที่ PO / อ้างอิง</span>
+          <Field label="เลขที่ PO / อ้างอิง">
             <input
               value={referenceNo}
               onChange={(e) => setReferenceNo(e.target.value)}
-              className="rounded-lg border border-line bg-page px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              className={MODAL_INPUT}
             />
-          </label>
+          </Field>
         )}
 
         {action !== "safety" && (
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-muted">หมายเหตุ</span>
+          <Field label="หมายเหตุ" hint="จะถูกบันทึกไว้ในประวัติ transaction">
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="rounded-lg border border-line bg-page px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+              className={MODAL_INPUT}
             />
-          </label>
+          </Field>
         )}
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            ยกเลิก
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "กำลังบันทึก..." : "บันทึก"}
-          </Button>
-        </div>
       </form>
-    </div>
+    </Modal>
   );
 }

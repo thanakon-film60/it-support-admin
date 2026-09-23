@@ -1,6 +1,12 @@
 import "server-only";
 
-const LINE_API_BASE = "https://api.line.me/v2/bot";
+/** ปกติยิงไป https://api.line.me
+ *
+ *  ตั้ง LINE_API_BASE ชี้ไปเซิร์ฟเวอร์จำลองได้ตอนทดสอบ เพื่อดูว่าข้อความแจ้งเตือนหน้าตาเป็นยังไง
+ *  และยิงถูกคนไหม โดยไม่ต้องส่งของจริงเข้าไลน์พนักงาน และไม่กินโควตา 300 ข้อความ/เดือน
+ *  (แนวคิดเดียวกับ LINE_API_HOST ของบอท Python ที่ tests/e2e ใช้อยู่แล้ว)
+ *  ⚠️ ต้องเว้นว่างเสมอตอนใช้งานจริง ไม่งั้นข้อความจะไม่ถึงผู้ใช้ */
+const LINE_API_BASE = (process.env.LINE_API_BASE || "https://api.line.me").replace(/\/+$/, "") + "/v2/bot";
 
 function getAccessToken(): string {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -12,8 +18,21 @@ function getAccessToken(): string {
   return token;
 }
 
+/** ปุ่มลัดที่ปักอยู่เหนือแป้นพิมพ์ — ใช้ให้ผู้แจ้งกด "ตกลง" ยืนยันว่าแก้ไขเสร็จแล้ว
+ *
+ *  เลือก quick reply แทน Flex เพราะข้อความแจ้งเตือนนี้เป็น push ที่เด้งขึ้นมาตอนผู้ใช้
+ *  ไม่ได้เปิดแชทอยู่ ปุ่มจึงต้องอยู่ตรงที่กดง่ายที่สุดทันทีที่เปิดเข้ามา ไม่ใช่ต้องเลื่อนหาในการ์ด
+ */
+export interface LineQuickReply {
+  items: {
+    type: "action";
+    action: { type: "postback"; label: string; data: string; displayText?: string };
+  }[];
+}
+
 export type LineMessage =
-  | { type: "text"; text: string }
+  | { type: "flex"; altText: string; contents: Record<string, unknown> }
+  | { type: "text"; text: string; quickReply?: LineQuickReply }
   | {
       type: "template";
       altText: string;
@@ -51,6 +70,7 @@ export async function pushMessage(to: string, messages: LineMessage[]): Promise<
   });
   if (!res.ok) {
     console.error("[LINE] pushMessage failed:", res.status, await res.text());
+    throw new Error(`LINE push failed (${res.status})`);
   }
 }
 

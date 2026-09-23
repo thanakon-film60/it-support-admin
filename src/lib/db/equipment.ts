@@ -1,8 +1,10 @@
-import { readCollection, upsertOne, patchOne } from "./store";
+import { readCollection, writeCollection, upsertOne, patchOne } from "./store";
+import { byNewestFirst } from "../sorting";
+import { EQUIPMENT_CATEGORY_LABEL } from "../labels";
 import { newId } from "../utils";
 import { listUsers } from "./users";
 import { listTickets } from "./tickets";
-import type { Equipment, EquipmentSummary } from "../types";
+import type { Equipment, EquipmentCategory, EquipmentSummary } from "../types";
 
 const COLLECTION = "equipment";
 
@@ -45,7 +47,9 @@ function seed(): Equipment[] {
 }
 
 export function listEquipment(): Equipment[] {
-  return readCollection<Equipment>(COLLECTION, seed);
+  // เรียงใหม่→เก่าเหมือน listTickets ด้วยเหตุผลเดียวกัน — ทรัพย์สินที่เพิ่งเพิ่ม
+  // (ทั้งจากฟอร์มและจาก Import Excel) เคยไปต่อท้ายจนมองไม่เห็นว่าเข้าระบบแล้ว
+  return byNewestFirst(readCollection<Equipment>(COLLECTION, seed), "created_at");
 }
 
 /** normalize รหัสทรัพย์สินให้เทียบกันได้ เช่น "nb-001", "NB 001", "NB001" -> "NB001"
@@ -57,17 +61,36 @@ function normalizeAssetCode(code: string): string {
 /** ค้นทรัพย์สินจากรหัสที่ผู้ใช้พิมพ์เข้ามา — ยอมรับรูปแบบที่ไม่เป๊ะได้ระดับหนึ่ง
  *  ลำดับการค้น: ตรงเป๊ะ -> ลงท้ายด้วย -> มีคำนี้อยู่ข้างใน (กันเคสพิมพ์ย่อ เช่น NB-001) */
 export function getEquipmentByAssetCode(input: string): Equipment | null {
+  return findEquipmentByAssetCode(input)[0] ?? null;
+}
+
+/** ค้นทรัพย์สินจากรหัส แล้วคืน "ทุกเครื่องที่ตรง" ไม่ใช่เครื่องแรกเครื่องเดียว
+ *
+ *  ทำไมต้องมีฟังก์ชันนี้: ข้อมูลจริงในระบบมี 28 แถวที่ใช้รหัสซ้ำกับเครื่องอื่น
+ *  (เช่น PC2306001 ถูกใช้กับ 4 เครื่องคนละสาขา — ดู db/imports/equipment-import-conflicts.csv)
+ *  ของเดิมคืนแค่ `.find()` ตัวแรก แปลว่าเวลาผู้ใช้พิมพ์รหัสที่ซ้ำ บอทจะผูก ticket เข้ากับเครื่องแรก
+ *  ที่บังเอิญอยู่ในไฟล์ **เงียบๆ โดยไม่มีใครรู้ว่าเลือกผิด** — ช่างอาจไปผิดสาขา
+ *
+ *  วิธีที่ถูกคือคืนทุกตัวแล้วให้คนเลือก ส่วนการแก้รหัสซ้ำที่ต้นทางยังต้องทำอยู่ดี
+ *  แต่ระหว่างที่ยังไม่ได้แก้ ระบบต้องไม่เดาแทนผู้ใช้
+ *
+ *  ลำดับผลลัพธ์: ตรงเป๊ะก่อน -> ลงท้ายด้วย -> มีคำนี้อยู่ข้างใน (กันเคสพิมพ์ย่อ เช่น NB-001)
+ *  โดยแต่ละเครื่องจะปรากฏครั้งเดียวเท่านั้น
+ */
+export function findEquipmentByAssetCode(input: string): Equipment[] {
   const needle = normalizeAssetCode(input);
-  if (!needle) return null;
+  if (!needle) return [];
   const all = listEquipment();
 
-  const exact = all.find((e) => normalizeAssetCode(e.asset_code) === needle);
-  if (exact) return exact;
+  const exact = all.filter((e) => normalizeAssetCode(e.asset_code) === needle);
+  // เจอแบบตรงเป๊ะแล้วไม่ต้องค้นแบบหลวมต่อ — ไม่งั้นพิมพ์ "PC2306001" เป๊ะๆ
+  // จะพ่วงเครื่องที่รหัสแค่ "มีคำนี้อยู่ข้างใน" มาให้เลือกด้วย ซึ่งไม่ใช่สิ่งที่ผู้ใช้หมายถึง
+  if (exact.length > 0) return exact;
 
-  const endsWith = all.find((e) => normalizeAssetCode(e.asset_code).endsWith(needle));
-  if (endsWith) return endsWith;
+  const endsWith = all.filter((e) => normalizeAssetCode(e.asset_code).endsWith(needle));
+  if (endsWith.length > 0) return endsWith;
 
-  return all.find((e) => normalizeAssetCode(e.asset_code).includes(needle)) ?? null;
+  return all.filter((e) => normalizeAssetCode(e.asset_code).includes(needle));
 }
 
 export function getEquipmentById(id: string): Equipment | null {
@@ -89,6 +112,16 @@ export function updateEquipment(
   return patchOne<Equipment>(COLLECTION, id, patch, seed);
 }
 
+/** ลบถาวร — ผู้เรียกต้องตรวจเองก่อนว่าไม่มี ticket ผูกอยู่ (ดู deleteEquipmentAction)
+ *  คืน false เมื่อไม่พบ id นั้น เพื่อให้แยกออกจากกรณีลบสำเร็จได้ */
+export function removeEquipment(id: string): boolean {
+  const all = readCollection<Equipment>(COLLECTION, seed);
+  const next = all.filter((e) => e.id !== id);
+  if (next.length === all.length) return false;
+  writeCollection(COLLECTION, next);
+  return true;
+}
+
 /** เทียบเท่า view `equipment_summary` ของต้นแบบ — join ผู้ครอบครอง + นับจำนวนครั้งที่ส่งซ่อม */
 export function listEquipmentSummary(): EquipmentSummary[] {
   const users = listUsers();
@@ -107,6 +140,94 @@ export function listEquipmentSummary(): EquipmentSummary[] {
       repair_count: repairCount,
     };
   });
+}
+
+/** ตัวเลือกหนึ่งอันในเมนูเลือกทรัพย์สินของบอท LINE */
+export interface AssetOption {
+  /** ค่าที่ส่งกลับมาตอนผู้ใช้กด */
+  value: string;
+  label: string;
+  /** บรรทัดรองใต้ label เช่น ยี่ห้อ/ที่ติดตั้ง ใช้แยกของที่ชื่อซ้ำกัน */
+  sub: string | null;
+  count: number;
+}
+
+/** ตัวเลือกสำหรับเมนูเลือกทรัพย์สินทีละชั้น: ประเภท → ยี่ห้อ/รุ่น → รหัส
+ *
+ *  ทำไมต้องไล่ทีละชั้น: แชท LINE ไม่มี dropdown จริงให้ใช้ (ไม่มี <select>)
+ *  quick reply ใส่ได้สูงสุด 13 ปุ่ม ส่วน carousel ใส่ได้ 12 ใบ แต่ข้อมูลจริงมีทรัพย์สิน 200+ ชิ้น
+ *  การไล่กรองทีละชั้นจึงเป็นวิธีเดียวที่ทำให้เลือกของจาก 200+ ชิ้นได้จบในไม่กี่ปุ่ม
+ *  โดยไม่ต้องให้ผู้ใช้จำรหัสเอง — ซึ่งเป็นจุดที่คนเลิกใช้บอทมากที่สุด
+ *
+ *  จงใจ "ไม่" กรองตามสาขาที่เลือกไว้ตอนต้น เพราะ install_location ในข้อมูลจริงปนกัน
+ *  ทั้งชื่อสาขา ("สาขาเซ็นทรัล") และชื่อแผนก/ห้อง ("แผนกบัญชี", "คลัง IT")
+ *  ถ้ากรองด้วยจะซ่อนของที่ควรเห็นโดยผู้ใช้ไม่รู้ตัว — แสดงที่ติดตั้งไว้ในบรรทัดรองแทน
+ */
+export function listAssetFilterOptions(input: {
+  level: "category" | "brand" | "code";
+  category?: string | null;
+  brand?: string | null;
+}): { options: AssetOption[]; total: number } {
+  const { level, category, brand } = input;
+
+  let rows = listEquipment();
+  if (level !== "category" && category) {
+    rows = rows.filter((e) => e.category === category);
+  }
+  if (level === "code" && brand) {
+    rows = rows.filter((e) => (e.brand_model?.trim() || NO_BRAND) === brand);
+  }
+
+  if (level === "category") return { options: groupCategories(rows), total: rows.length };
+  if (level === "brand") return { options: groupBrands(rows), total: rows.length };
+  return { options: listCodes(rows), total: rows.length };
+}
+
+const NO_BRAND = "ไม่ระบุยี่ห้อ";
+
+function groupCategories(rows: Equipment[]): AssetOption[] {
+  const counts = new Map<string, number>();
+  for (const e of rows) counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([value, count]) => ({
+      value,
+      label: EQUIPMENT_CATEGORY_LABEL[value as EquipmentCategory] ?? value,
+      sub: null,
+      count,
+    }))
+    // เรียงตามจำนวนมากไปน้อย ของที่คนแจ้งบ่อยสุดจะอยู่บนสุดโดยไม่ต้อง hardcode ลำดับ
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "th"));
+}
+
+function groupBrands(rows: Equipment[]): AssetOption[] {
+  const counts = new Map<string, number>();
+  for (const e of rows) {
+    const key = e.brand_model?.trim() || NO_BRAND;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([value, count]) => ({ value, label: value, sub: null, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "th"));
+}
+
+function listCodes(rows: Equipment[]): AssetOption[] {
+  const users = listUsers();
+  return rows
+    .map((e) => {
+      const holder = e.current_holder_id
+        ? users.find((u) => u.id === e.current_holder_id)?.display_name ?? null
+        : null;
+      // บรรทัดรองสำคัญมากกับข้อมูลชุดนี้ เพราะรหัสทรัพย์สินซ้ำกันอยู่ 28 แถว
+      // ถ้าโชว์แต่รหัส ผู้ใช้จะเลือกเครื่องผิดสาขาโดยไม่มีทางรู้เลย
+      const parts = [e.brand_model?.trim(), e.install_location?.trim(), holder].filter(Boolean);
+      return {
+        value: e.asset_code,
+        label: e.asset_code,
+        sub: parts.length ? parts.join(" · ") : null,
+        count: 1,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, "th", { numeric: true }));
 }
 
 export function listCustodianRows(): EquipmentSummary[] {

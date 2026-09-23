@@ -63,7 +63,7 @@ def _collapse_repeats(text: str) -> str:
     ถ้ายุบทุกการซ้ำจะทำลายคำที่ถูกต้องอยู่แล้ว จึงยุบเฉพาะที่ซ้ำ 3 ตัวขึ้นไป
     ซึ่งแทบไม่มีในคำไทยมาตรฐาน แต่พบตลอดในแชท
     """
-    return re.sub(r"(.)\1{2,}", r"\1", text)
+    return re.sub(r"(.)\1{2,}", lambda m: m[1] * (2 if m[1].isascii() and m[1].isalpha() else 1), text)
 
 
 def normalize(text: str) -> str:

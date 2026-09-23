@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Protocol
 
 
@@ -36,7 +36,35 @@ class Session:
     requester_name: str | None = None
     requester_department: str | None = None
     description: str | None = None
+    description_collected: bool = False  # Free-text shortcut may collect details before requester/items.
     line_display_name: str | None = None
+    # URL รูปที่ผู้ใช้ส่งเข้ามาระหว่างแจ้งเรื่อง (อัปโหลดเข้าระบบแล้ว) — แนบไปกับ ticket ตอนส่ง
+    image_urls: list[str] = field(default_factory=list)
+    # ตัวเลือกทรัพย์สินที่รอให้ผู้ใช้เลือก ตอนรหัสเดียวตรงกับหลายเครื่อง
+    # เก็บเป็น [{"id", "asset_code", "label"}] — เก็บ label สำเร็จรูปไว้เลย
+    # จะได้ไม่ต้องยิงถาม backend ซ้ำตอนผู้ใช้กดปุ่ม
+    asset_choices: list[dict[str, Any]] = field(default_factory=list)
+    # ---- สถานะของเมนูเลือกทรัพย์สินทีละชั้น (ประเภท -> ยี่ห้อ/รุ่น -> รหัส) ----
+    #
+    # เก็บไว้ในนี้แทนการยัดลง postback data เพราะ LINE จำกัด data ไว้ที่ 300 ไบต์
+    # ชื่อยี่ห้อ/รุ่นภาษาไทยพอ encode แล้วกินตัวละ 9 ไบต์ ยาวนิดเดียวก็ทะลุ
+    # ปุ่มจึงส่งมาแค่ "ลำดับที่เท่าไหร่" แล้วมาเปิดค่าจริงจาก pick_values ที่นี่
+    pick_level: str | None = None          # "category" | "brand" | "code"
+    pick_category: str | None = None
+    pick_brand: str | None = None
+    # เมนูเลือกสาขาใช้ช่องเก็บชุดเดียวกัน (pick_values / pick_labels / pick_page)
+    # แยกกันได้จาก pick_level: สาขาใช้ company|group|branch ส่วนทรัพย์สินใช้ category|brand|code
+    # และสองเมนูนี้ไม่มีทางทำงานพร้อมกัน เพราะเลือกสาขาจบก่อนถึงจะถามทรัพย์สิน
+    pick_company: str | None = None
+    pick_company_label: str | None = None
+    pick_group: str | None = None
+    pick_group_label: str | None = None
+    pick_page: int = 0
+    pick_values: list[str] = field(default_factory=list)
+    pick_labels: list[str] = field(default_factory=list)
+    # เก็บ "ชื่อที่คนอ่าน" ของประเภทที่เลือกไว้ด้วย (เช่น notebook -> โน้ตบุ๊ค)
+    # เพราะฝั่งบอทไม่มีตารางแปลชื่อประเภท ตัวแปลอยู่ฝั่ง Next.js ที่เดียว
+    pick_category_label: str | None = None
     updated_at: float = field(default_factory=time.time)
 
     def to_json(self) -> str:
@@ -44,7 +72,14 @@ class Session:
 
     @classmethod
     def from_json(cls, raw: str) -> "Session":
-        return cls(**json.loads(raw))
+        data = json.loads(raw)
+        # ทิ้งคีย์ที่ไม่รู้จักแทนที่จะ TypeError
+        #
+        # เหตุผล: session ค้างอยู่ใน Redis นานถึง 30 นาที ตอน deploy เวอร์ชันที่ "ลบฟิลด์ออก"
+        # (หรือตอน rollback) จะมี session รูปแบบเก่าค้างอยู่ ถ้าปล่อยให้ throw ผู้ใช้ที่กำลังคุยค้างไว้
+        # จะเจอบอทเงียบไปเลยจนกว่า session จะหมดอายุ — ทิ้งฟิลด์ที่ไม่รู้จักแล้วคุยต่อดีกว่ามาก
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in data.items() if k in known})
 
 
 class ConversationStore(Protocol):
@@ -117,3 +152,70 @@ def build_store(redis_url: str, ttl_seconds: int) -> ConversationStore:
     if redis_url.strip():
         return RedisStore(redis_url, ttl_seconds)
     return MemoryStore(ttl_seconds)
+
+
+# ---------------------------------------------------------------- กันสแปม
+
+
+class RateLimiter(Protocol):
+    async def hit(self, user_id: str) -> int:
+        """นับ 1 ครั้งแล้วคืนจำนวนครั้งสะสมในหน้าต่างเวลาปัจจุบัน"""
+        ...
+
+
+class MemoryRateLimiter:
+    """นับในหน่วยความจำ — ใช้ตอน dev หรือเมื่อไม่ได้ตั้ง Redis
+
+    ข้อจำกัดเหมือน MemoryStore: ถ้ารันหลาย worker แต่ละตัวนับแยกกัน
+    ลิมิตจริงจะกลายเป็น (limit × จำนวน worker) จึงไม่ควรใช้บน production
+    """
+
+    def __init__(self, window_seconds: int = 60) -> None:
+        self._window = window_seconds
+        self._hits: dict[str, list[float]] = {}
+
+    async def hit(self, user_id: str) -> int:
+        now = time.time()
+        cutoff = now - self._window
+        recent = [t for t in self._hits.get(user_id, []) if t > cutoff]
+        recent.append(now)
+        self._hits[user_id] = recent
+
+        # กวาดคนที่เงียบไปแล้วทิ้ง ไม่ให้ dict โตขึ้นเรื่อยๆ ตามจำนวนคนที่เคยทักมา
+        if len(self._hits) > 1000:
+            self._hits = {
+                uid: ts for uid, ts in self._hits.items() if ts and ts[-1] > cutoff
+            }
+        return len(recent)
+
+
+class RedisRateLimiter:
+    """นับบน Redis — worker ทุกตัวเห็นตัวนับเดียวกัน
+
+    ใช้ fixed window (INCR + EXPIRE) ไม่ใช่ sliding window เพราะต้องการแค่
+    "กันคนกดรัว/สคริปต์ยิง" ไม่ได้ต้องการความแม่นระดับวินาที และ fixed window
+    ใช้คำสั่ง Redis แค่ 2 คำสั่งต่อ event ซึ่งถูกกว่ามาก
+    """
+
+    def __init__(self, url: str, window_seconds: int = 60, prefix: str = "linebot:rate:") -> None:
+        import redis.asyncio as aioredis
+
+        self._redis = aioredis.from_url(url, decode_responses=True)
+        self._window = window_seconds
+        self._prefix = prefix
+
+    async def hit(self, user_id: str) -> int:
+        # ใส่เลขหน้าต่างเวลาลงใน key เอง — พอข้ามนาที key จะเปลี่ยนและเริ่มนับใหม่อัตโนมัติ
+        bucket = int(time.time() // self._window)
+        key = f"{self._prefix}{user_id}:{bucket}"
+        pipe = self._redis.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, self._window + 5)
+        count, _ = await pipe.execute()
+        return int(count)
+
+
+def build_rate_limiter(redis_url: str, window_seconds: int = 60) -> RateLimiter:
+    if redis_url.strip():
+        return RedisRateLimiter(redis_url, window_seconds)
+    return MemoryRateLimiter(window_seconds)

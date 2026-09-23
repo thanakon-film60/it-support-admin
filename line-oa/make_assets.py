@@ -26,20 +26,41 @@ FONT_REG = HERE / "fonts" / "NotoSansThai-Regular.ttf"
 W, H = 2500, 1686           # ขนาด rich menu แบบใหญ่ (ค่าเดียวที่ LINE ยอมรับสำหรับ 2 แถว)
 COLS, ROWS = 3, 2
 BG = "#EAF0F8"
+BG_DATA = "#E8F6F0"   # พื้นเขียวอ่อนของเมนูข้อมูล — ต่างจากเมนูหลักให้เห็นชัด
 CARD = "#FFFFFF"
 CARD_EDGE = "#D7E2F0"
 TEXT = "#0F2B4D"
 SUBTEXT = "#6B84A3"
 
-# ไล่เฉดจากน้ำเงินเข้ม -> ฟ้า ตามลำดับปุ่ม ให้ทั้งกริดดูเป็นชุดเดียวกัน
-TILES = [
-    {"icon": "wrench",    "th": "แจ้งซ่อม",        "en": "Repair",     "color": "#123B6B"},
-    {"icon": "box_in",    "th": "เบิกอุปกรณ์",     "en": "Withdraw",   "color": "#17559A"},
-    {"icon": "box_out",   "th": "คืนอุปกรณ์",      "en": "Return",     "color": "#1C6FC7"},
-    {"icon": "gear",      "th": "ขอใช้บริการ IT",  "en": "IT Service", "color": "#1E82D6"},
-    {"icon": "clipboard", "th": "เรื่องที่ฉันแจ้ง", "en": "My Tickets", "color": "#23A0E0"},
-    {"icon": "question",  "th": "คำถามที่พบบ่อย",  "en": "FAQ",        "color": "#29B6E8"},
+# ---------------------------------------------------------------- เมนู 2 ชั้น
+#
+# ทำไมต้องมี 2 ชั้น: ปุ่มบนเมนูเดียวใส่ได้แค่ 6 ปุ่ม แต่บอทตอบได้มากกว่านั้นเยอะ
+# เดิมความสามารถอย่าง "ดูสต็อก" / "ทรัพย์สินที่ฉันถืออยู่" ต้องพิมพ์เอาเองเท่านั้น
+# ซึ่งแทบไม่มีใครรู้ว่าทำได้ การแยกเป็นเมนู "แจ้งเรื่อง" กับ "เช็คข้อมูล" ทำให้เห็นครบโดยไม่แน่นจอ
+#
+# เมนูหลัก = สิ่งที่ "ทำ" (สร้างเรื่องใหม่) ไล่เฉดน้ำเงิน
+# เมนูข้อมูล = สิ่งที่ "ดู" (อ่านข้อมูลที่มีอยู่) ไล่เฉดเขียว-ฟ้า ให้รู้ทันทีว่าเปลี่ยนเมนูแล้ว
+
+MENU_MAIN = [
+    {"icon": "wrench",     "th": "แจ้งซ่อม",        "en": "Repair",      "color": "#123B6B"},
+    {"icon": "box_in",     "th": "เบิกอุปกรณ์",     "en": "Withdraw",    "color": "#17559A"},
+    {"icon": "box_out",    "th": "คืนอุปกรณ์",      "en": "Return",      "color": "#1C6FC7"},
+    {"icon": "gear",       "th": "ขอใช้บริการ IT",  "en": "IT Service",  "color": "#1E82D6"},
+    {"icon": "chart",      "th": "เช็คข้อมูล",      "en": "Check Info",  "color": "#0E9F6E"},
+    {"icon": "question",   "th": "คำถามที่พบบ่อย",  "en": "FAQ",         "color": "#29B6E8"},
 ]
+
+MENU_DATA = [
+    {"icon": "chart",      "th": "สต็อกคงเหลือ",    "en": "Stock",       "color": "#0B7A55"},
+    {"icon": "clipboard",  "th": "เรื่องที่ฉันแจ้ง", "en": "My Tickets",  "color": "#0E9F6E"},
+    {"icon": "laptop",     "th": "ทรัพย์สินของฉัน",  "en": "My Assets",   "color": "#12B886"},
+    {"icon": "search",     "th": "ค้นหาทรัพย์สิน",  "en": "Find Asset",  "color": "#15AABF"},
+    {"icon": "question",   "th": "คำถามที่พบบ่อย",  "en": "FAQ",         "color": "#29B6E8"},
+    {"icon": "arrow_left", "th": "กลับเมนูหลัก",    "en": "Back",        "color": "#64748B"},
+]
+
+# ชื่อเดิมยังใช้ได้ เผื่อมีสคริปต์อื่นอ้างถึง
+TILES = MENU_MAIN
 
 S = 3  # supersampling — วาดใหญ่ 3 เท่าแล้วย่อ ทำให้ขอบโค้งเนียน ไม่หยัก
 
@@ -112,6 +133,34 @@ def _icon_mask(kind: str, n: int) -> Image.Image:
         d.text(((n - (bb[2] - bb[0])) / 2 - bb[0], (n - (bb[3] - bb[1])) / 2 - bb[1]),
                "?", font=f, fill=255)
 
+    elif kind == "chart":
+        # แท่งกราฟ 3 แท่ง — สื่อถึง "ยอดคงเหลือ/ตัวเลข"
+        for x0, y0 in ((22, 58), (43, 38), (64, 22)):
+            d.rounded_rectangle(box(x0, y0, x0 + 14, 84), radius=3 * k, fill=255)
+        d.rectangle(box(14, 86, 86, 92), fill=255)
+
+    elif kind == "laptop":
+        # โน้ตบุ๊ก — สื่อถึง "ทรัพย์สินที่ถืออยู่"
+        d.rounded_rectangle(box(24, 22, 76, 62), radius=5 * k, fill=255)
+        d.rounded_rectangle(box(31, 29, 69, 55), radius=2 * k, fill=0)
+        d.polygon(P((14, 78), (86, 78), (78, 66), (22, 66)), fill=255)
+        d.rectangle(box(40, 69, 60, 73), fill=0)
+
+    elif kind == "search":
+        # แว่นขยาย
+        cx, cy, ro, ri = 44, 42, 26, 16
+        d.ellipse(box(cx - ro, cy - ro, cx + ro, cy + ro), fill=255)
+        d.ellipse(box(cx - ri, cy - ri, cx + ri, cy + ri), fill=0)
+        d.line(P((62, 60), (82, 80)), fill=255, width=int(13 * k))
+
+    elif kind == "arrow_left":
+        # ลูกศรกลับ
+        d.polygon(P((28, 50), (54, 24), (54, 40), (78, 40), (78, 60), (54, 60), (54, 76)), fill=255)
+
+    elif kind == "arrow_right":
+        # ลูกศรเข้าเมนูย่อย
+        d.polygon(P((72, 50), (46, 24), (46, 40), (22, 40), (22, 60), (46, 60), (46, 76)), fill=255)
+
     return m
 
 
@@ -137,8 +186,14 @@ def _center(d, text, font, cx, y, fill):
 
 
 # ------------------------------------------------------------------ rich menu
-def build_richmenu(out: Path) -> None:
-    img = Image.new("RGB", (W * S, H * S), BG)
+def build_richmenu(out: Path, tiles: list[dict] | None = None, bg: str = BG) -> None:
+    """วาดรูป rich menu 1 ใบจากรายการ tiles (6 ช่อง 3x2)
+
+    bg ต่างกันระหว่างเมนูหลักกับเมนูข้อมูล เพื่อให้ผู้ใช้รู้ทันทีว่าอยู่เมนูไหน
+    โดยไม่ต้องอ่านตัวหนังสือ — สำคัญเพราะเมนูสลับไปมาได้ ถ้าหน้าตาเหมือนกันเป๊ะจะสับสน
+    """
+    tiles = tiles or MENU_MAIN
+    img = Image.new("RGB", (W * S, H * S), bg)
     d = ImageDraw.Draw(img)
     f_th = ImageFont.truetype(str(FONT_BOLD), int(76 * S))
     f_en = ImageFont.truetype(str(FONT_REG), int(40 * S))
@@ -146,7 +201,7 @@ def build_richmenu(out: Path) -> None:
     tw, th = W / COLS, H / ROWS
     pad, radius = 26 * S, 40 * S
 
-    for i, tile in enumerate(TILES):
+    for i, tile in enumerate(tiles):
         col, row = i % COLS, i // COLS
         x0, y0 = col * tw * S, row * th * S
         x1, y1 = x0 + tw * S, y0 + th * S
@@ -187,7 +242,8 @@ if __name__ == "__main__":
     out_dir = HERE / "assets"
     out_dir.mkdir(exist_ok=True)
     src = HERE / "source"
-    build_richmenu(out_dir / "richmenu-main.png")
+    build_richmenu(out_dir / "richmenu-main.png", MENU_MAIN, BG)
+    build_richmenu(out_dir / "richmenu-data.png", MENU_DATA, BG_DATA)
     if (src / "cover-source.png").exists():
         build_cover(src / "cover-source.png", out_dir / "oa-cover-1080x878.jpg")
     if (src / "logo-source.png").exists():

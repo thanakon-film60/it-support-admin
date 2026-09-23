@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { dayKeyTH, partsOfKey, timeKeyTH } from "./date-th";
 
 export function newId(): string {
   return randomUUID();
@@ -39,24 +40,19 @@ const THAI_MONTHS_SHORT = [
 ];
 
 export function formatThaiDateShort(iso: string): string {
-  const d = new Date(iso);
-  const day = d.getDate();
-  const month = THAI_MONTHS_SHORT[d.getMonth()];
-  const yy = String((d.getFullYear() + 543) % 100).padStart(2, "0");
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  return `${day} ${month} ${yy} ${hh}:${mm}`;
+  const key = dayKeyTH(iso);
+  if (!key) return "-";
+  const { day, month, year } = partsOfKey(key);
+  const yy = String((year + 543) % 100).padStart(2, "0");
+  return `${day} ${THAI_MONTHS_SHORT[month - 1]} ${yy} ${timeKeyTH(iso)}`;
 }
 
 export function formatThaiDateFull(iso: string): string {
-  const d = new Date(iso);
-  const day = d.getDate();
-  const month = THAI_MONTHS_SHORT[d.getMonth()];
-  const yyyy = d.getFullYear() + 543;
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${day}/${d.getMonth() + 1}/${yyyy} ${hh}:${mm}:${ss}`;
+  const key = dayKeyTH(iso);
+  if (!key) return "-";
+  const { day, month, year } = partsOfKey(key);
+  const ss = String(new Date(iso).getUTCSeconds()).padStart(2, "0");
+  return `${day}/${month}/${year + 543} ${timeKeyTH(iso)}:${ss}`;
 }
 
 /** อายุแบบ "0ปี 1ด." นับจากวันที่ที่ระบุถึงวันนี้ */

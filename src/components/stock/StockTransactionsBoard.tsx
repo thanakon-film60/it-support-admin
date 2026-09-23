@@ -1,30 +1,80 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Pagination, usePaginated } from "@/components/ui/Pagination";
 import Link from "next/link";
 import type { StockTransaction } from "@/lib/types";
 import { STOCK_TXN_TYPE_LABEL } from "@/lib/labels";
 import { Button } from "@/components/ui/Button";
 import { formatThaiDateShort, toCsv } from "@/lib/utils";
+import { SortMenu, SortableTh, useSort } from "@/components/ui/SortControl";
+import type { SortColumn } from "@/lib/sorting";
+import {
+  ClearFiltersButton,
+  DateRangeFilter,
+  FilterBar,
+  SelectFilter,
+  countActive,
+  inDateRange,
+  optionsFrom,
+  useDateRange,
+} from "@/components/ui/Filters";
 
 type TxnRow = StockTransaction & { item_name: string; item_unit: string };
 
+const SORT_COLUMNS: SortColumn<TxnRow>[] = [
+  { key: "created_at", label: "วันที่ทำรายการ", type: "date", get: (t) => t.created_at },
+  { key: "item_name", label: "ชื่อรายการ", type: "text", get: (t) => t.item_name },
+  { key: "type", label: "ประเภท", type: "text", get: (t) => STOCK_TXN_TYPE_LABEL[t.type] },
+  { key: "quantity", label: "จำนวน", type: "number", get: (t) => t.quantity },
+  { key: "staff_name", label: "ผู้ทำรายการ", type: "text", get: (t) => t.staff_name },
+];
+
 export function StockTransactionsBoard({ transactions }: { transactions: TxnRow[] }) {
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [staffFilter, setStaffFilter] = useState("all");
+  const dates = useDateRange();
+
+  const typeOptions = useMemo(
+    () => optionsFrom(transactions.map((t) => STOCK_TXN_TYPE_LABEL[t.type])),
+    [transactions]
+  );
+  const staffOptions = useMemo(
+    () => optionsFrom(transactions.map((t) => t.staff_name)),
+    [transactions]
+  );
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return transactions;
-    return transactions.filter(
-      (t) =>
+    return transactions.filter((t) => {
+      if (typeFilter !== "all" && STOCK_TXN_TYPE_LABEL[t.type] !== typeFilter) return false;
+      if (staffFilter !== "all" && t.staff_name !== staffFilter) return false;
+      if (!inDateRange(t.created_at, dates.range)) return false;
+      if (!q) return true;
+      return (
         t.item_name.toLowerCase().includes(q) ||
         (t.staff_name?.toLowerCase().includes(q) ?? false) ||
         (t.reference_no?.toLowerCase().includes(q) ?? false)
-    );
-  }, [transactions, search]);
+      );
+    });
+  }, [transactions, search, typeFilter, staffFilter, dates.range]);
+
+  const sort = useSort(visible, SORT_COLUMNS, {
+    defaultKey: "created_at",
+    storageKey: "stock-txn",
+  });
+
+  const activeFilters = countActive(typeFilter, staffFilter, dates.active);
+  function clearFilters() {
+    setSearch("");
+    setTypeFilter("all");
+    setStaffFilter("all");
+    dates.reset();
+  }
 
   function handleExportCsv() {
-    const rows = visible.map((t) => ({
+    const rows = sort.rows.map((t) => ({
       item_name: t.item_name,
       type: STOCK_TXN_TYPE_LABEL[t.type],
       quantity: t.quantity,
@@ -51,6 +101,10 @@ export function StockTransactionsBoard({ transactions }: { transactions: TxnRow[
     URL.revokeObjectURL(url);
   }
 
+  // แบ่งหน้า — ทำงานบน "รายการที่ผ่านตัวกรองแล้ว" ไม่ใช่ข้อมูลดิบ
+  // ค้นหา/กรองจึงยังทำกับข้อมูลทั้งชุดเหมือนเดิม แค่ตัดเป็นหน้าๆ ตอนแสดงผล
+  const pager = usePaginated(sort.rows, { storageKey: "stock-txn", resetOn: `${sort.key}:${sort.dir}` });
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -66,28 +120,43 @@ export function StockTransactionsBoard({ transactions }: { transactions: TxnRow[
         </Button>
       </div>
 
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="ค้นหาชื่อรายการ, ผู้ทำรายการ, เลขที่อ้างอิง..."
-        className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent sm:max-w-xs"
-      />
+      <FilterBar>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ค้นหาชื่อรายการ, ผู้ทำรายการ, เลขที่อ้างอิง..."
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent sm:w-64"
+        />
+        <SelectFilter value={typeFilter} onChange={setTypeFilter} options={typeOptions} allLabel="ทุกประเภท" />
+        <SelectFilter value={staffFilter} onChange={setStaffFilter} options={staffOptions} allLabel="ผู้ทำรายการทุกคน" />
+        <DateRangeFilter value={dates.range} onChange={dates.setRange} />
+        <ClearFiltersButton count={activeFilters} onClear={clearFilters} />
+      </FilterBar>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SortMenu sort={sort} />
+        {visible.length !== transactions.length && (
+          <p className="text-xs text-muted">
+            ตัวกรองเหลือ <span className="font-num text-ink">{visible.length}</span> จาก {transactions.length} รายการ
+          </p>
+        )}
+      </div>
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead>
             <tr className="border-b border-line text-xs text-muted">
-              <th className="px-4 py-3 font-medium">รายการ</th>
-              <th className="px-4 py-3 font-medium">ประเภท</th>
-              <th className="px-4 py-3 font-medium">จำนวน</th>
-              <th className="px-4 py-3 font-medium">ผู้ทำรายการ</th>
-              <th className="px-4 py-3 font-medium">เลขที่อ้างอิง</th>
-              <th className="px-4 py-3 font-medium">หมายเหตุ</th>
-              <th className="px-4 py-3 font-medium">วันที่</th>
+              <SortableTh sort={sort} columnKey="item_name">รายการ</SortableTh>
+              <SortableTh sort={sort} columnKey="type">ประเภท</SortableTh>
+              <SortableTh sort={sort} columnKey="quantity">จำนวน</SortableTh>
+              <SortableTh sort={sort} columnKey="staff_name">ผู้ทำรายการ</SortableTh>
+              <SortableTh sort={sort}>เลขที่อ้างอิง</SortableTh>
+              <SortableTh sort={sort}>หมายเหตุ</SortableTh>
+              <SortableTh sort={sort} columnKey="created_at">วันที่</SortableTh>
             </tr>
           </thead>
           <tbody>
-            {visible.map((t) => (
+            {pager.items.map((t) => (
               <tr
                 key={t.id}
                 className="border-b border-line/60 last:border-0 hover:bg-accent-bg/20"
@@ -115,6 +184,8 @@ export function StockTransactionsBoard({ transactions }: { transactions: TxnRow[
           </tbody>
         </table>
       </div>
+
+      <Pagination pager={pager} unitLabel="รายการ" />
     </div>
   );
 }

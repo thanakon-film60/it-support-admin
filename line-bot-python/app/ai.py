@@ -141,6 +141,9 @@ class Knowledge:
     """ภาพรวมข้อมูลของระบบที่ดึงมาจากฐานข้อมูลของโปรเจกต์"""
 
     branches: list[str] = field(default_factory=list)
+    # สาขาแบบละเอียด [{"company","name","group","floor",...}] — ใช้หาว่าสาขาหนึ่งอยู่บริษัทไหน
+    branch_items: list[dict[str, Any]] = field(default_factory=list)
+    companies: list[dict[str, Any]] = field(default_factory=list)
     stock_items: list[dict[str, Any]] = field(default_factory=list)
     equipment: list[dict[str, Any]] = field(default_factory=list)
     faq: list[dict[str, Any]] = field(default_factory=list)
@@ -149,6 +152,51 @@ class Knowledge:
 
     def faq_by_id(self, faq_id: str) -> dict[str, Any] | None:
         return next((f for f in self.faq if f["id"] == faq_id), None)
+
+    def branch_names(self, company: str | None = None) -> list[str]:
+        """ชื่อสาขา จำกัดเฉพาะบริษัทที่ระบุ (ไม่ระบุ = ทุกบริษัท)
+
+        ถ้าหลังบ้านยังไม่ส่ง branch_items มา (เว็บรุ่นเก่า) จะตกกลับไปใช้ branches
+        ซึ่งเป็นชื่อรวมทุกบริษัท — เสียการกรองบริษัทไป แต่บอทยังทำงานต่อได้
+        """
+        if not self.branch_items:
+            return list(self.branches)
+        if company is None:
+            return [b["name"] for b in self.branch_items]
+        return [b["name"] for b in self.branch_items if b.get("company") == company]
+
+    def companies_of_branch(self, name: str) -> list[str]:
+        """บริษัทที่มีสาขาชื่อนี้ — คืนหลายค่าได้ถ้าชื่อซ้ำกันข้ามบริษัท
+
+        ใช้เดาบริษัทให้อัตโนมัติเมื่อผู้ใช้พิมพ์ชื่อสาขามาตรงๆ โดยไม่ได้เลือกบริษัทก่อน
+        ถ้าคืนมามากกว่า 1 บริษัท ผู้เรียก "ต้องถามผู้ใช้" ห้ามหยิบตัวแรกมาใช้
+        """
+        target = (name or "").strip().lower()
+        if not target:
+            return []
+        found: list[str] = []
+        for b in self.branch_items:
+            if b.get("name", "").strip().lower() == target:
+                code = b.get("company")
+                if code and code not in found:
+                    found.append(code)
+        return found
+
+    def branch_groups(self, company: str) -> list[dict[str, Any]]:
+        """กลุ่ม/ทีมของบริษัทหนึ่ง เรียงตามลำดับที่หลังบ้านจัดไว้ (ภูมิภาค/ผังทีม)"""
+        entry = next((c for c in self.companies if c.get("code") == company), None)
+        if entry and entry.get("groups"):
+            return entry["groups"]
+        groups: list[dict[str, Any]] = []
+        for b in self.branch_items:
+            if b.get("company") != company or not b.get("group"):
+                continue
+            hit = next((g for g in groups if g["name"] == b["group"]), None)
+            if hit:
+                hit["count"] += 1
+            else:
+                groups.append({"name": b["group"], "count": 1})
+        return groups
 
 
 class KnowledgeCache:
@@ -187,6 +235,8 @@ class KnowledgeCache:
 
         knowledge = Knowledge(
             branches=raw.get("branches", []),
+            branch_items=raw.get("branch_items", []),
+            companies=raw.get("companies", []),
             stock_items=raw.get("stock_items", []),
             equipment=raw.get("equipment", []),
             faq=faq,
@@ -220,6 +270,33 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     ),
 }
 
+# คำทักทายล้วนๆ — ทักกลับแล้วจบ ไม่ต้องพาเข้าขั้นตอนแจ้งเรื่อง
+#
+# ทำไมต้องดักแยก: ของเดิมข้อความแรกที่ไม่เข้า intent จะถูกตีความว่าเป็น "ชื่อสาขา"
+# คนพิมพ์ว่า "สวัสดีครับ" จึงได้คำตอบว่า "ไม่พบสาขา สวัสดีครับ" ซึ่งอ่านแล้วเหมือนระบบเสีย
+GREETING_WORDS: tuple[str, ...] = (
+    "สวัสดี", "หวัดดี", "ดีครับ", "ดีค่ะ", "ดีคับ", "ทัก", "แวะมา",
+    "hello", "hi", "hey", "yo", "good morning", "goodmorning",
+)
+
+# คำที่ "ขึ้นต้นด้วยคำทักทาย แต่มีเนื้อความต่อท้าย" ต้องไม่ถูกตัดจบแค่ทักทาย
+# เช่น "สวัสดีครับ เครื่องปริ้นเสีย" ต้องเข้า flow แจ้งซ่อมตามปกติ
+GREETING_MAX_LEN = 25
+
+
+def is_greeting(text: str) -> bool:
+    """ข้อความนี้เป็น 'คำทักทายล้วน' หรือเปล่า
+
+    เช็คความยาวด้วยโดยตั้งใจ — ประโยคที่ขึ้นต้นด้วยคำทักทายแล้วตามด้วยปัญหาจริง
+    ("สวัสดีครับ คอมเปิดไม่ติด") ต้องไม่ถูกตัดจบแค่การทักกลับ ซึ่งจะทำให้ผู้ใช้
+    ต้องพิมพ์เรื่องเดิมซ้ำอีกรอบ
+    """
+    cleaned = (text or "").strip().lower()
+    if not cleaned or len(cleaned) > GREETING_MAX_LEN:
+        return False
+    return any(word in cleaned for word in GREETING_WORDS)
+
+
 # คำถามที่ต้องไปดึง "ข้อมูลจริง" ในระบบมาตอบ (ไม่ใช่การแจ้งเรื่องใหม่)
 DATA_QUERY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "stock_query": ("เหลือ", "คงเหลือ", "มีกี่", "กี่ชิ้น", "กี่อัน", "สต็อก", "stock", "มีของไหม", "พอไหม", "มีไหม"),
@@ -249,6 +326,8 @@ class Analysis:
     intent: str
     confidence: float
     branch: str | None = None
+    # บริษัทที่เดาได้จากชื่อสาขา — เติมให้เฉพาะตอนที่สาขานั้นอยู่บริษัทเดียวเท่านั้น
+    company: str | None = None
     asset_code: str | None = None
     item_name: str | None = None
     quantity: int | None = None
@@ -490,7 +569,10 @@ def analyze(text: str, knowledge: Knowledge) -> Analysis:
     ticket_intent, confidence = detect_intent(text)
     data_scores = _score_keywords(text, DATA_QUERY_KEYWORDS)
 
-    branch, _ = _fuzzy_best(text, knowledge.branches, threshold=82)
+    branch, _ = _fuzzy_best(text, knowledge.branch_names(), threshold=82)
+    # เดาบริษัทให้ก็ต่อเมื่อไม่กำกวม — สาขาชื่อซ้ำข้ามบริษัทต้องให้ผู้ใช้เลือกเอง
+    branch_companies = knowledge.companies_of_branch(branch) if branch else []
+    company = branch_companies[0] if len(branch_companies) == 1 else None
     asset_code = extract_asset_code(text, knowledge)
     ticket_code = extract_ticket_code(text)
 
@@ -510,6 +592,7 @@ def analyze(text: str, knowledge: Knowledge) -> Analysis:
 
     base = dict(
         branch=branch,
+        company=company,
         asset_code=asset_code,
         ticket_code=ticket_code,
         faq_matches=faq_matches,

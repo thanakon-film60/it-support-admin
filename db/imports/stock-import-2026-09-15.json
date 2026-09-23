@@ -1,0 +1,137 @@
+[
+ {
+  "row": 2,
+  "name": "ROUTER (เราเตอร์)",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 6,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 3,
+  "name": "USB Hub",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 9,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 4,
+  "name": "USB Type C",
+  "category": "อุปกรณ์ต่อพ่วง",
+  "safety_stock": 10,
+  "quantity_available": 12,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 5,
+  "name": "กล้องวงจรปิด",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 6,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 6,
+  "name": "ขาตั้ง Tablet",
+  "category": "อุปกรณ์ต่อพวง",
+  "safety_stock": 5,
+  "quantity_available": 5,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 7,
+  "name": "ขาตั้งกล้อง",
+  "category": "อุปกรณ์ต่อพ่วง",
+  "safety_stock": 10,
+  "quantity_available": 20,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 8,
+  "name": "คีย์บอร์ด",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 4,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 9,
+  "name": "เครื่องปริ้นสลิป",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 9,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 10,
+  "name": "เครื่องสำรองไฟ",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 2,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 11,
+  "name": "แฟลชไดร์ฟ",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 4,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 12,
+  "name": "เมมโมรี่กล้อง",
+  "category": "hardware",
+  "safety_stock": 5,
+  "quantity_available": 22,
+  "unit": "ชิ้น",
+  "location": "สำนักงานใหย๋"
+ },
+ {
+  "row": 13,
+  "name": "เมาส์",
+  "category": "อุปกรณ์ต่อพ่วง",
+  "safety_stock": 5,
+  "quantity_available": 6,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 14,
+  "name": "เมาส์มีสาย",
+  "category": "อุปกรณ์ต่อพ่วง",
+  "safety_stock": 5,
+  "quantity_available": 4,
+  "unit": "ชิ้น",
+  "location": "IT"
+ },
+ {
+  "row": 15,
+  "name": "สมุดเคลมสินค้า",
+  "category": "อื่นๆ",
+  "safety_stock": 10,
+  "quantity_available": 2,
+  "unit": "ชิ้น",
+  "location": "SAFETY STOCK"
+ },
+ {
+  "row": 16,
+  "name": "หมึกเครื่อง M3870FW",
+  "category": "หมึกปริ้นเตอร์",
+  "safety_stock": 2,
+  "quantity_available": 1,
+  "unit": "ชิ้น",
+  "location": "IT"
+ }
+]

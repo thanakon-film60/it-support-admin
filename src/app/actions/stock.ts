@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import {
   createStockItem,
+  getStockItemById,
+  listStockTransactions,
   recordStockTransaction,
+  removeStockItem,
   updateSafetyStock,
+  updateStockItem,
 } from "@/lib/db/stock";
 import type { StockItem } from "@/lib/types";
 
@@ -35,6 +39,56 @@ export async function createStockItemAction(
   };
 
   createStockItem(input);
+  revalidatePath("/stock");
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function updateStockItemAction(
+  id: string,
+  _prev: StockFormState,
+  formData: FormData
+): Promise<StockFormState> {
+  await requireSession();
+
+  const existing = getStockItemById(id);
+  if (!existing) return { error: "ไม่พบรายการนี้" };
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: "กรุณากรอกชื่อรายการ" };
+
+  const safety = Number(formData.get("safety_stock") ?? existing.safety_stock);
+
+  // จำนวนคงเหลือแก้ที่นี่ไม่ได้โดยตั้งใจ — ต้องผ่านปุ่ม "รับเข้า / ปรับยอด" ที่บันทึกประวัติให้
+  updateStockItem(id, {
+    name,
+    category: String(formData.get("category") ?? "").trim() || null,
+    unit: String(formData.get("unit") ?? "ชิ้น").trim() || "ชิ้น",
+    location: String(formData.get("location") ?? "").trim() || null,
+    safety_stock: Number.isFinite(safety) ? Math.max(0, safety) : existing.safety_stock,
+  });
+
+  revalidatePath("/stock");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/** ลบรายการสต็อก — อนุญาตเฉพาะรายการที่ยังไม่เคยมีการเคลื่อนไหว
+ *
+ *  ถ้ามี transaction แล้วลบทิ้ง หน้าประวัติ transaction จะมีแถวที่บอกไม่ได้ว่าของชิ้นไหน
+ *  และยอดรับเข้า/จ่ายออกย้อนหลังจะกระทบกันทั้งชุด */
+export async function deleteStockItemAction(id: string): Promise<StockFormState> {
+  await requireSession();
+
+  const existing = getStockItemById(id);
+  if (!existing) return { error: "ไม่พบรายการนี้" };
+
+  const used = listStockTransactions().filter((t) => t.stock_item_id === id).length;
+  if (used > 0) {
+    return { error: `ลบไม่ได้ — รายการนี้มีประวัติการเคลื่อนไหว ${used} รายการ` };
+  }
+
+  if (!removeStockItem(id)) return { error: "ลบไม่สำเร็จ" };
   revalidatePath("/stock");
   revalidatePath("/");
   return { success: true };

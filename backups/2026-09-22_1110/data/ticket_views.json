@@ -1,0 +1,62 @@
+[
+  {
+    "id": "48fc82ea-2491-4c29-bb25-c277b7fe182a",
+    "ticket_id": "46f10fa4-77c2-4a66-9fb9-065a598602e0",
+    "ticket_code": "ITSR2026090011",
+    "source": "line-bot",
+    "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+    "viewer_name": "Film",
+    "ip": "147.92.150.197",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-09-16T09:38:22.834Z"
+  },
+  {
+    "id": "69f115da-ed79-4eb0-907a-ea346dfc0dfa",
+    "ticket_id": "93dc1291-2057-42e2-a111-13329e131637",
+    "ticket_code": "ITSR2026090012",
+    "source": "line-bot",
+    "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+    "viewer_name": "Film",
+    "ip": "147.92.150.197",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-09-16T12:41:05.608Z"
+  },
+  {
+    "id": "a430e929-c41a-45ce-84f2-fdc84100b27f",
+    "ticket_id": "a97c45e8-0c33-4ef2-8f45-4daf9cbdc2e5",
+    "ticket_code": "ITSR2026090013",
+    "source": "line-bot",
+    "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+    "viewer_name": "Film",
+    "ip": "147.92.150.197",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-09-16T15:16:07.397Z"
+  },
+  {
+    "id": "d85b54ed-6def-4faf-9379-867d1ac05172",
+    "ticket_id": "a97c45e8-0c33-4ef2-8f45-4daf9cbdc2e5",
+    "ticket_code": "ITSR2026090013",
+    "source": "line-bot",
+    "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+    "viewer_name": "Film",
+    "ip": "147.92.150.197",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-09-17T05:32:28.652Z"
+  },
+  {
+    "id": "46817549-87c9-40bb-829d-7fce8c0bba3f",
+    "ticket_id": "d97c80dc-59ec-4fea-91ee-a01a3dfe2dc6",
+    "ticket_code": "ITSV2026090010",
+    "source": "line-bot",
+    "line_user_id": "U0f48dd5fc45e13306132b1c8fd5f1c3f",
+    "viewer_name": "กกกกกกกกกกก",
+    "ip": "147.92.150.195",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-09-21T07:25:07.790Z"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "aa9e09ee-c24e-4fec-9ffc-86d8ede0591b",
+    "stock_item_id": "614757f1-dd4e-4c30-85e2-12b9188c2e79",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (สมัย)",
+    "reference_no": "ITRQ2026090007",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-14T16:26:03.153Z"
+  },
+  {
+    "id": "f7000e69-9758-4812-a248-f0fc2ce765db",
+    "stock_item_id": "614757f1-dd4e-4c30-85e2-12b9188c2e79",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (สมัย)",
+    "reference_no": "ITRQ2026090008",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-14T16:27:02.146Z"
+  },
+  {
+    "id": "521e7025-dfd0-4a59-ac4a-ca958419169d",
+    "stock_item_id": "614757f1-dd4e-4c30-85e2-12b9188c2e79",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (สมัย)",
+    "reference_no": "ITRQ2026090009",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-14T16:28:26.651Z"
+  },
+  {
+    "id": "ee4b8ed6-86c4-4d11-a7a3-d27dcae07479",
+    "stock_item_id": "614757f1-dd4e-4c30-85e2-12b9188c2e79",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (สมัย)",
+    "reference_no": "ITRQ2026090010",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-14T16:28:40.325Z"
+  }
+]

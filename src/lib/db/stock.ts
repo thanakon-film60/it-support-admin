@@ -1,4 +1,4 @@
-import { readCollection, upsertOne, patchOne } from "./store";
+import { readCollection, writeCollection, upsertOne, patchOne } from "./store";
 import { newId } from "../utils";
 import type { StockItem, StockTransaction, StockItemWithComputed, StockTxnType } from "../types";
 
@@ -106,6 +106,27 @@ export function recordStockTransaction(input: {
 
 export function updateSafetyStock(id: string, safetyStock: number): StockItem | null {
   return patchOne<StockItem>(ITEMS_COLLECTION, id, { safety_stock: safetyStock }, seedItems);
+}
+
+/** แก้ข้อมูลรายการสต็อก — จงใจไม่ให้แก้ quantity_available ตรงนี้
+ *
+ *  จำนวนคงเหลือต้องเปลี่ยนผ่าน recordStockTransaction เท่านั้น เพราะทุกการเปลี่ยนแปลง
+ *  ต้องมีแถวใน stock_transactions กำกับว่าใครทำ ทำไม เมื่อไหร่ ถ้าเปิดให้แก้ตัวเลขตรงๆ
+ *  ยอดคงเหลือกับประวัติจะไม่ตรงกันและไล่หาสาเหตุย้อนหลังไม่ได้ */
+export function updateStockItem(
+  id: string,
+  patch: Partial<Omit<StockItem, "id" | "created_at" | "quantity_available">>
+): StockItem | null {
+  return patchOne<StockItem>(ITEMS_COLLECTION, id, patch, seedItems);
+}
+
+/** ลบถาวร — ผู้เรียกต้องตรวจก่อนว่ายังไม่มี transaction ผูกอยู่ */
+export function removeStockItem(id: string): boolean {
+  const all = readCollection<StockItem>(ITEMS_COLLECTION, seedItems);
+  const next = all.filter((i) => i.id !== id);
+  if (next.length === all.length) return false;
+  writeCollection(ITEMS_COLLECTION, next);
+  return true;
 }
 
 /** หักสต็อกอัตโนมัติเมื่อ ticket ประเภท "เบิกอุปกรณ์" ถูกปิดงาน — ผูก business logic ไว้จุดเดียว

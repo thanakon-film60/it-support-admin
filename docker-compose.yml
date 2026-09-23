@@ -41,6 +41,19 @@ services:
       # AUTH_DISABLED=true = ปิดหน้า login ทั้งระบบ ใครเปิด URL ได้ก็เห็นข้อมูลทั้งหมด
       # (ดูคำเตือนเต็มที่ src/lib/auth.ts) เปลี่ยนค่าแล้วต้อง build ใหม่ ไม่ใช่แค่ restart
       AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # สถานะที่จะ push แจ้งผู้แจ้งทาง LINE — ค่าตั้งต้นส่งเฉพาะตอน "จบเรื่อง"
+      # เพราะแพ็กเกจฟรีของ LINE OA ส่ง push ได้ 300 ข้อความ/เดือน (ข้อความ reply ไม่นับ)
+      # ตั้งเป็นค่าว่างเพื่อปิดการแจ้งเตือนทั้งหมด (ดู src/lib/line/notify.ts)
+      LINE_NOTIFY_STATUSES: ${LINE_NOTIFY_STATUSES:-resolved,closed,cancelled}
+      # LINE user id ของทีม IT ที่จะได้ข้อความ "ผู้แจ้งเปิดดูสถานะแล้ว" (คั่นด้วยจุลภาค)
+      # เว้นว่าง = ไม่ push แค่ขึ้นในหน้าแอดมิน — ดู .env.example เรื่องโควตา push
+      LINE_ADMIN_USER_IDS: ${LINE_ADMIN_USER_IDS:-}
+      # กันการกด Inspect/ดูซอร์สบนหน้าแอดมิน — กันได้แค่คนที่กดเล่น ไม่ได้กันคนที่ตั้งใจ
+      # (ดูคำเตือนเต็มที่ src/components/security/BlockDevTools.tsx)
+      # ค่าพวกนี้อ่านตอน request จึงเปลี่ยนแล้วแค่ `docker compose up -d app` ไม่ต้อง --build
+      BLOCK_DEVTOOLS: ${BLOCK_DEVTOOLS:-true}
+      BLOCK_CONTEXT_MENU: ${BLOCK_CONTEXT_MENU:-true}
+      BLOCK_DEVTOOLS_DETECT: ${BLOCK_DEVTOOLS_DETECT:-false}
       NODE_ENV: production
     volumes:
       # รูปที่อัปโหลดผ่านฟอร์ม FAQ ถูกเขียนลงดิสก์จริง (src/app/actions/faq.ts) ถ้าไม่แยกเป็น
@@ -113,6 +126,22 @@ services:
       # ตัวคอนเทนเนอร์เอง ไม่ใช่คอนเทนเนอร์ "app" ข้างๆ (ข้อผิดพลาดคลาสสิกเวลาย้ายจาก dev ตรงๆ เข้า compose)
       BACKEND_BASE_URL: http://app:3000
       REDIS_URL: redis://redis:6379/0
+      # รับรูปที่ผู้ใช้ส่งมาแล้วแนบเข้า ticket (ตั้ง false เพื่อปิด)
+      ACCEPT_IMAGES: ${ACCEPT_IMAGES:-true}
+      MAX_IMAGES_PER_TICKET: ${MAX_IMAGES_PER_TICKET:-5}
+      # กันคนกดรัว/สคริปต์ยิงถล่ม — ทุก event กลายเป็นการเรียก /api/internal/* ฝั่ง app
+      # ตั้ง 0 เพื่อปิดการจำกัด
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-20}
+      # ติดตั้ง rich menu ให้เองตอนสตาร์ท (idempotent — มีอยู่แล้วจะข้าม ไม่อัปโหลดซ้ำ)
+      # เดิมต้องรัน line-oa/setup_richmenu.py ด้วยมือ ซึ่งลืมได้ และอาการเวลาลืมคือ
+      # พนักงานแอด OA เข้ามาแล้วเจอห้องแชทเปล่าๆ ไม่มีปุ่มอะไรเลย
+      RICHMENU_AUTO_INSTALL: ${RICHMENU_AUTO_INSTALL:-true}
+      # ตั้ง true ครั้งเดียวเมื่อเปลี่ยนรูป/ปุ่ม แล้วค่อยเอากลับเป็น false
+      RICHMENU_FORCE_REINSTALL: ${RICHMENU_FORCE_REINSTALL:-false}
+    volumes:
+      # บอทต้องอ่านไฟล์รูปเมนูตอนติดตั้ง — mount แบบ read-only แทนการ COPY เข้า image
+      # จะได้เปลี่ยนรูป (รัน line-oa/make_assets.py) แล้ว restart เอาอยู่ ไม่ต้อง build ใหม่
+      - ./line-oa/assets:/app/line-oa:ro
     ports:
       # ไว้ทดสอบ http://localhost:8000/health ตรงๆ จากเครื่องนี้ และให้ `tailscale serve` ชี้มาที่นี่
       - "127.0.0.1:8000:8000"

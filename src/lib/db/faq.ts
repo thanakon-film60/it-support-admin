@@ -1,4 +1,4 @@
-import { readCollection, upsertOne, writeCollection } from "./store";
+import { readCollection, upsertOne, patchOne, writeCollection } from "./store";
 import { newId } from "../utils";
 import type { FaqItem, FaqCategory } from "../types";
 
@@ -86,6 +86,14 @@ export function createFaqItem(
   const item: FaqItem = { ...input, id: newId(), created_at: new Date().toISOString() };
   upsertOne<FaqItem>(COLLECTION, item, seed);
   return item;
+}
+
+export function getFaqItemById(id: string): FaqItem | null {
+  return listFaqItems().find((f) => f.id === id) ?? null;
+}
+
+export function updateFaqItem(id: string, patch: Partial<FaqItem>): FaqItem | null {
+  return patchOne<FaqItem>(COLLECTION, id, patch, seed);
 }
 
 export function deleteFaqItem(id: string): void {
