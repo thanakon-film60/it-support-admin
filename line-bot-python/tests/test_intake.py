@@ -79,3 +79,73 @@ async def test_ai_duplicate_asset_waits_for_selection():
     assert (await s.get(USER)).step == "ASK_PICK_ASSET"
     await handle(postback({"a": "pick_asset", "v": "second"}), s, backend)
     assert (await s.get(USER)).equipment_id == "second"
+
+
+@pytest.mark.asyncio
+async def test_แต่ละบทสนทนาได้_request_id_ของตัวเอง():
+    """คนเดียวกันแจ้ง 2 เรื่องติดกันต้องได้ ticket 2 ใบ
+
+    หลังบ้านกันเรื่องซ้ำด้วยคู่ (request_id, line_user_id) ถ้า request_id ซ้ำข้ามบทสนทนา
+    เรื่องที่สองจะถูกมองว่าเป็นการกดส่งซ้ำแล้วหายไปเฉยๆ โดยผู้ใช้เห็นเลขที่เดิมและคิดว่าแจ้งแล้ว
+    """
+    s, backend = store(), FakeBackend()
+    for _ in range(2):
+        await handle(postback({"a": "start"}), s, backend)
+        await handle(text("สำนักงานใหญ่"), s, backend)
+        await handle(postback({"a": "type", "v": "return"}), s, backend)
+        await handle(postback({"a": "skip_asset"}), s, backend)
+        await handle(text("Tester / IT"), s, backend)
+        await handle(text("-"), s, backend)
+
+    assert len(backend.created) == 2
+    ids = [c["request_id"] for c in backend.created]
+    assert all(ids), "ทุก ticket ต้องมี request_id"
+    assert ids[0] != ids[1], "คนละบทสนทนาต้องได้ request_id คนละค่า"
+
+
+@pytest.mark.asyncio
+async def test_กดข้ามทรัพย์สินแล้วต้องไม่ผูก_equipment_id():
+    s, backend = store(), FakeBackend()
+    await handle(postback({"a": "start"}), s, backend)
+    await handle(text("สำนักงานใหญ่"), s, backend)
+    await handle(postback({"a": "type", "v": "return"}), s, backend)
+    await handle(postback({"a": "skip_asset"}), s, backend)
+    await handle(text("Tester / IT"), s, backend)
+    await handle(text("-"), s, backend)
+
+    assert backend.created[0]["equipment_id"] is None
+    assert backend.created[0]["asset_code"] is None
+
+
+@pytest.mark.asyncio
+async def test_เล่าอาการมาในข้อความแรกแล้วไม่ต้องพิมพ์ซ้ําตอนถามรายละเอียด():
+    """เดิมแจ้งซ่อมบังคับต้องมีรายละเอียดเสมอ — คนที่พิมพ์ "NB2501001 เปิดไม่ติด" มาตั้งแต่แรก
+    แล้วตอบ "ไม่มี" จึงถูกถามวนอยู่ตรงนั้น ทั้งที่บอกไปครบแล้ว"""
+    s, backend = store(), FakeBackend()
+    await handle(text("NB2501001 เปิดไม่ติด ที่สำนักงานใหญ่"), s, backend,
+                 knowledge=FakeKnowledgeCache())
+    await handle(text("Tester / IT"), s, backend)
+
+    await handle(text("ไม่มี"), s, backend)
+
+    assert len(backend.created) == 1, "ต้องสร้าง ticket ได้เลย ไม่ใช่ถามรายละเอียดซ้ำ"
+    assert backend.created[0]["initial_message"] == "NB2501001 เปิดไม่ติด ที่สำนักงานใหญ่"
+    assert await s.get(USER) is None
+
+
+@pytest.mark.asyncio
+async def test_ยังไม่เคยเล่าอะไรเลยยังต้องบังคับให้พิมพ์รายละเอียด():
+    """ตรงข้ามกับเคสบน — กันไม่ให้การผ่อนกฎกลายเป็นการยกเลิกกฎไปเลย
+    ticket แจ้งซ่อมที่ไม่มีข้อความอะไรเลยคือสิ่งที่ช่างเอาไปทำอะไรต่อไม่ได้"""
+    s, backend = store(), FakeBackend()
+    await handle(postback({"a": "start"}), s, backend)
+    await handle(text("สำนักงานใหญ่"), s, backend)
+    await handle(postback({"a": "type", "v": "repair"}), s, backend)
+    await handle(postback({"a": "skip_asset"}), s, backend)
+    await handle(text("Tester / IT"), s, backend)
+
+    r = await handle(text("ไม่มี"), s, backend)
+
+    assert backend.created == []
+    assert (await s.get(USER)).step == "ASK_DESC"
+    assert r[0].text

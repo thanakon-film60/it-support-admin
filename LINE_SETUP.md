@@ -20,7 +20,7 @@
 | บทสนทนาสร้าง ticket | จบในแชทได้ ไม่ต้องเปิด LIFF |
 | ตอบคำถามข้อมูล | สต็อกคงเหลือ / ทรัพย์สินอยู่กับใคร / สถานะ ticket / เรื่องที่ฉันแจ้ง |
 | OA Manager | Webhooks เปิด · Chat ปิด · Greeting ปิด · Auto-response ปิด (ถูกต้องทั้งหมด) |
-| เทสต์ | unit 51/51 · e2e 41/41 |
+| เทสต์ | unit 229/229 · e2e 48 จุดตรวจ · JS 68/68 |
 
 ### ⏳ ยังไม่ได้ทำ — ต้องทำบนเครื่องคุณเอง
 
@@ -39,7 +39,7 @@
 - **ระบบอยู่ได้ด้วยเครื่องเดียว** เครื่องนี้ปิด/หลับ = บอทตายทันที (Tailscale Funnel เป็นทางเดียวที่ใช้ได้จริง
   ส่วน DuckDNS+Caddy ยังเข้าจากอินเทอร์เน็ตไม่ได้เพราะยังไม่ได้ forward port 443 ที่เราเตอร์)
 - **`AUTH_DISABLED=true`** — หน้าแอดมินเปิดสู่อินเทอร์เน็ตโดยไม่ต้องล็อกอิน ใครมี URL ก็เห็นข้อมูล
-  พนักงาน 182 คน ทรัพย์สิน ค่าซ่อม และสต็อกทั้งหมด (เป็นการตัดสินใจของเจ้าของระบบ ไม่ใช่บั๊ก)
+  พนักงาน 326 คน ทรัพย์สิน ค่าซ่อม และสต็อกทั้งหมด (เป็นการตัดสินใจของเจ้าของระบบ ไม่ใช่บั๊ก)
 
 ---
 
@@ -59,11 +59,26 @@ docker compose up -d --build bot
 curl.exe http://127.0.0.1:8000/health
 ```
 
-| ค่าที่ได้ในฟิลด์ `richmenu` | แปลว่า |
-| --- | --- |
-| `installed (richmenu-xxxx)` | เพิ่งติดตั้งสำเร็จ |
-| `ok (มีอยู่แล้ว: richmenu-xxxx)` | มีอยู่แล้ว เลยข้าม (ปกติหลัง restart) |
-| `ล้มเหลว: ...` | ข้อความต่อท้ายบอกสาเหตุตรงๆ |
+`/health` คืน **สองฟิลด์คู่กันเสมอ** — `richmenu_state` ไว้ให้สคริปต์อ่าน (ASCII)
+และ `richmenu` ไว้ให้คนอ่าน (ไทย) **สคริปต์ห้ามเทียบจากฟิลด์หลังเด็ดขาด** (เหตุผลอยู่ใต้ตาราง)
+
+| `richmenu_state` | `richmenu` | แปลว่า |
+| --- | --- | --- |
+| `installed` | `installed (richmenu-xxxx)` | เพิ่งติดตั้งสำเร็จ |
+| `ok` | `ok (มีอยู่แล้ว: richmenu-xxxx)` | มีอยู่แล้ว เลยข้าม (ปกติหลัง restart) |
+| `installing` | `กำลังติดตั้ง...` | ยังทำอยู่ — รออีก 2-3 วินาทีแล้วถามใหม่ ไม่ใช่ความผิดพลาด |
+| `disabled` | `ปิดการติดตั้งอัตโนมัติ` | ตั้ง `RICHMENU_AUTO_INSTALL=false` ไว้ |
+| `failed` | `ล้มเหลว: ...` | ข้อความต่อท้ายบอกสาเหตุตรงๆ |
+
+> **ทำไมต้องแยก `richmenu_state` ออกมา (2026-09-26):**
+> `deploy.bat` เรียก Windows PowerShell 5.1 ซึ่งถอดรหัส body ของ `Invoke-WebRequest`
+> เป็น ISO-8859-1 เมื่อ `Content-Type` ไม่ได้บอก charset มาด้วย ข้อความไทยจึงกลายเป็น
+> `à¸à¸³à¸¥à¸±à¸...` **ก่อนถึงบรรทัดที่เทียบ** ลูปที่รอให้ติดตั้งเสร็จเลยหลุดทันที
+> แล้วรายงานว่า "ติดตั้ง rich menu ไม่สำเร็จ" ทั้งที่บอทกำลังติดตั้งอยู่และสำเร็จในไม่กี่วินาที
+>
+> แก้ไปแล้ว 3 ชั้น: `/health` ส่ง `charset=utf-8` · `deploy.ps1` อ่าน body เป็น UTF-8 เอง
+> (`Get-Utf8Body`) · และเพิ่มฟิลด์ `richmenu_state` ที่ไม่ขึ้นกับภาษา
+> กฎที่ได้มา: **อย่าให้ตรรกะของเครื่องไปขึ้นกับข้อความที่เขียนให้คนอ่าน**
 
 > ติดตั้งแล้วยังไม่เห็นเมนู? **ปิดห้องแชทแล้วเปิดใหม่ 1 ครั้ง** — LINE แคชเมนูไว้ฝั่งเครื่อง
 
@@ -71,11 +86,20 @@ curl.exe http://127.0.0.1:8000/health
 และอาการเวลาลืมคือพนักงานแอด OA เข้ามาแล้วเจอห้องแชทเปล่าๆ ไม่มีปุ่มอะไรให้กด —
 ดูเหมือนระบบพังสนิททั้งที่บอททำงานปกติ
 
-**ปลอดภัยต่อการ restart:** ถ้าเมนูที่เป็น default อยู่แล้วชื่อตรงกัน จะข้ามไปเลย ไม่สร้างใหม่
-(สำคัญเพราะ LINE ให้ 1 แชนแนลมีเมนูได้ 1,000 อัน การสร้างใหม่ทุก restart จะถมจนเต็มโดยไม่มีใครสังเกต)
+**ปลอดภัยต่อการ restart:** ถ้าเมนูที่เป็น default อยู่แล้ว **ตรงกับโค้ดชุดปัจจุบัน** (ขนาดรูป + ชุดปุ่ม)
+จะข้ามไปเลย ไม่สร้างใหม่ (สำคัญเพราะ LINE ให้ 1 แชนแนลมีเมนูได้ 1,000 อัน การสร้างใหม่ทุก restart
+จะถมจนเต็มโดยไม่มีใครสังเกต)
 
-**เปลี่ยนรูปหรือปุ่ม:** แก้ `line-oa/make_assets.py` → `python make_assets.py` → ตั้ง
-`RICHMENU_FORCE_REINSTALL=true` ใน `.env` → `docker compose up -d bot` → เอากลับเป็น `false`
+เดิมเช็คแค่ "ชื่อเมนูตรงไหม" ซึ่งไม่พอ — ตอนลดจาก 6 ปุ่มเหลือ 4 ปุ่ม (2026-09-25) เมนูเก่าก็ชื่อเดียวกัน
+และเป็น default อยู่แล้ว ถ้าเช็คแค่ชื่อ deploy ไปแล้วเมนูจะไม่เปลี่ยน แล้วคนที่ deploy จะเห็นว่า
+"โค้ดขึ้นแล้วแต่เมนูยังเป็นของเก่า" โดยไม่รู้ว่าต้องไปตั้ง `RICHMENU_FORCE_REINSTALL` เอง
+
+**เปลี่ยนปุ่ม (เพิ่ม/ลด/แก้ข้อความ):** แก้ `line-oa/make_assets.py` + `line-bot-python/app/richmenu.py`
+→ `python make_assets.py` → `docker compose up -d --build bot` — **ไม่ต้องตั้ง `RICHMENU_FORCE_REINSTALL`**
+เพราะลายเซ็นปุ่มไม่ตรงกับของเดิม บอทจะติดตั้งใหม่ให้เอง
+
+**เปลี่ยนแค่รูป โดยปุ่มเหมือนเดิม:** ตั้ง `RICHMENU_FORCE_REINSTALL=true` ใน `.env`
+→ `docker compose up -d bot` → เอากลับเป็น `false` (กรณีนี้ลายเซ็นปุ่มเหมือนเดิม บอทจึงมองว่าไม่ต้องทำอะไร)
 
 **จัดการด้วยมือ** (ยังใช้ได้เหมือนเดิม):
 
@@ -129,16 +153,39 @@ Invoke-WebRequest https://api.line.me/v2/bot/channel/webhook/test -Method POST `
 | `COULD_NOT_CONNECT` + `Connection failed` | ต่อไม่ถึงเครื่องเลย |
 | `COULD_NOT_CONNECT` + `Session protocol negotiation failure` | ต่อถึงแต่ TLS เจรจาไม่สำเร็จ |
 
-**วิธีแก้ที่ได้ผลจริง** (ต้นเหตุคือ Funnel ค้างหลังเครื่องเปลี่ยน IP ในวง LAN —
-เห็นได้จากบรรทัด `portmap: monitor: gateway and self IP changed` ตอนรัน `tailscale netcheck`):
+**วิธีแก้ที่ได้ผลจริง — ต้อง `off` ให้เกลี้ยงก่อนเสมอ** (อัปเดต 2026-09-26):
 
 ```powershell
-Restart-Service -Name Tailscale -Force
-Start-Sleep -Seconds 25
+tailscale funnel --https=443 off
+tailscale serve status                            # ต้องขึ้น "No serve config"
 tailscale funnel --bg 3000
 tailscale funnel --bg --set-path=/webhook 8000
 # แล้วยิง /channel/webhook/test ซ้ำ ต้องได้ success:true
 ```
+
+> ⚠️ **สั่ง `funnel --bg` ซ้ำเฉยๆ ไม่ช่วย และ `Restart-Service Tailscale` ก็ไม่ช่วย**
+>
+> เพราะ config ในเครื่องเหมือนเดิมทุกตัวอักษร Tailscale จึงไม่ส่งอะไรขึ้นไป sync กับ control plane
+> ใหม่เลย ส่วน restart service ก็แค่โหลด config เดิมกลับมาทั้งดุ้น
+> การ `off` ทำให้ config ถูกลบจริงแล้วตั้งใหม่ = ลงทะเบียนกับ control plane รอบใหม่
+
+**อาการที่ทำให้หลงทางได้ง่ายมาก** (เจอจริง 2026-09-26 กว่าจะหาเจอใช้เวลาเป็นชั่วโมง):
+
+| สิ่งที่ตรวจ | ผลที่ได้ | ทำให้เข้าใจผิดว่า |
+| --- | --- | --- |
+| `tailscale funnel status` | `Funnel on` เส้นทางถูกครบ | config ปกติดี |
+| `tailscale netcheck` | DERP สิงคโปร์ 32ms · IPv4/IPv6 ได้ · ไม่มี captive portal | เครือข่ายปกติดี |
+| `tailscale cert <โดเมน>` | ออกใบรับรองได้ | node ไม่หมดอายุ · tailnet เปิด HTTPS certs |
+| `tailscale status` | node ออนไลน์ | ทุกอย่างพร้อม |
+| `curl https://<โดเมน>/webhook` จากเครื่องตัวเอง | `{"ok":true}` | **หลงมากสุด** — MagicDNS ลัดเข้าเครื่องตัวเอง ไม่ได้ผ่านทางเข้าสาธารณะ |
+| DNS สาธารณะของโดเมน | resolve ได้เป็น IP ของ ingress (103.84.155.x) | Funnel ประกาศออกไปแล้วจริง |
+| `netstat` พอร์ต 443 | tailscaled ถือ `<tailscale-ip>:443` อยู่ (อยู่ร่วมกับ Docker/Caddy ที่ `0.0.0.0:443` ได้ ไม่ได้แย่งกัน) | ไม่ใช่ปัญหาพอร์ตชน |
+
+**ทุกอย่างข้างบน "เขียว" หมดแต่ข้างนอกยังต่อไม่ได้ = ให้ข้ามไปทำ `off` แล้วตั้งใหม่ทันที**
+อย่าเสียเวลาไล่ตรวจ ACL / ย้ายพอร์ต / เปลี่ยนไป ngrok ก่อน
+
+ตัวชี้ขาดตัวเดียวที่เชื่อได้คือ `/v2/bot/channel/webhook/test` (ให้ LINE ยิงเอง) — ถ้ามีเครื่องมือ
+ที่ยิงจากเน็ตข้างนอกได้ก็ใช้ยืนยันซ้ำได้ แต่ห้ามใช้ curl จากเครื่องตัวเองเด็ดขาด
 
 ตรวจก่อนสรุปว่าเป็นเรื่องอื่น: `tailscale netcheck` (ต้องมี IPv4/IPv6 และเจอ DERP) และ
 `tailscale cert <โดเมน>` (ต้องออก cert ได้และยังไม่หมดอายุ) — ถ้าสองอย่างนี้ปกติแต่ LINE
@@ -153,7 +200,7 @@ Tailscale Funnel ไม่ได้ตั้งค่าตัวเองอั
 ```powershell
 tailscale funnel --bg 3000                       # /        -> หน้าแอดมิน (Next.js)
 tailscale funnel --bg --set-path=/webhook 8000   # /webhook -> บอท Python
-tailscale funnel status                          # ต้องขึ้น (Funnel on) ไม่ใช่ (tainet only)
+tailscale funnel status                          # ต้องขึ้น (Funnel on) ไม่ใช่ (tailnet only)
 ```
 
 > ⚠️ **ต้องเป็น `funnel` เท่านั้น ห้ามใช้ `serve`** — สองคำสั่งนี้เขียนทับ config ตัวเดียวกัน
@@ -212,7 +259,7 @@ curl.exe -H "Authorization: Bearer $env:LINE_CHANNEL_ACCESS_TOKEN" https://api.l
 ## 6. ทดสอบก่อนปล่อยให้พนักงานใช้
 
 1. สแกน QR (`qr/line-oa-qr-logo.png`) เพิ่ม OA เป็นเพื่อน → ต้องได้ข้อความต้อนรับ **1 ข้อความ** และเห็น rich menu
-2. กดปุ่ม **แจ้งซ่อม** → ต้องเข้า flow ถามสาขา
+2. กดปุ่ม **แจ้งซ่อม** (เมนูมี 4 ปุ่มจัดเป็น 2x2) → ต้องเข้า flow ถามบริษัท แล้วถามสาขา
 3. พิมพ์ `คีย์บอร์ดเหลือกี่อัน` → ต้องตอบยอดคงเหลือจริงจากระบบ
 4. **ส่งรูปหน้าจอเข้าไป** → ต้องตอบ "ได้รับรูปแล้วครับ 📸" และเปิด flow ให้
 5. แจ้งเรื่องจนจบ → เปิด `/tickets` ดูว่า ticket ขึ้น และ **เห็นรูปที่แนบมาในแผงรายละเอียด**
@@ -244,14 +291,15 @@ $env:LINE_API_BASE = "http://127.0.0.1:3999"
 | อาการ | สาเหตุที่พบบ่อยที่สุด |
 | --- | --- |
 | Verify ได้ 401 | `LINE_CHANNEL_SECRET` ในโปรเซสที่รันอยู่ไม่ตรงกับ LINE — ต้อง recreate container ไม่ใช่แค่แก้ไฟล์ |
-| Verify ต่อไม่ได้ | Tailscale Funnel ไม่ได้รัน หรือเป็น `tainet only` แทน `Funnel on` |
+| Verify ต่อไม่ได้ | Tailscale Funnel ไม่ได้รัน หรือเป็น `tailnet only` แทน `Funnel on` |
 | Verify ได้ `COULD_NOT_CONNECT` / `Session protocol negotiation failure` ทั้งที่ `funnel status` ขึ้น `Funnel on` | **Funnel ค้างหลังเครื่องเปลี่ยน IP ในวง LAN** — restart บริการ Tailscale แล้วตั้ง funnel ใหม่ (ดูข้อ 3.1) |
 | Verify error ทั้งที่ตั้งถูก | เพิ่ง `docker compose up -d bot` — Funnel ใช้เวลา 1-2 นาที รอแล้วกดใหม่ |
 | แอดเพื่อนแล้วบอทเงียบ | `Use webhook` ปิด หรือ `chatMode` เป็น `chat` (เช็คที่ `/v2/bot/info`) |
 | บอทตอบซ้ำ 2 ข้อความ | Greeting message / Auto-response ยังเปิดอยู่ |
 | บอทเงียบเฉพาะบางคน | คนนั้นยิงเกิน `RATE_LIMIT_PER_MINUTE` (ค่าตั้งต้น 20/นาที) |
 | ส่งรูปแล้วบอทเงียบ | `ACCEPT_IMAGES=false` หรือ `/api/internal/attachments` ตอบ 401 (`INTERNAL_API_KEY` ไม่ตรงกัน 2 ฝั่ง) |
-| ไม่เห็น rich menu | ดู `richmenu` ใน `/health` ก่อน · ถ้าขึ้น ok/installed แล้วยังไม่เห็น ให้ปิด/เปิดห้องแชทใหม่ |
+| ไม่เห็น rich menu | ดู `richmenu_state` ใน `/health` ก่อน · ถ้าขึ้น `ok`/`installed` แล้วยังไม่เห็น ให้ปิด/เปิดห้องแชทใหม่ |
+| `deploy.bat` ฟ้อง "ติดตั้ง rich menu ไม่สำเร็จ" ตามด้วยอักษรขยะ `à¸...` | บอทยัง **กำลังติดตั้ง** อยู่ ไม่ได้ล้มเหลว — เป็นบั๊กของสคริปต์รุ่นก่อน 2026-09-26 ที่อ่านภาษาไทยเพี้ยน ยืนยันด้วย `curl.exe http://127.0.0.1:8000/health` แล้ว deploy ใหม่อีกครั้งให้สคริปต์รุ่นใหม่ขึ้น |
 | `richmenu` ขึ้น `ไม่พบไฟล์รูปเมนู` | docker-compose ยังไม่ได้ mount `./line-oa/assets` — ต้อง `docker compose up -d` ใหม่ |
 | รูปขึ้นในหน้าแอดมินไม่ได้ (404) | ต้องมี route `src/app/uploads/[...path]/route.ts` — Next.js อ่านโฟลเดอร์ `public/` แค่ตอนสตาร์ท |
 | เปลี่ยนสถานะแล้วไม่มีแจ้งเตือน | ตรวจว่าเปิดตัวเลือก LINE และกดบันทึกแล้ว ตรวจผลลัพธ์ token และ LINE user ID ของผู้แจ้ง; `LINE_NOTIFY_STATUSES` ใช้กับการส่งอัตโนมัติ ไม่จำกัดตัวเลือกส่งจากหน้าต่างนี้ |

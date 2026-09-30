@@ -21,6 +21,10 @@ def test_application_starts_and_accepts_signed_webhook(monkeypatch):
     with TestClient(app) as client:
         health = client.get("/health")
         assert health.status_code == 200
+        # สคริปต์ deploy ต้องตัดสินผลจาก state ที่เป็น ASCII ไม่ใช่ข้อความไทย และ body
+        # ต้องระบุ charset ไม่งั้น PowerShell 5.1 อ่านไทยเพี้ยน (ทำ deploy รายงานผิด 2026-09-26)
+        assert health.json()["richmenu_state"] == "disabled"
+        assert "charset=utf-8" in health.headers["content-type"].lower()
         assert health.json()["first_step"] == "ASK_BRANCH"
         assert health.json()["first_selection"] == "company"
         assert client.get("/webhook").json()["service"] == "line-bot-python"

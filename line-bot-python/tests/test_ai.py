@@ -201,7 +201,7 @@ async def test_เบิกของด้วยประโยคเดีย�
 
     # ข้ามรหัสทรัพย์สิน -> ต้องไม่ถามเลือกของซ้ำ เพราะรู้แล้วว่าเบิกเมาส์ 2 อัน
     r = await handle(postback({"a": "skip_asset"}), s, backend, knowledge=kc)
-    assert "ระบุชื่อผู้เบิก" in r[0].text
+    assert "ผู้เบิกคือใคร" in r[0].text
 
     await handle(text("สมชาย ใจดี - แผนกบัญชี"), s, backend, knowledge=kc)
     r = await handle(text("-"), s, backend, knowledge=kc)
@@ -222,7 +222,7 @@ async def test_ระบุรหัสทรัพย์สินมาใน�
     )
     assert "ทรัพย์สิน: NB2501001" in r[0].text
     # รู้ครบทั้งสาขา ประเภท และทรัพย์สินแล้ว -> ถามชื่อผู้แจ้งได้เลย
-    assert "ระบุชื่อผู้แจ้ง" in r[1].text
+    assert "ผู้แจ้งคือใคร" in r[1].text
 
 
 @pytest.mark.asyncio

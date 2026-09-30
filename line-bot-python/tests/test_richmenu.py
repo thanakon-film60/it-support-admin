@@ -1,11 +1,15 @@
-"""ตรวจการติดตั้ง rich menu (เมนูเดียว + เมนู 2 ชั้น) ด้วยเซิร์ฟเวอร์จำลอง LINE API
+"""ตรวจการติดตั้ง rich menu (เมนูเดียว 4 ปุ่ม) ด้วยเซิร์ฟเวอร์จำลอง LINE API
 
 ทำไมต้องจำลองทั้ง API ไม่ mock เป็นฟังก์ชัน: ลำดับการเรียกสำคัญมาก —
 alias ต้องตั้งหลังเมนูถูกสร้างจริง, รูปต้องอัปโหลดก่อนตั้งเป็น default,
 และของเก่าต้องถูกลบก่อนสร้างใหม่ ถ้า mock ทีละฟังก์ชันจะไม่จับลำดับที่ผิดเลย
 
-สิ่งที่ห่วงที่สุดคือการสร้างเมนูซ้ำทุก restart — LINE ให้ 1 แชนแนลมีเมนูได้ 1,000 อัน
-ถ้าเผลอสร้างใหม่ทุกครั้งจะเต็มในไม่กี่เดือนโดยไม่มีใครสังเกต จนวันหนึ่งติดตั้งไม่ได้อีกเลย
+สองเรื่องที่ห่วงที่สุด:
+  1. สร้างเมนูซ้ำทุก restart — LINE ให้ 1 แชนแนลมีเมนูได้ 1,000 อัน ถ้าเผลอสร้างใหม่ทุกครั้ง
+     จะเต็มในไม่กี่เดือนโดยไม่มีใครสังเกต จนวันหนึ่งติดตั้งไม่ได้อีกเลย
+  2. อัปเกรดจากเมนู 2 ชั้นรุ่นก่อนแล้วของเก่าไม่ถูกลบ — เมนูชั้น 2 กับ alias ของมัน
+     ไม่หายไปเอง และ "เมนูหลักรุ่นเก่า" ก็ชื่อเดียวกัน เป็น default อยู่เหมือนกัน
+     ถ้าเช็คแค่ชื่อจะข้ามการติดตั้งใหม่ แล้ว deploy ไปเมนูก็ยังเป็นของเก่า
 """
 
 from __future__ import annotations
@@ -21,15 +25,18 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.richmenu import (  # noqa: E402
-    ALIAS_DATA,
     ALIAS_MAIN,
-    DATA_BUTTONS,
+    CHAT_BAR_TEXT,
+    COLS,
+    ROWS,
+    LEGACY_ALIAS_DATA,
+    LEGACY_MENU_DATA_NAME,
     MAIN_BUTTONS,
-    MAIN_BUTTONS_SOLO,
-    MENU_DATA_NAME,
     MENU_MAIN_NAME,
     W,
     H,
+    STATE_INSTALLED,
+    STATE_OK,
     RichMenuError,
     _areas,
     ensure_rich_menu,
@@ -49,6 +56,30 @@ class FakeLine:
     def new_id(self) -> str:
         self._seq += 1
         return f"richmenu-{self._seq:04d}"
+
+    def seed_legacy(self) -> tuple[str, str]:
+        """จำลองแชนแนลที่ยังเป็นเมนู 2 ชั้น 6 ปุ่มของเวอร์ชันก่อน (2500x1686)"""
+        old_actions = [
+            {"type": "message", "text": "แจ้งซ่อม"},
+            {"type": "message", "text": "เบิกอุปกรณ์"},
+            {"type": "message", "text": "คืนอุปกรณ์"},
+            {"type": "message", "text": "ขอใช้บริการ IT"},
+            {"type": "richmenuswitch", "richMenuAliasId": LEGACY_ALIAS_DATA, "data": "a=menu&v=data"},
+            {"type": "postback", "data": "a=faq_menu", "displayText": "คำถามที่พบบ่อย"},
+        ]
+        old_areas = [
+            {"bounds": {"x": (i % 3) * 833, "y": (i // 3) * 843, "width": 833, "height": 843},
+             "action": a}
+            for i, a in enumerate(old_actions)
+        ]
+        main_id, data_id = self.new_id(), self.new_id()
+        for mid, name in ((main_id, MENU_MAIN_NAME), (data_id, LEGACY_MENU_DATA_NAME)):
+            self.menus[mid] = {"name": name, "size": {"width": 2500, "height": 1686},
+                               "chatBarText": CHAT_BAR_TEXT, "areas": old_areas}
+        self.aliases[ALIAS_MAIN] = main_id
+        self.aliases[LEGACY_ALIAS_DATA] = data_id
+        self.default_id = main_id
+        return main_id, data_id
 
 
 def _handler(state: FakeLine):
@@ -121,6 +152,12 @@ def _handler(state: FakeLine):
 
         def do_DELETE(self):
             state.calls.append(f"DELETE {self.path}")
+            # ต้องเช็ค alias ก่อน เพราะ path ของ alias ขึ้นต้นด้วย /v2/bot/richmenu/ เหมือนกัน
+            if self.path.startswith("/v2/bot/richmenu/alias/"):
+                aid = self.path.rsplit("/", 1)[-1]
+                if state.aliases.pop(aid, None) is None:
+                    return self._send(404, b'{"message":"not found"}')
+                return self._send(200)
             if self.path.startswith("/v2/bot/richmenu/"):
                 mid = self.path.rsplit("/", 1)[-1]
                 state.menus.pop(mid, None)
@@ -152,135 +189,152 @@ def _png(tmp_path: Path, name: str) -> str:
 
 
 @pytest.fixture
-def images(tmp_path):
-    return _png(tmp_path, "richmenu-main.png"), _png(tmp_path, "richmenu-data.png")
+def image(tmp_path):
+    return _png(tmp_path, "richmenu-main.png")
 
 
-async def _install(line, images, **kw):
-    main, data = images
-    return await ensure_rich_menu(
-        "tok", main, data_image_path=data, api_host=line.url, blob_host=line.url, **kw
-    )
+async def _install(line, image, **kw):
+    return await ensure_rich_menu("tok", image, api_host=line.url, blob_host=line.url, **kw)
 
 
-# ------------------------------------------------------------------ เมนู 2 ชั้น
+def _only_menu(line) -> dict:
+    assert len(line.menus) == 1, f"ต้องเหลือเมนูเดียว แต่เหลือ {len(line.menus)}"
+    return next(iter(line.menus.values()))
 
 
-@pytest.mark.asyncio
-async def test_ติดตั้งเมนูสองชั้นครบทุกขั้นตอน(line, images):
-    result = await _install(line, images)
-
-    assert "installed" in result
-    names = sorted(m["name"] for m in line.menus.values())
-    assert names == sorted([MENU_MAIN_NAME, MENU_DATA_NAME])
-
-    main_id = next(k for k, v in line.menus.items() if v["name"] == MENU_MAIN_NAME)
-    data_id = next(k for k, v in line.menus.items() if v["name"] == MENU_DATA_NAME)
-
-    assert sorted(line.uploads) == sorted([main_id, data_id]), "ต้องอัปโหลดรูปครบทั้งสองเมนู"
-    assert line.aliases[ALIAS_MAIN] == main_id
-    assert line.aliases[ALIAS_DATA] == data_id
-    assert line.default_id == main_id, "เมนูหลักต้องเป็นเมนูเริ่มต้น"
+# ------------------------------------------------------------------ ติดตั้งครั้งแรก
 
 
 @pytest.mark.asyncio
-async def test_ปุ่มสลับเมนูชี้ไป_alias_ที่มีอยู่จริง(line, images):
-    """ถ้า alias ที่ปุ่มอ้างไม่มีอยู่ กดแล้วจะเงียบสนิท ไม่มีอะไรเกิดขึ้น หาสาเหตุยากมาก"""
-    await _install(line, images)
+async def test_ติดตั้งเมนู_4_ปุ่มครบทุกขั้นตอน(line, image):
+    result = await _install(line, image)
 
-    for menu in line.menus.values():
-        for area in menu["areas"]:
-            action = area["action"]
-            if action["type"] == "richmenuswitch":
-                assert action["richMenuAliasId"] in line.aliases, \
-                    f"ปุ่มสลับชี้ไป alias '{action['richMenuAliasId']}' ที่ไม่มีอยู่จริง"
+    assert result.state == STATE_INSTALLED
+    menu = _only_menu(line)
+    assert menu["name"] == MENU_MAIN_NAME
+    assert menu["size"] == {"width": W, "height": H}
+    assert len(menu["areas"]) == 4
+
+    menu_id = next(iter(line.menus))
+    assert line.uploads == [menu_id], "ต้องอัปโหลดรูปให้เมนูที่เพิ่งสร้าง 1 ครั้ง"
+    assert line.aliases[ALIAS_MAIN] == menu_id
+    assert line.default_id == menu_id, "ต้องตั้งเป็นเมนูเริ่มต้นของทุกคน"
 
 
 @pytest.mark.asyncio
-async def test_alias_ถูกตั้งหลังเมนูถูกสร้างแล้วเท่านั้น(line, images):
+async def test_ไม่มีปุ่มสลับเมนูหลงเหลือ(line, image):
+    """เลิกใช้เมนูชั้น 2 แล้ว ถ้ายังมีปุ่ม richmenuswitch ค้างอยู่ กดแล้วจะเงียบสนิท หาสาเหตุยากมาก"""
+    await _install(line, image)
+    types = [a["action"]["type"] for a in _only_menu(line)["areas"]]
+    assert "richmenuswitch" not in types
+
+
+@pytest.mark.asyncio
+async def test_alias_ถูกตั้งหลังเมนูถูกสร้างแล้วเท่านั้น(line, image):
     """LINE ปฏิเสธ alias ที่ชี้ไปเมนูที่ยังไม่มี — ลำดับจึงสำคัญ ไม่ใช่แค่ทำครบ"""
-    await _install(line, images)
+    await _install(line, image)
     first_alias = next(i for i, c in enumerate(line.calls) if c == "POST /v2/bot/richmenu/alias")
     last_create = max(i for i, c in enumerate(line.calls) if c == "POST /v2/bot/richmenu")
-    assert last_create < first_alias, "ตั้ง alias ก่อนสร้างเมนูครบ"
+    assert last_create < first_alias, "ตั้ง alias ก่อนสร้างเมนู"
 
 
 @pytest.mark.asyncio
-async def test_restart_ซ้ําแล้วไม่สร้างเมนูใหม่(line, images):
-    await _install(line, images)
-    uploads_after_first = len(line.uploads)
-
-    for _ in range(3):
-        result = await _install(line, images)
-        assert "มีอยู่แล้ว" in result
-
-    assert len(line.uploads) == uploads_after_first, "restart ซ้ำต้องไม่อัปโหลดรูปใหม่"
-    assert len(line.menus) == 2, "ต้องไม่สะสมเมนูจนเต็มโควตา 1,000 อันของ LINE"
-
-
-@pytest.mark.asyncio
-async def test_alias_ค้างจากรอบก่อนถูกชี้ไปเมนูใหม่(line, images):
-    """alias อยู่ระดับแชนแนล ไม่หายไปพร้อมเมนูที่ถูกลบ — ติดตั้งรอบสองจึงเจอของค้างเสมอ
-    ถ้าไม่อัปเดตให้ชี้เมนูใหม่ ปุ่มสลับจะพาไปเมนูที่ถูกลบไปแล้ว"""
-    await _install(line, images)
-    old_main = line.aliases[ALIAS_MAIN]
-
-    await _install(line, images, force=True)
-
-    assert line.aliases[ALIAS_MAIN] != old_main, "alias ต้องชี้ไปเมนูใหม่"
-    assert line.aliases[ALIAS_MAIN] in line.menus, "alias ต้องชี้ไปเมนูที่ยังมีอยู่จริง"
-    assert line.aliases[ALIAS_DATA] in line.menus
-    assert len(line.menus) == 2
-
-
-@pytest.mark.asyncio
-async def test_เมนูเก่าที่ค้างอยู่ถูกเก็บกวาด(line, images):
-    for _ in range(3):
-        line.menus[line.new_id()] = {"name": MENU_MAIN_NAME, "size": {}, "areas": [], "chatBarText": ""}
-
-    await _install(line, images)
-
-    assert len(line.menus) == 2, "ของค้าง 3 อันต้องถูกลบ เหลือเมนูใหม่ 2 อัน"
-
-
-# ------------------------------------------------------------------ ถอยเป็นเมนูเดียว
-
-
-@pytest.mark.asyncio
-async def test_ไม่มีรูปเมนูย่อยให้ถอยเป็นเมนูเดียว(line, images, tmp_path):
-    """สำคัญ: ห้ามติดตั้งเมนูหลักที่มีปุ่มสลับไปเมนูที่ไม่มีอยู่ เพราะกดแล้วจะเงียบ"""
-    main, _ = images
-    result = await ensure_rich_menu(
-        "tok", main, data_image_path=str(tmp_path / "ไม่มีไฟล์นี้.png"),
-        api_host=line.url, blob_host=line.url,
-    )
-
-    assert "installed" in result
-    assert len(line.menus) == 1
-    menu = next(iter(line.menus.values()))
-    types = [a["action"]["type"] for a in menu["areas"]]
-    assert "richmenuswitch" not in types, "เมนูเดียวต้องไม่มีปุ่มสลับที่ไปไหนไม่ได้"
-
-
-@pytest.mark.asyncio
-async def test_ไม่มีรูปเมนูหลักเลยต้องบอกให้ชัด(line, tmp_path):
+async def test_ไม่มีรูปเมนูต้องบอกให้ชัด(line, tmp_path):
     with pytest.raises(RichMenuError) as exc:
         await ensure_rich_menu("tok", str(tmp_path / "ไม่มี.png"), api_host=line.url, blob_host=line.url)
     assert "ไม่พบไฟล์รูป" in str(exc.value)
 
 
+@pytest.mark.asyncio
+async def test_รูปใหญ่เกินลิมิตต้องหยุดก่อนยิง_API(line, tmp_path):
+    """LINE ตอบ error ที่อ่านไม่รู้เรื่องเมื่อรูปเกิน 1 MB — ดักตั้งแต่ก่อนสร้างเมนูดีกว่า
+    ไม่งั้นจะเหลือเมนูไม่มีรูปลอยอยู่ในแชนแนล"""
+    big = tmp_path / "ใหญ่.png"
+    big.write_bytes(b"\x89PNG" + b"0" * 1_000_001)
+    with pytest.raises(RichMenuError) as exc:
+        await ensure_rich_menu("tok", str(big), api_host=line.url, blob_host=line.url)
+    assert "ใหญ่เกินลิมิต" in str(exc.value)
+    assert line.menus == {}, "ต้องไม่สร้างเมนูค้างไว้"
+
+
+# ------------------------------------------------------------------ รันซ้ำ / อัปเกรด
+
+
+@pytest.mark.asyncio
+async def test_restart_ซ้ําแล้วไม่สร้างเมนูใหม่(line, image):
+    await _install(line, image)
+    uploads_after_first = len(line.uploads)
+
+    for _ in range(3):
+        assert (await _install(line, image)).state == STATE_OK
+
+    assert len(line.uploads) == uploads_after_first, "restart ซ้ำต้องไม่อัปโหลดรูปใหม่"
+    assert len(line.menus) == 1, "ต้องไม่สะสมเมนูจนเต็มโควตา 1,000 อันของ LINE"
+
+
+@pytest.mark.asyncio
+async def test_อัปเกรดจากเมนูสองชั้นรุ่นก่อนแล้วของเก่าหายหมด(line, image):
+    """เคสจริงตอน deploy 2026-09-25: แชนแนลมีเมนู 6 ปุ่ม 2 ชั้นอยู่ และเมนูหลักรุ่นเก่า
+    ก็ชื่อเดียวกัน + เป็น default อยู่แล้ว ถ้าเช็คแค่ชื่อจะข้ามการติดตั้ง แล้วเมนูไม่เปลี่ยน"""
+    old_main, old_data = line.seed_legacy()
+
+    result = await _install(line, image)
+
+    assert result.state == STATE_INSTALLED, "ต้องติดตั้งใหม่เองโดยไม่ต้องตั้ง RICHMENU_FORCE_REINSTALL"
+    menu = _only_menu(line)
+    assert menu["size"] == {"width": W, "height": H}
+    assert len(menu["areas"]) == 4
+    new_id = next(iter(line.menus))
+    assert {old_main, old_data} <= set(line.deleted), "เมนูเก่าทั้งสองใบต้องถูกลบ"
+    assert LEGACY_ALIAS_DATA not in line.aliases, "alias ของเมนูชั้น 2 ต้องถูกลบ ไม่งั้นค้างถาวร"
+    assert line.aliases[ALIAS_MAIN] == new_id
+    assert line.default_id == new_id
+
+
+@pytest.mark.asyncio
+async def test_เปลี่ยนข้อความปุ่มแล้วติดตั้งใหม่ให้เอง(line, image, monkeypatch):
+    """ถ้าเทียบแค่ "ขนาดรูป" จะจับไม่ได้เวลาแก้แค่ข้อความบนปุ่ม แล้วต้องไปตั้ง force เองทุกครั้ง"""
+    await _install(line, image)
+    menu_id = next(iter(line.menus))
+    line.menus[menu_id]["areas"][0]["action"] = {"type": "message", "text": "ของเก่า"}
+
+    assert (await _install(line, image)).state == STATE_INSTALLED, "ปุ่มไม่ตรงกับโค้ดต้องติดตั้งใหม่"
+    assert menu_id in line.deleted
+
+
+@pytest.mark.asyncio
+async def test_เมนูเก่าที่ค้างอยู่ถูกเก็บกวาด(line, image):
+    for _ in range(3):
+        line.menus[line.new_id()] = {"name": MENU_MAIN_NAME, "size": {}, "areas": [], "chatBarText": ""}
+
+    await _install(line, image)
+
+    assert len(line.menus) == 1, "ของค้าง 3 อันต้องถูกลบ เหลือเมนูใหม่ใบเดียว"
+
+
+@pytest.mark.asyncio
+async def test_alias_ค้างจากรอบก่อนถูกชี้ไปเมนูใหม่(line, image):
+    """alias อยู่ระดับแชนแนล ไม่หายไปพร้อมเมนูที่ถูกลบ — ติดตั้งรอบสองจึงเจอของค้างเสมอ
+    ถ้าไม่อัปเดตให้ชี้เมนูใหม่ alias จะชี้ไปเมนูที่ถูกลบไปแล้ว"""
+    await _install(line, image)
+    old_main = line.aliases[ALIAS_MAIN]
+
+    await _install(line, image, force=True)
+
+    assert line.aliases[ALIAS_MAIN] != old_main, "alias ต้องชี้ไปเมนูใหม่"
+    assert line.aliases[ALIAS_MAIN] in line.menus, "alias ต้องชี้ไปเมนูที่ยังมีอยู่จริง"
+
+
 # ------------------------------------------------------------------ โครงสร้างปุ่ม
 
 
-@pytest.mark.parametrize("buttons", [MAIN_BUTTONS, DATA_BUTTONS, MAIN_BUTTONS_SOLO])
-def test_พื้นที่ปุ่มครอบคลุมรูปเต็มพอดีไม่ทับกัน(buttons):
-    areas = _areas(buttons)
-    assert len(areas) == 6
+def test_พื้นที่ปุ่มครอบคลุมรูปเต็มพอดีไม่ทับกัน():
+    areas = _areas(MAIN_BUTTONS)
+    assert len(areas) == len(MAIN_BUTTONS) == COLS * ROWS
 
-    # ไม่เหลือขอบขวาที่กดไม่ได้ (2500 หาร 3 ไม่ลงตัว)
-    for row in (0, 1):
-        in_row = [a for a in areas if a["bounds"]["y"] == row * (H // 2)]
-        assert max(a["bounds"]["x"] + a["bounds"]["width"] for a in in_row) == W
+    # ไม่เหลือขอบที่กดไม่ได้ ทั้งแนวนอนและแนวตั้ง
+    assert max(a["bounds"]["x"] + a["bounds"]["width"] for a in areas) == W
+    assert max(a["bounds"]["y"] + a["bounds"]["height"] for a in areas) == H
 
     for i, a in enumerate(areas):
         for b in areas[i + 1:]:
@@ -291,9 +345,11 @@ def test_พื้นที่ปุ่มครอบคลุมรูปเ�
             assert ox <= 0 or oy <= 0, "พื้นที่ปุ่มทับกัน"
 
 
-def test_เมนูสองชั้นสลับกลับไปกลับมาได้():
-    """เมนูหลักต้องมีปุ่มไปเมนูข้อมูล และเมนูข้อมูลต้องมีปุ่มกลับ ไม่งั้นผู้ใช้ติดอยู่ในเมนูย่อย"""
-    main_switch = [b for b in MAIN_BUTTONS if b["type"] == "richmenuswitch"]
-    data_switch = [b for b in DATA_BUTTONS if b["type"] == "richmenuswitch"]
-    assert [b["richMenuAliasId"] for b in main_switch] == [ALIAS_DATA]
-    assert [b["richMenuAliasId"] for b in data_switch] == [ALIAS_MAIN]
+def test_ขนาดรูปเป็นค่าที่_LINE_ยอมรับ():
+    """LINE รับแค่ 2500x1686 กับ 2500x843 — ค่าอื่นถูกปฏิเสธทั้ง request ตอนสร้างเมนู
+
+    และความสูงต้องสอดคล้องกับจำนวนแถวด้วย: 1 แถวใช้รูปเตี้ย 2 แถวใช้รูปสูง
+    ถ้าเผลอแก้ ROWS โดยลืมแก้ H พื้นที่กดจะเลยขอบรูปลงไปครึ่งหนึ่งโดยที่ LINE ไม่เตือนอะไรเลย
+    """
+    assert (W, H) in ((2500, 1686), (2500, 843))
+    assert H == 843 * ROWS, f"{ROWS} แถวต้องใช้รูปสูง {843 * ROWS} ไม่ใช่ {H}"

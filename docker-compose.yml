@@ -132,11 +132,11 @@ services:
       # กันคนกดรัว/สคริปต์ยิงถล่ม — ทุก event กลายเป็นการเรียก /api/internal/* ฝั่ง app
       # ตั้ง 0 เพื่อปิดการจำกัด
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-20}
-      # ติดตั้ง rich menu ให้เองตอนสตาร์ท (idempotent — มีอยู่แล้วจะข้าม ไม่อัปโหลดซ้ำ)
+      # ติดตั้ง rich menu 4 ปุ่มให้เองตอนสตาร์ท (idempotent — ตรงกับโค้ดอยู่แล้วจะข้าม)
       # เดิมต้องรัน line-oa/setup_richmenu.py ด้วยมือ ซึ่งลืมได้ และอาการเวลาลืมคือ
       # พนักงานแอด OA เข้ามาแล้วเจอห้องแชทเปล่าๆ ไม่มีปุ่มอะไรเลย
       RICHMENU_AUTO_INSTALL: ${RICHMENU_AUTO_INSTALL:-true}
-      # ตั้ง true ครั้งเดียวเมื่อเปลี่ยนรูป/ปุ่ม แล้วค่อยเอากลับเป็น false
+      # ตั้ง true ครั้งเดียวเมื่อ 'เปลี่ยนรูปแต่ปุ่มเหมือนเดิม' แล้วค่อยเอากลับเป็น false
       RICHMENU_FORCE_REINSTALL: ${RICHMENU_FORCE_REINSTALL:-false}
     volumes:
       # บอทต้องอ่านไฟล์รูปเมนูตอนติดตั้ง — mount แบบ read-only แทนการ COPY เข้า image

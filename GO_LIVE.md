@@ -14,7 +14,8 @@
   cd F:\GitHub\it-support-admin
   docker compose up -d --build app bot
   ```
-  ✅ ตรวจ: `docker compose ps` ขึ้น 6 service ครบ ไม่มีตัวไหน restarting
+  ✅ ตรวจ: `docker compose ps` ขึ้น **4 service** (`db` · `redis` · `app` · `bot`) ไม่มีตัวไหน restarting
+  (`caddy` กับ `duckdns` ไม่ใช่ dependency ของ `app`/`bot` คำสั่งข้างบนจึงไม่สตาร์ทให้ — ต้องการครบ 6 ใช้ `docker compose up -d --build`)
 
 - [ ] **1.2 route เสิร์ฟรูปทำงาน**
   ```powershell
@@ -26,13 +27,14 @@
   ```powershell
   curl.exe http://127.0.0.1:8000/health
   ```
-  ✅ ตรวจ: ต้องได้ JSON ที่มีครบทั้ง 4 อย่าง
+  ✅ ตรวจ: ต้องได้ JSON ที่มีครบทุกอย่าง
   ```json
-  {"ok":true,"state_backend":"redis","accept_images":true,
-   "rate_limit_per_minute":20,"richmenu":"installed (richmenu-xxxx)"}
+  {"ok":true,"state_backend":"redis","accept_images":true,"rate_limit_per_minute":20,
+   "richmenu":"installed (richmenu-xxxx)","richmenu_state":"installed"}
   ```
-  `richmenu` เป็น `installed (...)` = เพิ่งติดตั้ง · `ok (มีอยู่แล้ว: ...)` = มีอยู่แล้วเลยข้าม — ผ่านทั้งคู่
-  ถ้าเป็น `ล้มเหลว: ...` ข้อความต่อท้ายจะบอกสาเหตุตรงๆ
+  ดูที่ **`richmenu_state`** เป็นหลัก: `installed` = เพิ่งติดตั้ง · `ok` = มีอยู่แล้วเลยข้าม — ผ่านทั้งคู่
+  ถ้าเป็น `installing` แปลว่ายังทำอยู่ **ไม่ใช่ความผิดพลาด** รออีก 2-3 วินาทีแล้วถามใหม่
+  ถ้าเป็น `failed` ข้อความใน `richmenu` จะบอกสาเหตุตรงๆ
 
 ---
 
@@ -41,7 +43,7 @@
 - [x] ~~**2.1 ติดตั้ง rich menu**~~ — **ไม่ต้องทำแล้ว บอทติดตั้งให้เองตอนสตาร์ท**
   ข้อ 1.1 (`docker compose up -d --build`) ติดตั้งเมนูให้เรียบร้อยแล้ว
   ✅ ตรวจ: `curl.exe http://127.0.0.1:8000/health` → ฟิลด์ `richmenu` ต้องขึ้นต้นด้วย `installed` หรือ `ok`
-  ✅ ตรวจ: เปิดแชทกับ OA ในมือถือ เห็นปุ่ม 6 ปุ่มจริง (ถ้าไม่เห็น **ปิดห้องแชทแล้วเปิดใหม่ 1 ครั้ง** — LINE แคชเมนูฝั่งเครื่อง)
+  ✅ ตรวจ: เปิดแชทกับ OA ในมือถือ เห็นปุ่ม 4 ปุ่มจัดเป็น 2x2 จริง (ถ้าไม่เห็น **ปิดห้องแชทแล้วเปิดใหม่ 1 ครั้ง** — LINE แคชเมนูฝั่งเครื่อง)
 
   ถ้า `richmenu` ขึ้น `ล้มเหลว: ...` ให้อ่านข้อความต่อท้าย แล้วยังใช้วิธีเดิมได้เสมอ:
   ```powershell
@@ -102,7 +104,7 @@
   ถ้าคาดว่าเกิน ต้องอัปแพ็กเกจ หรือลด `LINE_NOTIFY_STATUSES` เหลือ `resolved,closed`
 
 - [ ] **4.2 `AUTH_DISABLED=true`** — หน้าแอดมินเปิดสู่เน็ตโดยไม่ต้องล็อกอิน
-  ตอนนี้ใครมี URL ก็เห็นพนักงาน 182 คน ทรัพย์สิน ค่าซ่อม และสต็อกทั้งหมด
+  ตอนนี้ใครมี URL ก็เห็นพนักงาน 326 คน ทรัพย์สิน ค่าซ่อม และสต็อกทั้งหมด
   และยังทำให้ปุ่ม **Import Excel** (ซึ่งใช้ `xlsx` ที่มีช่องโหว่ระดับ High ยังไม่มี patch) เปิดให้คนนอกใช้ได้ด้วย
   เปิดกลับ: `AUTH_DISABLED=false` แล้ว `docker compose up -d --build app` (**build ไม่ใช่ restart**)
 
@@ -111,11 +113,15 @@
   และการจับคู่ผู้ครอบครองยังอาศัยลำดับแถว ซึ่งผิดได้เมื่อรหัสซ้ำ
 
 - [ ] **4.4 ระบบอยู่ได้ด้วยเครื่องเดียว**
-  เครื่องปิด/หลับ = บอทตาย และ Tailscale Funnel ต้องรันใหม่ทุกครั้งที่รีบูต (ดู LINE_SETUP.md ข้อ 3)
+  เครื่องปิด/หลับ = บอทตาย · Tailscale Funnel **ไม่จำค่าข้ามการรีบูต** และเวลาตายจะเงียบสนิท
+  ไม่มี error ที่ไหนเลย (เกิดมาแล้ว 2 ครั้ง)
+  ✅ ต้องทำ: คลิกขวา `install-autostart.bat` → **Run as administrator** ครั้งเดียว
+  จะได้ทั้ง Funnel อัตโนมัติหลังล็อกอินและสำรองข้อมูลอัตโนมัติทุกวัน
+  ✅ เวลา Funnel ค้างทั้งที่ทุกอย่างขึ้นเขียว → `LINE_SETUP.md` §3.1 (อ่านก่อนไล่หาสาเหตุอื่น)
 
 - [ ] **4.5 ข้อมูลจริงอยู่ในไฟล์ JSON ไม่ใช่ Postgres**
   container `db` รัน healthy อยู่แต่ **ไม่มีโค้ดไหนใช้มันเลย** ข้อมูลจริงอยู่ที่ volume `app_data` (`/app/data/*.json`)
-  ✅ ควรมี backup: `docker compose cp app:/app/data ./backup-$(Get-Date -f yyyy-MM-dd)`
+  ✅ ควรมี backup: ดับเบิลคลิก `backup.bat` (หรือให้ `install-autostart.bat` ตั้งให้รันเองทุกวัน)
 
 ---
 

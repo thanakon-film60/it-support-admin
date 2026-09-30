@@ -41,6 +41,41 @@ EQUIPMENT = {
 
 BRANCHES = ["สำนักงานใหญ่", "สาขาเซ็นทรัล", "สาขาเชียงใหม่", "สาขาขอนแก่น", "ภูเก็ต"]
 
+# ทะเบียนพนักงานชุดย่อ — รูปแบบเดียวกับที่ /api/internal/lookup?kind=knowledge ส่งมา
+# จงใจให้ "สมชาย" มี 2 คนเพื่อทดสอบเส้นทาง "เจอหลายคนต้องให้เลือก" ซึ่งเป็นเคสที่พลาดง่ายที่สุด
+EMPLOYEES = [
+    {"id": "u-film", "code": "A69048", "name": "ธนากร โฮงทอง", "full_name": "นายธนากร โฮงทอง",
+     "nickname": "ฟิล์ม", "department": "ฝ่ายเทคโนโลยีสารสนเทศ", "position": "IT Software/Network"},
+    {"id": "u-somchai1", "code": "A60001", "name": "สมชาย ใจดี", "full_name": "นายสมชาย ใจดี",
+     "nickname": "ชาย", "department": "ฝ่ายบัญชีและการเงิน", "position": "Accounts Payable"},
+    {"id": "u-somchai2", "code": "A60002", "name": "สมชาย ทองดี", "full_name": "นายสมชาย ทองดี",
+     "nickname": "ต้น", "department": "ฝ่ายคลังสินค้า", "position": "Packing Officer"},
+    {"id": "u-noi", "code": "M69010", "name": "วรัญญา บุญกิจ", "full_name": "นางสาววรัญญา บุญกิจ",
+     "nickname": "มุก", "department": "ฝ่ายบัญชีและการเงิน", "position": "Accounts Receivable"},
+]
+
+DEPARTMENTS = [
+    {"name": "ฝ่ายบัญชีและการเงิน", "count": 2},
+    {"name": "ฝ่ายคลังสินค้า", "count": 1},
+    {"name": "ฝ่ายเทคโนโลยีสารสนเทศ", "count": 1},
+]
+
+# ทะเบียนบริษัท + สาขาไหนอยู่บริษัทไหน — รูปแบบเดียวกับที่ /api/internal/lookup?kind=knowledge ส่งมา
+# (test_ai.py import ไปสร้าง Knowledge เพื่อตรวจว่าบอทเดาบริษัทจากชื่อสาขาได้ถูก)
+COMPANIES = [
+    {"code": "montipa", "label": "Montipa"},
+    {"code": "motta", "label": "Motta"},
+    {"code": "central", "label": "สำนักงานใหญ่"},
+]
+
+BRANCH_COMPANY = {
+    "สำนักงานใหญ่": "central",
+    "สาขาเซ็นทรัล": "montipa",
+    "สาขาเชียงใหม่": "montipa",
+    "สาขาขอนแก่น": "motta",
+    "ภูเก็ต": "motta",
+}
+
 # ตัวเลือกของเมนูเลือกสาขาทีละชั้น (บริษัท -> กลุ่ม -> สาขา)
 # จงใจให้ "ศาลายา" อยู่ทั้ง Montipa และ Motta เพราะข้อมูลจริงก็ซ้ำกันแบบนี้
 BRANCH_OPTIONS = {
@@ -132,6 +167,20 @@ class FakeBackend:
         self.extra_equipment: dict[str, list[dict]] = extra_equipment or {}
         self.my_assets: dict = {"found": True, "linked": True, "holder_name": "สมชาย ใจดี",
                                 "assets": [EQUIPMENT["NB2501001"]], "total": 1}
+        # ทะเบียนผู้แจ้งที่ผูกกับบัญชี LINE — None = ยังไม่เคยผูก (บอทจะถามชื่อ)
+        self.bound_requester: dict | None = None
+        self.bind_calls: list[tuple[str, str]] = []
+
+    async def get_requester(self, line_user_id: str):
+        return self.bound_requester
+
+    async def bind_requester(self, line_user_id: str, user_id: str):
+        self.bind_calls.append((line_user_id, user_id))
+        self.bound_requester = next((e for e in EMPLOYEES if e["id"] == user_id), None)
+        return self.bound_requester
+
+    async def unbind_requester(self, line_user_id: str) -> None:
+        self.bound_requester = None
 
     async def list_stock_items(self):
         return STOCK
@@ -419,7 +468,7 @@ async def test_flow_เบิกอุปกรณ์ครบทั้งเส
 
     # 7. พอแล้ว -> ถามชื่อผู้เบิก
     r = await handle(postback({"a": "done_items"}), s, backend)
-    assert "ระบุชื่อผู้เบิก" in r[0].text
+    assert "ผู้เบิกคือใคร" in r[0].text
 
     # 8. พิมพ์ชื่อ -> ถามรายละเอียดเพิ่มเติม
     r = await handle(text("สมัย"), s, backend)
@@ -521,7 +570,7 @@ async def test_flow_แจ้งซ่อมและผูกกับทรั
     # พิมพ์รหัสแบบมีขีด ต้องจับคู่กับรหัสจริงในระบบได้
     r = await handle(text("NB-2501001"), s, backend)
     assert "ทรัพย์สิน: NB2501001 — LENOVO ThinkPad E14 ✅" in r[0].text
-    assert "ระบุชื่อผู้แจ้ง" in r[1].text
+    assert "ผู้แจ้งคือใคร" in r[1].text
 
     await handle(text("วิชัย ศรีสุข - ขายหน้าร้าน"), s, backend)
     r = await handle(text("จอมีเส้นแนวตั้ง เปิดมาก็เป็นเลย"), s, backend)
@@ -548,7 +597,7 @@ async def test_รหัสทรัพย์สินไม่เจอไม�
 
     # ยังข้ามไปต่อได้
     r = await handle(postback({"a": "skip_asset"}), s, backend)
-    assert "ระบุชื่อผู้แจ้ง" in r[0].text
+    assert "ผู้แจ้งคือใคร" in r[0].text
 
 
 @pytest.mark.asyncio
@@ -724,6 +773,120 @@ async def test_every_ticket_type_accepts_free_text_without_an_asset(ticket_type)
         assert payload["items"][0]["qty"] == 2
     assert detail in replies[0].text
     assert await s.get(USER) is None
+
+
+# ------------------------------------------------ ปุ่ม "ไม่มี ส่งเลย" ของขั้นรายละเอียด
+#
+# ผู้ทดสอบเสนอให้ "ตัดขั้นรายละเอียดของการเบิกทิ้งไปเลย" ซึ่งตัดไม่ได้ เพราะปุ่ม
+# "เปลี่ยนคนแจ้ง" ติดอยู่กับข้อความของขั้นนี้ที่เดียวในทั้งระบบ — ถ้าตัด คนที่บัญชี LINE
+# ถูกผูกไว้ผิดคนจะแก้เองไม่ได้อีกเลย ทางออกคือคงขั้นตอนไว้แต่ให้จบได้ด้วยการกด 1 ครั้ง
+
+
+def _skip_button(reply) -> bool:
+    return any(data == M.SKIP_DESC_ACTION for _, data in reply.quick)
+
+
+@pytest.mark.asyncio
+async def test_กดปุ่มไม่มีส่งเลยตอนเบิกได้ticketทันทีไม่ต้องพิมพ์อะไรอีก():
+    """เคสที่ผู้ทดสอบบ่นมาจริง: เลือกของครบ ยืนยันผู้เบิกแล้ว ยังต้องพิมพ์ "-" อีกตัวถึงจะจบ"""
+    s, backend = store(), FakeBackend()
+    await s.set(USER, Session(
+        step="ASK_DESC", ticket_type="withdraw", branch="สำนักงานใหญ่",
+        requester_name="สมชาย", items=[{"name": "คีย์บอร์ด", "qty": 2}],
+    ))
+    replies = await handle(postback({"a": "desc_skip"}), s, backend)
+
+    assert len(backend.created) == 1, "กดครั้งเดียวต้องได้ ticket เลย"
+    assert not backend.created[0]["description"], "ไม่มีรายละเอียด = ส่งค่าว่าง ไม่ใช่ข้อความ '-'"
+    assert backend.created[0]["items"][0]["qty"] == 2
+    assert "TK-" in replies[0].text or backend.ticket_code in replies[0].text
+    assert await s.get(USER) is None, "ต้องจบบทสนทนา ไม่ค้างที่ ASK_DESC"
+
+
+@pytest.mark.asyncio
+async def test_กดปุ่มกับพิมพ์ขีดกลางต้องได้ผลเหมือนกันเป๊ะ():
+    """ถ้าสองทางนี้ให้ผลต่างกันเมื่อไหร่ แปลว่ามีเส้นทางหนึ่งถูกลืมตอนแก้เงื่อนไขการส่ง"""
+    payloads = []
+    for finish in (postback({"a": "desc_skip"}), text("-")):
+        s, backend = store(), FakeBackend()
+        await s.set(USER, Session(
+            step="ASK_DESC", ticket_type="withdraw", branch="สำนักงานใหญ่",
+            requester_name="สมชาย", items=[{"name": "คีย์บอร์ด", "qty": 1}],
+        ))
+        await handle(finish, s, backend)
+        payloads.append(backend.created)
+    assert len(payloads[0]) == len(payloads[1]) == 1
+    a, b = dict(payloads[0][0]), dict(payloads[1][0])
+    a.pop("request_id", None)
+    b.pop("request_id", None)
+    assert a == b
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ticket_type", ["repair", "withdraw", "return", "it_service"])
+@pytest.mark.parametrize("told_already", [False, True])
+async def test_ปุ่มไม่มีส่งเลยโผล่เฉพาะตอนที่กดแล้วผ่านจริง(ticket_type, told_already):
+    """ความคงเส้นคงวาระหว่าง "ปุ่มที่ผู้ใช้เห็น" กับ "สิ่งที่ handler ยอมรับจริง"
+
+    ปุ่มที่กดแล้วบอทถามซ้ำ แย่กว่าการไม่มีปุ่มเลย — ผู้ใช้จะสรุปว่าบอทพังแล้วเลิกใช้
+    ไม่ได้สรุปว่า "อ๋อ ต้องพิมพ์เอง" เทสต์นี้ผูกสองอย่างเข้าด้วยกันเพื่อให้แก้ฝั่งเดียวไม่ได้
+    """
+    def new_session():
+        return Session(
+            step="ASK_DESC", ticket_type=ticket_type, branch="สำนักงานใหญ่",
+            requester_name="สมชาย",
+            items=[{"name": "คีย์บอร์ด", "qty": 1}] if ticket_type == "withdraw" else [],
+            initial_message="คอมเปิดไม่ติดที่สำนักงานใหญ่" if told_already else None,
+        )
+
+    s, backend = store(), FakeBackend()
+    await s.set(USER, new_session())
+    prompt = await handle(postback({"a": "write_description"}), s, backend)
+    shown = _skip_button(prompt[0])
+
+    s2, backend2 = store(), FakeBackend()
+    await s2.set(USER, new_session())
+    await handle(postback({"a": "desc_skip"}), s2, backend2)
+    accepted = bool(backend2.created)
+
+    assert shown == accepted, (
+        f"{ticket_type} / เล่ามาแล้ว={told_already}: "
+        f"โชว์ปุ่ม={shown} แต่กดแล้วผ่าน={accepted}"
+    )
+    # เบิก/คืน ข้ามได้เสมอ · ซ่อม/ขอใช้บริการ ข้ามได้เฉพาะตอนเล่ามาแล้วตั้งแต่ข้อความแรก
+    assert shown == (ticket_type not in ("repair", "it_service") or told_already)
+
+
+@pytest.mark.asyncio
+async def test_แจ้งซ่อมที่ยังไม่เคยเล่าอะไรกดปุ่มข้ามไม่ได้():
+    """การ์ดเก่าที่ค้างบนจอจากก่อน deploy ยังกดเข้ามาได้ ต้องไม่หลุดเป็น ticket เปล่า"""
+    s, backend = store(), FakeBackend()
+    await s.set(USER, Session(step="ASK_DESC", ticket_type="repair",
+                              branch="สำนักงานใหญ่", requester_name="สมชาย"))
+    replies = await handle(postback({"a": "desc_skip"}), s, backend)
+    assert not backend.created
+    assert (await s.get(USER)).step == "ASK_DESC"
+    assert not _skip_button(replies[0])
+
+
+@pytest.mark.asyncio
+async def test_กดปุ่มข้ามจากขั้นอื่นต้องไม่ส่งticketและไม่ข้ามขั้นตอน():
+    """ปุ่มบนการ์ดเก่าที่เลื่อนขึ้นไปแล้วยังกดได้เสมอ — ห้ามลัดคิวไปสร้าง ticket"""
+    s, backend = store(), FakeBackend()
+    await s.set(USER, Session(step="ASK_REQUESTER", ticket_type="withdraw",
+                              branch="สำนักงานใหญ่", items=[{"name": "คีย์บอร์ด", "qty": 1}]))
+    await handle(postback({"a": "desc_skip"}), s, backend)
+    assert not backend.created
+    assert (await s.get(USER)).step == "ASK_REQUESTER"
+
+
+@pytest.mark.asyncio
+async def test_ปุ่มเปลี่ยนคนแจ้งยังอยู่คู่กับปุ่มข้าม():
+    """เหตุผลทั้งหมดที่ไม่ตัดขั้นตอนนี้ทิ้ง — ถ้าปุ่มนี้หายไปเมื่อไหร่ ผูกผิดคนแล้วแก้เองไม่ได้"""
+    reply = M.ask_description("withdraw", {"name": "สมชาย", "department": "IT"})
+    actions = [data for _, data in reply.quick]
+    assert "a=rq_change" in actions
+    assert M.SKIP_DESC_ACTION in actions
 
 
 @pytest.mark.asyncio

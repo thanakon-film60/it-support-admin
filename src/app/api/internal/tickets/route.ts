@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { verifyInternalKey, unauthorizedJson } from "@/lib/internal-auth";
 import { createTicket, listTickets, type NewTicketInput } from "@/lib/db/tickets";
 import { findOrCreateUserByName } from "@/lib/db/users";
+import { departmentLabel, listEmployees } from "@/lib/db/employees";
 import { findEquipmentByAssetCode, getEquipmentById } from "@/lib/db/equipment";
 import { deductStockForWithdrawTicket } from "@/lib/db/stock";
 import { findBranchesByName, isCompanyCode } from "@/lib/db/branches";
@@ -24,6 +25,8 @@ interface Payload {
   description?: string;
   requester_name?: string;
   requester_department?: string | null;
+  /** id ของแถวใน users — บอทส่งมาเมื่อผู้ใช้เลือกตัวเองจากทะเบียนพนักงานแล้ว */
+  requester_user_id?: string | null;
   asset_code?: string | null;
   items?: { name?: string; qty?: number }[];
   line_user_id?: string | null;
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return Response.json({ error: "ต้องส่ง JSON object" }, { status: 400 });
   }
-  const textFields = ["request_id", "initial_message", "equipment_id", "type", "company", "location", "description", "requester_name", "requester_department", "asset_code", "line_user_id", "line_display_name"] as const;
+  const textFields = ["request_id", "initial_message", "equipment_id", "type", "company", "location", "description", "requester_name", "requester_department", "requester_user_id", "asset_code", "line_user_id", "line_display_name"] as const;
   for (const key of textFields) {
     if (body[key] != null && (typeof body[key] !== "string" || body[key]!.length > 10000)) {
       return Response.json({ error: `${key} ต้องเป็นข้อความไม่เกิน 10000 ตัวอักษร` }, { status: 400 });
@@ -143,10 +146,22 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "ทรัพย์สินที่เลือกไม่ตรงกับรหัส กรุณาเลือกใหม่" }, { status: 400 });
   }
 
-  const requester = findOrCreateUserByName({
-    display_name: body.requester_name.trim(),
-    department: body.requester_department?.trim() || null,
-  });
+  // ผู้แจ้งที่เลือกมาจากทะเบียนพนักงานแล้ว ต้องผูกกับ "แถวเดิม" ของคนนั้นเสมอ
+  //
+  // ถ้าปล่อยให้ตกไป findOrCreateUserByName ทุกครั้ง การสะกดชื่อต่างกันนิดเดียว (เว้นวรรคเกิน,
+  // ใส่/ไม่ใส่คำนำหน้า) จะสร้าง user แถวใหม่ขึ้นมาเงียบๆ แล้วประวัติของคนคนเดียวจะกระจายหลายแถว
+  // จนดู "เคยแจ้งอะไรไว้บ้าง" ไม่ได้อีกเลย
+  const picked = body.requester_user_id?.trim()
+    ? listEmployees(true).find((u) => u.id === body.requester_user_id!.trim()) ?? null
+    : null;
+  const requester =
+    picked ??
+    findOrCreateUserByName({
+      display_name: body.requester_name.trim(),
+      department: body.requester_department?.trim() || null,
+    });
+  const requesterDepartment =
+    body.requester_department?.trim() || (picked ? departmentLabel(picked) : null);
 
   const imageUrls = sanitizeImageUrls(body.image_urls);
 
@@ -170,7 +185,7 @@ export async function POST(request: NextRequest) {
       source: "line-bot",
       ...(requestId ? { request_id: requestId } : {}),
       requester_name: requester.display_name,
-      requester_department: body.requester_department?.trim() || null,
+      requester_department: requesterDepartment,
       ...(body.initial_message?.trim() ? { initial_message: body.initial_message.trim() } : {}),
       ...(items.length > 0 ? { items } : {}),
       ...(imageUrls.length > 0 ? { image_urls: imageUrls } : {}),

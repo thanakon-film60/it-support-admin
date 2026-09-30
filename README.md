@@ -6,8 +6,16 @@
 1. **เพิ่มระบบ Login/Auth จริง** (ต้นแบบไม่มีระบบยืนยันตัวตนเลย — เป็นช่องโหว่ด้านความปลอดภัยที่เปิดให้ใครก็เข้าถึงข้อมูลได้)
 2. **สร้าง LINE OA Bot + LIFF mini-app แบบเต็มรูปแบบ** สำหรับให้พนักงานแจ้งปัญหา/สร้าง ticket จากภายนอกระบบแอดมิน (ต้นแบบไม่มีปุ่ม "สร้าง Ticket" ในหน้าแอดมินเลย แสดงว่า ticket ทั้งหมดถูกสร้างจากช่องทางอื่น)
 
-สถานะปัจจุบัน: **รันด้วย mock data (ไฟล์ JSON ในโฟลเดอร์ `data/`) ยังไม่ได้ต่อ Supabase จริง** — ดูหัวข้อ
-["ย้ายจาก mock data ไป Supabase"](#ย้ายจาก-mock-data-ไป-supabase) ด้านล่างเพื่อ migrate ต่อ
+สถานะปัจจุบัน: **ใช้งานจริงอยู่** บนเครื่อง Windows ในออฟฟิศ (Docker Desktop) ข้อมูลเก็บเป็นไฟล์ JSON
+ใน docker volume `app_data` — **ยังไม่ได้ย้ายไป Postgres** ทั้งที่ service เตรียมไว้แล้ว
+ดูหัวข้อ ["ย้ายจากไฟล์ JSON ไป Postgres"](#ย้ายจากไฟล์-json-ไป-postgres) ด้านล่าง
+
+> **เพิ่งเข้ามาดูโปรเจกต์นี้ครั้งแรก?** อ่าน [`PROJECT.md`](./PROJECT.md) ก่อน —
+> สรุปทั้งระบบไว้ในไฟล์เดียว (โครงสร้าง · ชั้นข้อมูล · บทสนทนาของบอท · กฎเหล็ก · กับดักที่เคยเจอ ·
+> งานที่ค้างอยู่) ส่วนไฟล์นี้เป็นคู่มือรายหัวข้อสำหรับตอนลงมือทำจริง
+>
+> ถ้าเป็น AI agent: มี skill พร้อมใช้ที่ [`it-support-admin.skill`](./it-support-admin.skill)
+> (ต้นฉบับแก้ได้ที่ `skill/` แล้ว `python skill/build.py` เพื่อแพ็กใหม่)
 
 ## Tech Stack
 
@@ -17,8 +25,9 @@
 | ภาษา | TypeScript |
 | Styling | Tailwind CSS v4 (CSS-first config, ไม่มี `tailwind.config.js`) |
 | Auth | Session cookie + JWT (`jose`) เซ็นเอง, hash รหัสผ่านด้วย `bcryptjs` |
-| Data (ปัจจุบัน) | Mock data เก็บเป็นไฟล์ JSON ผ่าน adapter เดียว (`src/lib/db/store.ts`) |
-| Data (เป้าหมาย) | Supabase (Postgres + Auth + Storage) — schema พร้อมอยู่ใน Project doc |
+| Data (ปัจจุบัน) | ไฟล์ JSON ใน docker volume `app_data` ผ่าน adapter เดียว (`src/lib/db/store.ts`) |
+| Data (เป้าหมาย) | **Postgres 16** ที่รันเองใน `docker-compose.yml` — schema อยู่ที่ `db/init/001_schema.sql` · pool อยู่ที่ `src/lib/db/pg.ts` (ยังไม่มีโค้ดไหนเรียกใช้) |
+| ทางเข้าจากเน็ต | Tailscale Funnel → `127.0.0.1:3000` (เว็บ) · `127.0.0.1:8000/webhook` (บอท) |
 | LINE Integration | LINE Messaging API (webhook) + LIFF (`@line/liff`) |
 | Excel Import | `xlsx` (SheetJS) — ⚠️ ดูหมายเหตุความปลอดภัยด้านล่าง |
 
@@ -56,10 +65,14 @@ npm run dev
 src/
   app/
     (dashboard)/          หน้าแอดมินทั้งหมด (ต้อง login) — layout เดียวคุม TopNav
-      page.tsx             ภาพรวม (Overview)
+      page.tsx             ภาพรวม (Overview) + ปฏิทิน
       tickets/              Tickets
+      resolved/              แก้ไขแล้ว รอผู้แจ้งยืนยัน
+      completed/             ดำเนินการเสร็จสิ้น
       assets/                ทรัพย์สิน
       custodian/             ผู้ครอบครอง (read-only)
+      employees/             ทะเบียนพนักงาน 326 คน
+      branches/              สาขา
       repair-history/        ประวัติซ่อม
       stock/                 สต็อก + stock/transactions
       faq/                   FAQ Bot
@@ -70,12 +83,12 @@ src/
   components/              UI components แยกตามโมดูล (ui/, nav/, tickets/, assets/, stock/, faq/, liff/)
   lib/
     db/                    Repository ต่อ collection (users, equipment, tickets, stock, faq, staff)
-    db/store.ts             Adapter เดียวที่แตะไฟล์ JSON จริง — จุดเดียวที่ต้องแก้ตอนย้ายไป Supabase
+    db/store.ts             Adapter เดียวที่แตะไฟล์ JSON จริง — จุดเดียวที่ต้องแก้ตอนย้ายไป Postgres
     line/                  LINE client, signature verification, FAQ-bot logic
     auth.ts                Session/JWT helpers
     types.ts                Domain types ทั้งหมด
 proxy.ts                  Next.js 16 middleware (เดิมชื่อ middleware.ts) — เช็ค session cookie แบบ optimistic
-data/                     Mock data (JSON) — สร้างอัตโนมัติ, ไม่ commit
+data/                     ข้อมูลจริง (JSON) — สร้างอัตโนมัติ, ไม่ commit, อยู่บน docker volume `app_data`
 ```
 
 ## ระบบ Auth ทำงานอย่างไร
@@ -91,7 +104,7 @@ data/                     Mock data (JSON) — สร้างอัตโนม
 
 1. ไปที่ [LINE Developers Console](https://developers.line.biz/console/) → สร้าง Provider (ถ้ายังไม่มี) → สร้าง **Messaging API Channel**
 2. ในหน้า channel ที่สร้าง: แท็บ "Basic settings" จะมี **Channel secret** และแท็บ "Messaging API" จะมีปุ่มออก **Channel access token (long-lived)** — copy ทั้งสองค่าไปใส่ใน `.env.local` (`LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`)
-3. Deploy โปรเจกต์นี้ให้มี URL จริง (เช่น Vercel) แล้วนำ URL ไปตั้งใน "Webhook URL" ของแท็บ Messaging API เป็น `https://<โดเมน>/api/line/webhook` แล้วกด **Verify** (ปุ่มนี้จะยิง GET เข้ามา — route รองรับไว้แล้ว) จากนั้นเปิด **Use webhook**
+3. ทำให้ระบบมี URL จริงที่ LINE ยิงเข้ามาได้ **ระบบนี้รันบนเครื่อง Windows ในออฟฟิศ และเปิดทางเข้าด้วย Tailscale Funnel** (ไม่ได้ขึ้นคลาวด์) จะได้โดเมนถาวร `https://<ชื่อเครื่อง>.<tailnet>.ts.net` — ขั้นตอนเต็มอยู่ใน [`LINE_SETUP.md`](./LINE_SETUP.md) ข้อ 3 นำ URL ไปตั้งใน "Webhook URL" ของแท็บ Messaging API แล้วกด **Verify** จากนั้นเปิด **Use webhook**
 4. ปิด "Auto-reply messages" และ "Greeting messages" ของ LINE Official Account เริ่มต้น (ในหน้า [OA Manager](https://manager.line.biz/)) ไม่งั้นจะชนกับข้อความที่บอทของเราตอบเอง
 5. สร้าง **LIFF app** ในแท็บ "LIFF" ของ channel เดียวกัน: Size = `Full`, Endpoint URL = `https://<โดเมน>/liff/new-ticket` → copy **LIFF ID** ไปใส่ `NEXT_PUBLIC_LIFF_ID` ใน `.env.local` (ต้อง rebuild หลังแก้ค่านี้ เพราะเป็น build-time env)
 
@@ -137,18 +150,27 @@ data/                     Mock data (JSON) — สร้างอัตโนม
 ถ้ายังไม่ได้ตั้งค่า `NEXT_PUBLIC_LIFF_ID` หน้า `/liff/new-ticket` จะ**ไม่ล่ม** — ระบบ fallback เป็นฟอร์มให้กรอกชื่อผู้แจ้งเอง
 แทนการดึงชื่อจาก LINE Profile อัตโนมัติ ทำให้ทดสอบฟอร์มได้แม้ยังไม่มี LINE channel จริง (เปิด URL ตรงๆ ในเบราว์เซอร์ปกติได้เลย)
 
-## ย้ายจาก Mock Data ไป Supabase
+## ย้ายจากไฟล์ JSON ไป Postgres
 
-ทุกไฟล์ใน `src/lib/db/*.ts` (ยกเว้น `store.ts`) เรียกผ่านฟังก์ชันของ `store.ts` เท่านั้น ไม่แตะ `fs` ตรงๆ
-ดังนั้นตอนย้ายจริงแค่เขียน adapter ใหม่ที่ implement signature เดียวกัน (`readCollection`, `writeCollection`, `upsertOne`, `patchOne`)
-โดยคุยกับ Supabase client แทนไฟล์ JSON แล้วสลับ import — **ไม่ต้องแก้โค้ดฝั่ง UI/Server Action เลย**
+> เอกสารรุ่นก่อนเขียนไว้ว่าจะย้ายไป Supabase — **เปลี่ยนแผนแล้ว** ของจริงคือ Postgres ที่รันเอง
+> ใน `docker-compose.yml` เพราะทั้งระบบอยู่บนเครื่องในออฟฟิศ ไม่ได้อยู่บนคลาวด์
 
-SQL schema ที่ออกแบบไว้ให้ตรงกับ mock data ทุกตาราง (รวม `equipment_summary` view) อยู่ใน Project doc
-`it-support-admin-analysis.md` — สร้างตารางใน Supanse ตาม schema นั้น แล้วเพิ่ม RLS policy ผูกกับ role ทีม IT ก่อนขึ้น production เสมอ (ต้นแบบไม่มี Auth/RLS เลย เป็นความเสี่ยงหลักที่พบตอนวิเคราะห์)
+**สถานะตอนนี้:** service `db` (postgres:16) รัน healthy อยู่ · schema อยู่ที่ `db/init/001_schema.sql` ·
+`src/lib/db/pg.ts` มี connection pool พร้อมใช้ — **แต่ยังไม่มีโมดูลไหน import มันเลย**
+ข้อมูลจริงทั้งหมดยังเป็นไฟล์ JSON ใน docker volume `app_data`
 
-ไฟล์รูปที่อัปโหลดจากฟอร์ม FAQ ตอนนี้เซฟลง `public/uploads/faq/` ตรงๆ (ไม่ใช่ base64 ในไฟล์ JSON) —
-ตอนย้ายไป Supabase ให้เปลี่ยนไปใช้ Supabase Storage bucket แทน (โครงสร้าง URL คล้ายกัน ปรับ `saveImages()` ใน
-`src/app/actions/faq.ts` จุดเดียว)
+**ทำไมควรย้าย:** ตอนนี้ทุก request อ่าน/เขียน**ทั้งไฟล์** และถ้ามี 2 process เขียนพร้อมกันข้อมูลพังได้จริง
+
+**ย้ายยังไง:** ทุกไฟล์ใน `src/lib/db/*.ts` (ยกเว้น `store.ts`) เรียกผ่านฟังก์ชันของ `store.ts` เท่านั้น
+ไม่แตะ `fs` ตรงๆ จึงแค่เขียน adapter ใหม่ที่ implement 4 signature เดิม
+(`readCollection` · `writeCollection` · `upsertOne` · `patchOne`) ให้คุยกับ Postgres แทนไฟล์ แล้วสลับ import
+— **ไม่ต้องแก้โค้ดฝั่ง UI / Server Action / บอท เลยแม้แต่บรรทัดเดียว**
+
+ก่อนขึ้นใช้จริงให้ตั้งสิทธิ์ระดับตารางผูกกับ role ทีม IT ด้วย (ต้นแบบไม่มีชั้นนี้เลย)
+
+ไฟล์รูปที่อัปโหลดจากฟอร์ม FAQ เซฟลง `public/uploads/faq/` ตรงๆ (ไม่ใช่ base64 ในไฟล์ JSON)
+ตอนย้ายฐานข้อมูลไม่ต้องแตะส่วนนี้ — ถ้าจะย้ายที่เก็บไฟล์ด้วย ปรับที่ `saveImages()` ใน
+`src/app/actions/faq.ts` จุดเดียว
 
 ## ตัวแปรสภาพแวดล้อม
 
@@ -303,6 +325,87 @@ API: `POST /api/internal/tickets/confirm` — `{ticket_code, line_user_id, actio
 
 API: `GET /api/internal/lookup?kind=branch_options&level=company|group|branch[&company=..&group=..]`
 และ `kind=branch_lookup&name=<ชื่อสาขา>` สำหรับตรวจว่าสาขานั้นอยู่บริษัทไหน
+
+## ทะเบียนพนักงาน และการระบุ "ผู้แจ้ง"
+
+ที่มาของข้อมูล: ไฟล์ของ HR (ผังองค์กร H2-2026) แปลงเป็น `src/lib/db/employees.seed.json`
+**326 คน** — มีฝ่ายตามผัง 133 คน · ยังไม่ถูกจัดฝ่าย 193 คน (แสดงเป็น "อื่นๆ")
+
+| ไฟล์ | หน้าที่ |
+| --- | --- |
+| `src/lib/db/employees.seed.json` | ทะเบียนดิบจาก HR — แก้ที่นี่ที่เดียว |
+| `src/lib/db/employees.ts` | ซิงก์เข้า `users`, ค้นหา, ผูก/ถอดบัญชี LINE, CRUD |
+| `src/lib/db/users.ts` | seed มาจากทะเบียน แทนข้อมูลตัวอย่าง 12 คนของเดิม |
+
+### ทำไมต้อง "ซิงก์" ไม่ใช่แค่ seed
+
+`readCollection()` ใน `db/store.ts` รัน seed เฉพาะตอน **ยังไม่มีไฟล์** แต่เครื่องที่ใช้งานอยู่จริง
+มี `data/users.json` อยู่แล้วเสมอ (และอยู่บน docker volume `app_data` ที่ไม่ถูกลบตอน deploy)
+การแก้ `seed()` เฉยๆ จึงไม่มีผลกับใครเลยสักคน — อาการคือ "อัปเดตโค้ดแล้วแต่รายชื่อยังเป็นชุดเดิม"
+ซึ่งหาสาเหตุยากมากเพราะโค้ดดูถูกทุกบรรทัด
+
+`ensureEmployeeRegistry()` จึงรวมทะเบียนเข้ากับของเดิมให้ ครั้งเดียวต่อ 1 ค่า `EMPLOYEE_REGISTRY_VERSION`
+(เก็บ marker ไว้ที่ `data/registry_meta.json`) ราคาของการเรียกซ้ำคืออ่านไฟล์เล็ก 1 ไฟล์ + เทียบสตริง
+จึงเรียกได้ทุก request
+
+**กติกาการเขียนทับ**
+
+| ช่อง | ใครชนะ |
+| --- | --- |
+| ทะเบียนมีค่า (ชื่อ/ฝ่าย/ตำแหน่ง/ระดับ/บริษัท) | ทะเบียน — HR เป็นเจ้าของข้อมูลนี้ |
+| ทะเบียนเป็น `null` | ของเดิมในระบบ — ไม่งั้นฝ่ายที่แอดมินเติมให้ 193 คนนั้นจะถูกล้างทุกครั้งที่ซิงก์ |
+| `line_user_id` / `email` / `id` / `created_at` | ระบบ — ทะเบียนไม่แตะเด็ดขาด |
+
+> **แก้ทะเบียนแล้วต้องขยับ `EMPLOYEE_REGISTRY_VERSION` ด้วยเสมอ** ไม่งั้นเครื่องที่ซิงก์ไปแล้วจะข้ามรอบใหม่ไปเงียบๆ
+
+### ขั้นตอนในแชท
+
+ครั้งแรกของแต่ละบัญชี LINE บอทถาม "ผู้แจ้งคือใครครับ?" แล้วรับได้ทั้ง **ชื่อจริง / ชื่อเล่น / รหัสพนักงาน**
+(ค้นในหน่วยความจำฝั่งบอทจากก้อน `knowledge` ที่ cache ไว้ 5 นาที + `rapidfuzz` รับคำพิมพ์ผิด)
+เจอคนเดียว → ให้กดยืนยัน · เจอหลายคน → ให้เลือก · ไม่เจอ → กด "ใช้ชื่อที่พิมพ์" แจ้งต่อได้เลย
+
+> **28 ก.ย. 2026 — ปิดเมนู "เลือกจากรายชื่อ" ไว้ชั่วคราว** ขั้นระบุผู้แจ้งให้พิมพ์ชื่อเอาเองอย่างเดียว
+> โค้ดเมนูยังอยู่ครบหลังธง `REQUESTER_PICKER_ENABLED` ใน `line-bot-python/app/messages.py`
+> เปิดกลับ = แก้เป็น `True` บรรทัดเดียว · ปุ่มเก่าที่ค้างในห้องแชทกดแล้วถอยไปหน้าพิมพ์ชื่อให้เอง
+
+
+**ครั้งที่ 2 เป็นต้นไปข้ามขั้นนี้ทั้งขั้น** — ขั้นถามรายละเอียดจะขึ้นบรรทัด `👤 แจ้งในชื่อ: ...`
+พร้อมปุ่ม "เปลี่ยนคนแจ้ง" รายละเอียดการออกแบบและเหตุผลรายข้ออยู่ใน [`LINE_INTAKE.md`](./LINE_INTAKE.md)
+
+ticket ที่สร้างจะส่ง `requester_user_id` มาด้วย จึงผูกกับ **แถวเดิม** ของคนนั้นเสมอ
+ไม่ใช่ "หาจากชื่อ ถ้าไม่เจอสร้างใหม่" แบบเดิมที่ทำให้ชื่อสะกดต่างกันนิดเดียวกลายเป็นคนละคน
+
+### กันสร้าง ticket ซ้ำตอนกด "ลองส่งใหม่"
+
+บอทส่ง `request_id` (เกิดพร้อม session คงเดิมตลอดแม้ผ่าน Redis) `initial_message`
+และ `equipment_id` ไปกับทุก ticket หลังบ้านเจอคู่ `(request_id, line_user_id)` ซ้ำจะคืน
+ticket เดิมแทนการสร้างใหม่ จึงไม่ได้ 2 ใบและไม่ตัดสต็อกซ้ำเมื่อ timeout หลังเขียนข้อมูลไปแล้ว
+
+`equipment_id` สำคัญเพราะรหัสทรัพย์สินในข้อมูลจริงซ้ำกันอยู่ 28 แถว — ทุกทางเข้า
+(พิมพ์รหัสเอง / ไล่เมนู / AI จับรหัสจากประโยคแรก) ผ่าน `_resolve_asset_code` ตัวเดียวกัน
+จึงถามว่า "เครื่องไหน" เหมือนกันหมด และได้ `equipment_id` ติดไปกับ ticket เสมอ
+
+### หน้าแอดมิน `/employees`
+
+จัดการทะเบียนได้จากหน้าเว็บโดยไม่ต้อง deploy — เพิ่มคน · แก้ชื่อ/ฝ่าย/ตำแหน่ง/ระดับ ·
+ปิดใช้งาน · ถอดการผูกบัญชี LINE · ลบ พร้อมตัวกรองฝ่าย ค้นหา (ข้ามช่องว่างเหมือนฝั่งบอท)
+และแถบสรุป "ยังไม่ระบุฝ่าย" ไว้ไล่เติมฝ่ายให้ 193 คนที่ HR ยังไม่ได้จัด
+
+| การกระทำ | กติกา |
+| --- | --- |
+| ลบถาวร | ได้เฉพาะคนที่**ไม่มี**ticket และไม่ได้ถือทรัพย์สินอยู่ · มีแล้วต้องใช้ "ปิดใช้งาน" แทน ไม่งั้นประวัติจะอ้างถึงคนที่ไม่มีตัวตน |
+| ปิดใช้งาน | หายจากเมนูเลือกผู้แจ้งในบอทและ dropdown ผู้ครอบครอง แต่ ticket เก่ายังอ่านได้ครบ |
+| ถอด LINE | ครั้งหน้าที่คนนี้แจ้งเรื่อง บอทจะถามชื่อใหม่ · ใช้ตอนผูกผิดคน หรือมือถือถูกส่งต่อ |
+| รหัสพนักงานซ้ำ | ถูกปฏิเสธ — เป็นกุญแจซิงก์กับทะเบียน ซ้ำแล้วข้อมูล 2 คนจะปนกันตอนซิงก์รอบถัดไป |
+
+การแก้จากหน้านี้จะถูกทะเบียนเขียนทับก็ต่อเมื่อ **HR ใส่ค่านั้นมาในไฟล์ + ขยับเวอร์ชัน**
+ฝ่ายที่เติมให้คนที่ทะเบียนเว้นว่างไว้จะอยู่ถาวร (ดูกติกาการเขียนทับด้านบน)
+
+เลย์เอาต์: มือถือ/แท็บเล็ต = การ์ดต่อคน · ตั้งแต่ `lg` ขึ้นไป = ตาราง
+ตัดคอลัมน์ "บริษัท" ออกจากตารางโดยตั้งใจ เพราะ 8 คอลัมน์ + ปุ่มจัดการ 4 ปุ่มกว้าง 1242px
+แต่พื้นที่จริงบนจอ 1440 มีแค่ 1118px ทำให้คอลัมน์ "จัดการ" ถูกตัดหาย ต้องเลื่อนแนวนอน
+ก่อนกดลบได้ทุกแถว (วัดด้วย Playwright จริง — ตอนนี้พอดี 1118/1118 ไม่ต้องเลื่อน)
+บริษัทยังดู/แก้ได้ในกล่องแก้ไข และอยู่บนการ์ดของมือถือ
 
 ## เลือกทรัพย์สินในแชท LINE แบบไล่กรองทีละชั้น
 
@@ -508,14 +611,14 @@ push แจ้งทีม IT ส่ง**เฉพาะครั้งแรก
 
 ## สิ่งที่ควรทำต่อก่อนขึ้น production (ติเพื่อก่อ)
 
-รายการนี้คือช่องว่างที่รู้ตัวและตั้งใจปล่อยไว้ตามสโคปที่ตกลงกัน (mock data + POC) ไม่ใช่ของที่ลืมทำ:
+รายการนี้คือช่องว่างที่รู้ตัวและตั้งใจปล่อยไว้ ไม่ใช่ของที่ลืมทำ — **ระบบใช้งานจริงอยู่แล้ว** ไม่ใช่ POC แล้ว จึงควรไล่เก็บตามลำดับความเสี่ยง:
 
-1. **ยังไม่ได้ต่อ Supabase จริง** — ข้อมูลทั้งหมดอยู่ในไฟล์ JSON local ห้ามใช้ deploy จริงแบบนี้ (deploy บน serverless เช่น Vercel แล้ว filesystem จะไม่ persist ข้ามแต่ละ request/instance ด้วย)
+1. **ยังไม่ได้ย้ายไป Postgres** — ข้อมูลทั้งหมดอยู่ในไฟล์ JSON บน docker volume `app_data` ซึ่ง**ไม่หายตอน deploy** (mount ถาวรไว้แล้ว) แต่ทุก request อ่าน/เขียนทั้งไฟล์ และถ้ามี 2 process เขียนพร้อมกันข้อมูลพังได้จริง · ห้ามย้ายระบบนี้ไป serverless (เช่น Vercel) ตราบใดที่ยังเป็นไฟล์ เพราะ filesystem ไม่ persist ข้าม request/instance
 2. **`xlsx` (SheetJS) มีช่องโหว่ระดับ High ที่ยังไม่มี patch บน npm** (Prototype Pollution + ReDoS — `npm audit` เห็นได้) ความเสี่ยงจำกัดเพราะเป็นฟีเจอร์ Import Excel ที่ใช้ได้เฉพาะแอดมินที่ login แล้ว แต่ถ้าจะขึ้น production จริงควรพิจารณาย้ายไป `exceljs` หรือ sanitize ไฟล์ก่อน parse
 3. **`stock_items.category` ยังเป็น free text** (ไม่ใช่ enum เหมือน `equipment.category`) ตามที่สังเกตจากต้นแบบ — ปล่อยให้เหมือนต้นแบบไว้ก่อนตามที่ตกลง scope "เหมือนทุกรูปแบบ" แต่ถ้าจะแก้ในอนาคตควร normalize เป็น enum/lookup table
-4. **การผูกผู้ครอบครองทรัพย์สิน/ผู้แจ้งจาก LIFF (โหมด manual) ยังเป็นการพิมพ์ชื่ออิสระ** (`findOrCreateUserByName`) เหมือนต้นแบบ — เสี่ยงสร้าง user ซ้ำถ้าพิมพ์ชื่อไม่ตรงกันทุกตัวอักษร ควรทำ autocomplete จาก users ที่มีอยู่ในอนาคต
-5. **รหัสผ่านบัญชีทดสอบยังเป็นค่า default ที่รู้กันทั่วไป** (`ITadmin@2026`) — เปลี่ยนก่อน deploy จริงเสมอ และควรมีหน้า "จัดการบัญชีแอดมิน" เพิ่มถ้ามีผู้ใช้หลายคน (ตอนนี้ seed ไว้แค่ 1 บัญชี)
-6. **ยังไม่มี rate limiting / retry queue บน webhook** — ถ้า LINE ยิง event รัวๆ (เช่น broadcast) endpoint นี้ประมวลผล sync ทั้งหมด ถ้าจะรับโหลดสูงควรใส่ queue (เช่น Upstash QStash) คั่นกลาง
+4. **ผู้แจ้งที่มาจาก LIFF / คีย์เองในหน้าแอดมิน ยังเป็นการพิมพ์ชื่ออิสระ** (`findOrCreateUserByName`) — เสี่ยงสร้าง user ซ้ำถ้าพิมพ์ชื่อไม่ตรงกันทุกตัวอักษร **ฝั่งบอท LINE แก้แล้ว** (ส่ง `requester_user_id` จากทะเบียนพนักงานมาตรงๆ) เหลือ 2 ช่องทางนี้ที่ควรทำ autocomplete จากทะเบียน 326 คน
+5. **รหัสผ่านบัญชีทดสอบยังเป็นค่า default ที่ hardcode ไว้ในโค้ด** (`SEED_PASSWORD` ใน `src/lib/db/staff.ts`) — ค่านี้อยู่ใน git history แล้ว **ต้องเปลี่ยนก่อนเปิดให้คนอื่นใช้** และควรมีหน้า "จัดการบัญชีแอดมิน" ถ้ามีผู้ใช้หลายคน (ตอนนี้ seed ไว้แค่ 1 บัญชี)
+6. **webhook ฝั่ง Next.js (`/api/line/webhook`) ยังไม่มี rate limiting / retry queue** — ประมวลผล sync ทั้งหมด (บอท Python ซึ่งเป็นตัวที่ใช้จริงมีกันสแปม `RATE_LIMIT_PER_MINUTE` อยู่แล้ว ค่าตั้งต้น 20 ครั้ง/นาที/คน) route เดิมยังอยู่แต่ไม่ได้เป็น webhook ที่ LINE ยิงเข้าแล้ว
 
 ## คำสั่งที่ใช้บ่อย
 
@@ -524,4 +627,17 @@ npm run dev      # dev server (Turbopack)
 npm run build    # production build — ควรรันก่อน deploy ทุกครั้งเพื่อจับ type error/route error
 npm run start    # รัน production build ที่ build ไว้แล้ว
 npm run lint     # ESLint
+npx tsc --noEmit # ตรวจ type อย่างเดียว เร็วกว่า build มาก ใช้ระหว่างแก้
+
+# เทสต์ — ต้องเขียวทั้งคู่ก่อนบอกว่าเสร็จ
+node --test tests/*.test.cjs                  # ฝั่งเว็บ 68 เคส
+cd line-bot-python && python -m pytest -q     # ฝั่งบอท 229 เคส
+```
+
+ฝั่งปฏิบัติการ (Windows + Docker Desktop เปิดอยู่ — ดับเบิลคลิกได้เลย):
+
+```powershell
+deploy.bat              # build + docker compose up + ตรวจผลปลายทางจริงกว่า 20 ข้อ
+backup.bat              # สำรอง data/ + .env
+install-autostart.bat   # รันเป็น admin ครั้งเดียวตอนตั้งเครื่องใหม่ (Funnel + backup อัตโนมัติ)
 ```

@@ -23,40 +23,31 @@ HERE = Path(__file__).resolve().parent
 FONT_BOLD = HERE / "fonts" / "NotoSansThai-Bold.ttf"
 FONT_REG = HERE / "fonts" / "NotoSansThai-Regular.ttf"
 
-W, H = 2500, 1686           # ขนาด rich menu แบบใหญ่ (ค่าเดียวที่ LINE ยอมรับสำหรับ 2 แถว)
-COLS, ROWS = 3, 2
+# LINE รับรูป rich menu แค่ 2 ขนาด: 2500x1686 (2 แถว) กับ 2500x843 (แถวเดียว)
+# เมนูตอนนี้เป็น 4 ปุ่มแบบ 2x2 จึงใช้รูปสูง — ค่านี้ต้องตรงกับ line-bot-python/app/richmenu.py
+W, H = 2500, 1686
+COLS, ROWS = 2, 2
 BG = "#EAF0F8"
-BG_DATA = "#E8F6F0"   # พื้นเขียวอ่อนของเมนูข้อมูล — ต่างจากเมนูหลักให้เห็นชัด
 CARD = "#FFFFFF"
 CARD_EDGE = "#D7E2F0"
 TEXT = "#0F2B4D"
 SUBTEXT = "#6B84A3"
 
-# ---------------------------------------------------------------- เมนู 2 ชั้น
+# ------------------------------------------------------------------ เมนู 4 ปุ่ม
 #
-# ทำไมต้องมี 2 ชั้น: ปุ่มบนเมนูเดียวใส่ได้แค่ 6 ปุ่ม แต่บอทตอบได้มากกว่านั้นเยอะ
-# เดิมความสามารถอย่าง "ดูสต็อก" / "ทรัพย์สินที่ฉันถืออยู่" ต้องพิมพ์เอาเองเท่านั้น
-# ซึ่งแทบไม่มีใครรู้ว่าทำได้ การแยกเป็นเมนู "แจ้งเรื่อง" กับ "เช็คข้อมูล" ทำให้เห็นครบโดยไม่แน่นจอ
+# 2026-09-25: ตัด "เช็คข้อมูล" (ปุ่มสลับไปเมนูชั้นที่ 2) และ "คำถามที่พบบ่อย" ออก
+# เหลือเฉพาะสิ่งที่ผู้ใช้ "ทำ" จริง 4 อย่าง — เมนูชั้นที่ 2 จึงถูกยกเลิกไปทั้งใบ
+# 2026-09-26: เปลี่ยนจากเรียงแถวเดียวเป็น 2x2 ปุ่มใหญ่ขึ้นเท่าตัว กดง่ายขึ้นบนมือถือ
 #
-# เมนูหลัก = สิ่งที่ "ทำ" (สร้างเรื่องใหม่) ไล่เฉดน้ำเงิน
-# เมนูข้อมูล = สิ่งที่ "ดู" (อ่านข้อมูลที่มีอยู่) ไล่เฉดเขียว-ฟ้า ให้รู้ทันทีว่าเปลี่ยนเมนูแล้ว
+# ลำดับปุ่มในลิสต์นี้ต้องตรงกับ MAIN_BUTTONS ใน line-bot-python/app/richmenu.py เป๊ะๆ
+# เพราะรูปกับพื้นที่กดเป็นคนละไฟล์กัน ถ้าสลับลำดับจะกลายเป็น "กดปุ่มนี้แล้วได้อีกเรื่อง"
+# ซึ่งเป็นบั๊กที่มองไม่เห็นจากโค้ดฝั่งใดฝั่งหนึ่งเลย
 
 MENU_MAIN = [
-    {"icon": "wrench",     "th": "แจ้งซ่อม",        "en": "Repair",      "color": "#123B6B"},
-    {"icon": "box_in",     "th": "เบิกอุปกรณ์",     "en": "Withdraw",    "color": "#17559A"},
-    {"icon": "box_out",    "th": "คืนอุปกรณ์",      "en": "Return",      "color": "#1C6FC7"},
-    {"icon": "gear",       "th": "ขอใช้บริการ IT",  "en": "IT Service",  "color": "#1E82D6"},
-    {"icon": "chart",      "th": "เช็คข้อมูล",      "en": "Check Info",  "color": "#0E9F6E"},
-    {"icon": "question",   "th": "คำถามที่พบบ่อย",  "en": "FAQ",         "color": "#29B6E8"},
-]
-
-MENU_DATA = [
-    {"icon": "chart",      "th": "สต็อกคงเหลือ",    "en": "Stock",       "color": "#0B7A55"},
-    {"icon": "clipboard",  "th": "เรื่องที่ฉันแจ้ง", "en": "My Tickets",  "color": "#0E9F6E"},
-    {"icon": "laptop",     "th": "ทรัพย์สินของฉัน",  "en": "My Assets",   "color": "#12B886"},
-    {"icon": "search",     "th": "ค้นหาทรัพย์สิน",  "en": "Find Asset",  "color": "#15AABF"},
-    {"icon": "question",   "th": "คำถามที่พบบ่อย",  "en": "FAQ",         "color": "#29B6E8"},
-    {"icon": "arrow_left", "th": "กลับเมนูหลัก",    "en": "Back",        "color": "#64748B"},
+    {"icon": "wrench",  "th": "แจ้งซ่อม",       "en": "Repair",     "color": "#123B6B"},
+    {"icon": "box_in",  "th": "เบิกอุปกรณ์",    "en": "Withdraw",   "color": "#17559A"},
+    {"icon": "box_out", "th": "คืนอุปกรณ์",     "en": "Return",     "color": "#1C6FC7"},
+    {"icon": "gear",    "th": "ขอใช้บริการ IT", "en": "IT Service", "color": "#1E82D6"},
 ]
 
 # ชื่อเดิมยังใช้ได้ เผื่อมีสคริปต์อื่นอ้างถึง
@@ -179,6 +170,22 @@ def _badge(size: int, color: str, kind: str) -> Image.Image:
     return layer.resize((size, size), Image.LANCZOS)
 
 
+def _fit(d, text: str, font_path: Path, size: int, max_w: float) -> ImageFont.FreeTypeFont:
+    """ย่อฟอนต์ลงจนข้อความกว้างไม่เกิน max_w
+
+    ทำไมต้องมี: ช่องแคบลงจาก 833 เหลือ 625 px ตอนเปลี่ยนเป็น 4 ปุ่มแถวเดียว
+    ข้อความยาวอย่าง "ขอใช้บริการ IT" จึงเสี่ยงล้นขอบการ์ด และ Pillow ไม่เตือนอะไรเลย
+    — มันวาดทับออกไปนอกกรอบเงียบๆ ซึ่งจะไปเห็นตอนรูปขึ้นจริงบนมือถือแล้ว
+    ปรับอัตโนมัติดีกว่าฮาร์ดโค้ดขนาด เพราะแก้ข้อความทีหลังแล้วไม่ต้องมานั่งจูนใหม่"""
+    while size > 10:
+        font = ImageFont.truetype(str(font_path), size)
+        bb = d.textbbox((0, 0), text, font=font)
+        if bb[2] - bb[0] <= max_w:
+            return font
+        size = int(size * 0.94)
+    return ImageFont.truetype(str(font_path), size)
+
+
 def _center(d, text, font, cx, y, fill):
     bb = d.textbbox((0, 0), text, font=font)
     d.text((cx - (bb[2] - bb[0]) / 2 - bb[0], y), text, font=font, fill=fill)
@@ -187,32 +194,38 @@ def _center(d, text, font, cx, y, fill):
 
 # ------------------------------------------------------------------ rich menu
 def build_richmenu(out: Path, tiles: list[dict] | None = None, bg: str = BG) -> None:
-    """วาดรูป rich menu 1 ใบจากรายการ tiles (6 ช่อง 3x2)
-
-    bg ต่างกันระหว่างเมนูหลักกับเมนูข้อมูล เพื่อให้ผู้ใช้รู้ทันทีว่าอยู่เมนูไหน
-    โดยไม่ต้องอ่านตัวหนังสือ — สำคัญเพราะเมนูสลับไปมาได้ ถ้าหน้าตาเหมือนกันเป๊ะจะสับสน
-    """
+    """วาดรูป rich menu 1 ใบจากรายการ tiles (จัดกริดตาม COLS x ROWS)"""
     tiles = tiles or MENU_MAIN
     img = Image.new("RGB", (W * S, H * S), bg)
     d = ImageDraw.Draw(img)
-    f_th = ImageFont.truetype(str(FONT_BOLD), int(76 * S))
     f_en = ImageFont.truetype(str(FONT_REG), int(40 * S))
 
     tw, th = W / COLS, H / ROWS
-    pad, radius = 26 * S, 40 * S
+    # แยก pad แนวตั้ง/แนวนอน ให้การ์ดออกมาใกล้จตุรัสไม่ว่ากริดจะเป็นแบบไหน
+    #
+    # ใช้ pad เท่ากันทุกด้าน เพื่อให้ "ร่องระหว่างการ์ด" กว้างเท่ากันทั้งแนวตั้งและแนวนอน
+    #
+    # เคยลองบีบด้านกว้างเข้ามา (pad_x 170) ให้การ์ดใกล้จตุรัส ผลคือร่องแนวนอนกว้าง 340px
+    # แต่ร่องแนวตั้งแค่ 124px ต่างกัน 2.7 เท่า สายตาจึงอ่านเป็น "สองคอลัมน์ที่แยกกันอยู่"
+    # ไม่ใช่กริด 2x2 — การ์ดกว้างกว่าสูงไม่ได้เสียหาย แต่ร่องไม่เท่ากันเห็นชัดทันที
+    # พื้นที่กดยังเต็มช่องเสมอ (กำหนดที่ richmenu.py) — ที่แคบลงคือรูปเท่านั้น
+    pad_x, pad_y, radius = 62 * S, 62 * S, 46 * S
+    # เผื่อขอบในการ์ดอีกข้างละ 18px กันตัวอักษรชนเส้นกรอบพอดีเป๊ะจนดูอึดอัด
+    text_max_w = (tw - 2 * (pad_x / S) - 2 * 18) * S
 
     for i, tile in enumerate(tiles):
         col, row = i % COLS, i // COLS
         x0, y0 = col * tw * S, row * th * S
         x1, y1 = x0 + tw * S, y0 + th * S
-        d.rounded_rectangle([x0 + pad, y0 + pad, x1 - pad, y1 - pad],
+        d.rounded_rectangle([x0 + pad_x, y0 + pad_y, x1 - pad_x, y1 - pad_y],
                             radius=radius, fill=CARD, outline=CARD_EDGE, width=int(3 * S))
         cx = (x0 + x1) / 2
-        bsize = int(212 * S)
+        bsize = int(214 * S)
         badge = _badge(bsize, tile["color"], tile["icon"])
-        img.paste(badge, (int(cx - bsize / 2), int(y0 + 196 * S)), badge)
-        _center(d, tile["th"], f_th, cx, y0 + 464 * S, TEXT)
-        _center(d, tile["en"], f_en, cx, y0 + 572 * S, SUBTEXT)
+        img.paste(badge, (int(cx - bsize / 2), int(y0 + 206 * S)), badge)
+        f_th = _fit(d, tile["th"], FONT_BOLD, int(78 * S), text_max_w)
+        _center(d, tile["th"], f_th, cx, y0 + 472 * S, TEXT)
+        _center(d, tile["en"], f_en, cx, y0 + 582 * S, SUBTEXT)
 
     img.resize((W, H), Image.LANCZOS).save(out, optimize=True)
 
@@ -243,7 +256,6 @@ if __name__ == "__main__":
     out_dir.mkdir(exist_ok=True)
     src = HERE / "source"
     build_richmenu(out_dir / "richmenu-main.png", MENU_MAIN, BG)
-    build_richmenu(out_dir / "richmenu-data.png", MENU_DATA, BG_DATA)
     if (src / "cover-source.png").exists():
         build_cover(src / "cover-source.png", out_dir / "oa-cover-1080x878.jpg")
     if (src / "logo-source.png").exists():

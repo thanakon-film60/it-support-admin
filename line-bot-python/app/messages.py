@@ -324,6 +324,7 @@ def _picker_reply(
     show_count: bool = True,
     escapes: list[tuple[str, str]] | None = None,
     hint: str = "เลือกจากการ์ด หรือพิมพ์รหัสทรัพย์สินมาได้เลยครับ",
+    page_action: str = "a=pk_page",
 ) -> Reply:
     """ประกอบการ์ดเลือก 1 ชั้น
 
@@ -336,7 +337,7 @@ def _picker_reply(
     footer: list[dict] = []
     if pages > 1:
         nxt = (page + 1) % pages
-        footer.append(F._button(f"▼ ดูเพิ่ม (หน้า {nxt + 1}/{pages})", f"a=pk_page&p={nxt}"))
+        footer.append(F._button(f"▼ ดูเพิ่ม (หน้า {nxt + 1}/{pages})", f"{page_action}&p={nxt}"))
     if back:
         footer.append(F._button(back[0], back[1], style="secondary"))
     esc = escapes if escapes is not None else [
@@ -636,48 +637,247 @@ def ask_more_items(items: list[dict]) -> Reply:
     )
 
 
+# ปิดเมนู "เลือกจากรายชื่อ" ไว้ชั่วคราวตามที่เจ้าของระบบสั่ง (28 ก.ย. 2026)
+# — ขั้นระบุผู้แจ้งให้พิมพ์ชื่อเอาเองอย่างเดียวไปก่อน
+#
+# ไม่ได้ลบโค้ดเมนูทิ้ง เพราะคำสั่งคือ "ไปก่อน" ไม่ใช่ "เลิกใช้" การลบแล้ววันหลังเขียนใหม่
+# มีราคาแพงกว่าการคงไว้หลังธงตัวเดียวมาก (ตัวเมนู + การแบ่งหน้า + การกันกดการ์ดเก่า
+# เป็นโค้ดที่ผ่านการทดสอบมาแล้ว) เปิดกลับ = แก้บรรทัดนี้เป็น True บรรทัดเดียว
+#
+# ปิดที่นี่ที่เดียวคุมทั้ง 2 ฝั่ง: ปุ่มหายจากทุกข้อความ (ไฟล์นี้) และปุ่มเก่าที่ค้างอยู่ในแชท
+# กดแล้วถอยไปหน้าพิมพ์ชื่อแทนที่จะเปิดเมนู (flow.py) — ต้องทำทั้งคู่ เพราะการ์ดที่ส่งไปแล้ว
+# ลบออกจากห้องแชทของผู้ใช้ไม่ได้ ถ้ากันแค่ฝั่งข้อความใหม่ คนที่เลื่อนขึ้นไปกดของเก่าจะยังเข้าเมนูได้
+REQUESTER_PICKER_ENABLED = False
+
+
+def _picker_button() -> list[tuple[str, str]]:
+    """ปุ่ม "เลือกจากรายชื่อ" — คืนลิสต์ว่างเมื่อปิดใช้งาน เพื่อให้กระจายด้วย * ได้ทุกที่"""
+    return [("📋 เลือกจากรายชื่อ", "a=rq_menu")] if REQUESTER_PICKER_ENABLED else []
+
+
 def ask_requester(ticket_type: str) -> Reply:
+    """ถามว่า "ใครแจ้ง" — ถามครั้งเดียวต่อ 1 บัญชี LINE เท่านั้น
+
+    ทำไมให้พิมพ์ค้นหาเป็นทางหลัก ไม่ใช่กดเมนูฝ่าย: ทะเบียนมีพนักงาน 326 คน
+    การกดเมนูแปลว่าต้องเลื่อนหาตัวเองในฝ่ายที่อาจมีเป็นสิบๆ คน ส่วนการพิมพ์ชื่อเล่นของตัวเอง
+    ใช้เวลาไม่ถึง 2 วินาทีและแทบไม่มีทางเลือกผิดคน — เมนูจึงเป็นทางสำรองสำหรับคนที่
+    ไม่แน่ใจว่าชื่อตัวเองในระบบสะกดยังไง
+    """
     who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
     return Reply(
         text=(
-            f"ระบุชื่อ{who} (ชื่อ-นามสกุล และแผนก) ครับ\n\n"
-            "เช่น: สมชาย ใจดี - แผนกบัญชี\n\n"
-            "(พิมพ์ 'ยกเลิก' เพื่อออก)"
-        )
+            f"{who}คือใครครับ?\n\n"
+            "พิมพ์ชื่อจริง ชื่อเล่น หรือรหัสพนักงานมาได้เลย\n"
+            "เช่น: ธนากร · ฟิล์ม · A69048\n\n"
+            "(ถามครั้งเดียว ครั้งต่อไปไม่ต้องพิมพ์อีก)"
+        ),
+        quick=[*_picker_button(), ("❌ ยกเลิก", "a=cancel")],
     )
 
 
-def _description_prompt(text: str, button_label: str) -> Reply:
+def _employee_line(emp: dict) -> str:
+    """บรรทัดสรุปพนักงาน 1 คน — ใส่ชื่อเล่นกับฝ่ายด้วยเพราะชื่อจริงอย่างเดียวแยกคนไม่ออก
+    (ในทะเบียนมีชื่อจริงคล้ายกันหลายคู่ แต่พอมีชื่อเล่น+ฝ่ายแล้วแทบไม่มีทางสับสน)"""
+    name = emp.get("full_name") or emp.get("name") or "-"
+    nick = emp.get("nickname")
+    dept = emp.get("department") or "-"
+    head = f"{name} ({nick})" if nick else name
+    return f"{head}\n🏷 {dept}"
+
+
+def requester_confirm(emp: dict, ticket_type: str) -> Reply:
+    """เจอคนเดียว -> ให้กดยืนยันก่อนผูก
+
+    ต้องยืนยันเพราะการผูกนี้ "ติดถาวร" — ครั้งต่อๆ ไปบอทจะไม่ถามอีกเลย
+    ถ้าผูกผิดคนตั้งแต่แรกโดยไม่ถาม ticket ทุกใบหลังจากนั้นจะขึ้นชื่อคนอื่นโดยที่เจ้าตัวไม่รู้
+    """
+    who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
+    return Reply(
+        text=f"{who}คือคนนี้ใช่ไหมครับ?\n\n{_employee_line(emp)}",
+        quick=[
+            ("✅ ใช่ ฉันเอง", "a=rq_yes"),
+            ("🔁 ไม่ใช่ ค้นใหม่", "a=rq_again"),
+            *_picker_button(),
+            ("❌ ยกเลิก", "a=cancel"),
+        ],
+    )
+
+
+def requester_choices(matches: list[dict], ticket_type: str) -> Reply:
+    """เจอหลายคน -> ให้เลือก (ส่งกลับมาเป็น "ลำดับที่" เพราะ postback จำกัด 300 ไบต์)"""
+    who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
+    lines = [f"เจอ {len(matches)} คนที่ใกล้เคียงครับ เลือก{who}ด้วยนะครับ", ""]
+    quick: list[tuple[str, str]] = []
+    for index, emp in enumerate(matches[:MAX_QUICK_REPLY_ITEMS - 2]):
+        nick = emp.get("nickname")
+        name = emp.get("name") or "-"
+        lines.append(f"{index + 1}. {name}{f' ({nick})' if nick else ''} · {emp.get('department') or '-'}")
+        quick.append((truncate_label(f"{index + 1}. {nick or name}"), f"a=rq_pick&i={index}"))
+    quick.append(("🔁 ค้นใหม่", "a=rq_again"))
+    quick.append(("❌ ยกเลิก", "a=cancel"))
+    return Reply(text="\n".join(lines), quick=quick)
+
+
+def requester_not_found(text: str, ticket_type: str) -> Reply:
+    who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
+    # ข้อความต้องเปลี่ยนตามธงด้วย ไม่ใช่ซ่อนแค่ปุ่ม — การบอกให้ "เลือกจากรายชื่อ"
+    # ทั้งที่ไม่มีปุ่มให้กด คือการบอกทางออกที่ไม่มีอยู่จริงให้คนที่กำลังติดอยู่แล้ว
+    retry = (
+        "ลองพิมพ์ชื่อเล่น หรือรหัสพนักงานดูอีกครั้ง หรือเลือกจากรายชื่อก็ได้"
+        if REQUESTER_PICKER_ENABLED
+        else "ลองพิมพ์ชื่อเล่น หรือรหัสพนักงานดูอีกครั้งได้ครับ"
+    )
+    return Reply(
+        text=(
+            f"ไม่พบ \"{text}\" ในทะเบียนพนักงานครับ\n\n"
+            f"{retry}\n"
+            f"ถ้ายังไม่มีชื่อในระบบ กด \"ใช้ชื่อที่พิมพ์\" เพื่อแจ้งในชื่อนี้ไปก่อนได้ครับ "
+            f"(แอดมินจะเห็นว่า{who}คนนี้ยังไม่ได้อยู่ในทะเบียน)"
+        ),
+        quick=[
+            ("✍️ ใช้ชื่อที่พิมพ์", "a=rq_manual"),
+            *_picker_button(),
+            ("❌ ยกเลิก", "a=cancel"),
+        ],
+    )
+
+
+_REQUESTER_ESCAPES = [("🔍 พิมพ์ชื่อค้นหา", "a=rq_again"), ("❌ ยกเลิก", "a=cancel")]
+_REQUESTER_HINT = "เลือกจากการ์ด หรือพิมพ์ชื่อ/ชื่อเล่น/รหัสพนักงานค้นหาก็ได้ครับ"
+
+
+def ask_requester_department(options: list[dict], page: int = 0) -> Reply:
+    return _picker_reply(
+        title="เลือกฝ่ายของคุณครับ",
+        crumb=None,
+        options=options,
+        page=page,
+        action="a=rq_dept",
+        back=None,
+        escapes=_REQUESTER_ESCAPES,
+        hint=_REQUESTER_HINT,
+        page_action="a=rq_page",
+    )
+
+
+def ask_requester_person(options: list[dict], department: str, page: int = 0) -> Reply:
+    return _picker_reply(
+        title="เลือกชื่อของคุณครับ",
+        crumb=f"ฝ่าย: {department}",
+        options=options,
+        page=page,
+        action="a=rq_pick",
+        back=("◀ เปลี่ยนฝ่าย", "a=rq_menu"),
+        # 1 แถว = 1 คน ตัวเลข "1" ต่อท้ายทุกแถวไม่ได้บอกอะไร
+        show_count=False,
+        escapes=_REQUESTER_ESCAPES,
+        hint=_REQUESTER_HINT,
+        page_action="a=rq_page",
+    )
+
+
+# ปุ่ม "ข้ามรายละเอียด" — เพิ่ม 2026-09-30
+#
+# เดิมคนที่ไม่มีรายละเอียดจะเพิ่มต้องพิมพ์ "-" เอง ซึ่งเป็นการเปิดคีย์บอร์ดเพื่อพิมพ์ตัวเดียว
+# ผู้ทดสอบจึงเสนอให้ "ตัดขั้นตอนนี้ทิ้งไปเลย" — แต่ตัดไม่ได้ เพราะปุ่ม "เปลี่ยนคนแจ้ง"
+# (a=rq_change) ติดอยู่กับข้อความของขั้นนี้ "ที่เดียวในทั้งระบบ" ถ้าตัดขั้นตอน คนที่บัญชี LINE
+# ถูกผูกไว้ผิดคนจะไม่มีทางแก้เองในแชทอีกเลย ต้องให้แอดมินแก้ให้ทุกครั้ง
+# ทางออกคือคงขั้นตอนไว้แต่ให้จบได้ด้วยการกด 1 ครั้ง
+#
+# ปุ่มนี้ต้องโผล่ "เฉพาะตอนที่ข้ามได้จริง" เท่านั้น (ดู flow._can_skip_description)
+SKIP_DESC_LABEL = F.SKIP_DESC_LABEL
+SKIP_DESC_ACTION = "a=desc_skip"
+
+
+def _description_prompt(text: str, button_label: str, *, can_skip: bool) -> Reply:
+    quick: list[tuple[str, str]] = []
+    if can_skip:
+        quick.append((SKIP_DESC_LABEL, SKIP_DESC_ACTION))
+    quick.append(("❌ ยกเลิก", "a=cancel"))
     return Reply(
         text=text,
-        quick=[("❌ ยกเลิก", "a=cancel")],
-        flex=F.description_prompt(text, button_label),
+        quick=quick,
+        flex=F.description_prompt(text, button_label, can_skip=can_skip),
     )
 
-ASK_DESCRIPTION = _description_prompt(
-    "มีรายละเอียดเพิ่มเติมไหมครับ? กดปุ่มด้านล่างแล้วพิมพ์ได้เลย หรือพิมพ์ '-' ถ้าไม่มี\n\n(พิมพ์ 'ยกเลิก' เพื่อออก)",
-    "พิมพ์รายละเอียด",
+
+# ท้ายข้อความของแจ้งซ่อม/ขอใช้บริการต่างกัน 2 แบบ เพราะ "บังคับพิมพ์" กับ "กดข้ามได้"
+# เป็นคนละคำสั่งกัน ถ้าใช้ข้อความเดียวจะมีกรณีที่บอกว่า "จำเป็นต้องระบุ" ทั้งที่มีปุ่มข้ามอยู่ข้างล่าง
+_MUST_FILL = " (จำเป็นต้องระบุ)"
+_ALREADY_TOLD = "\nถ้าเล่ามาแล้วตั้งแต่ข้อความแรก กด 'ไม่มี ส่งเลย' ได้ทันที"
+
+_DESC_GENERIC = (
+    "มีรายละเอียดเพิ่มเติมไหมครับ?\n\n"
+    "ถ้ามี กดปุ่ม 'พิมพ์รายละเอียด' แล้วพิมพ์ในช่องแชท\n"
+    "ถ้าไม่มี กดปุ่ม 'ไม่มี ส่งเลย' ได้ทันที (พิมพ์ '-' ก็ได้เหมือนเดิม)\n\n"
+    "(พิมพ์ 'ยกเลิก' เพื่อออก)"
 )
 
-ASK_DESCRIPTION_REPAIR = _description_prompt(
+_DESC_REPAIR = (
     "ช่วยอธิบายอาการเสียหรือปัญหาที่ต้องการให้ทีม IT ช่วยครับ\n\n"
     "เช่น: คอมเปิดไม่ติดตั้งแต่เช้า กดปุ่มแล้วไม่มีไฟเข้า\n"
     "ไม่จำเป็นต้องทราบสาเหตุทางเทคนิค บอกอาการที่พบได้เลย และแนบรูปเพิ่มเติมได้ครับ\n\n"
-    "กดปุ่ม 'พิมพ์อาการ/สาเหตุ' แล้วพิมพ์ในช่องแชท จากนั้นกดส่ง (จำเป็นต้องระบุ)",
-    "พิมพ์อาการ/สาเหตุ",
+    "กดปุ่ม 'พิมพ์อาการ/สาเหตุ' แล้วพิมพ์ในช่องแชท จากนั้นกดส่ง"
 )
 
-ASK_DESCRIPTION_SERVICE = _description_prompt(
+_DESC_SERVICE = (
     "ต้องการให้ทีม IT ช่วยเรื่องอะไรครับ?\n\n"
     "พิมพ์สาเหตุหรือสิ่งที่ต้องการให้ช่วยได้เลย ไม่จำเป็นต้องเกี่ยวกับทรัพย์สินครับ\n\n"
     "เช่น: ขอให้ติดตั้งโปรแกรมบัญชี หรือขอสิทธิ์เข้าโฟลเดอร์แผนก\n\n"
-    "กดปุ่ม 'พิมพ์สิ่งที่ให้ช่วย' แล้วระบุสิ่งที่ต้องการพร้อมรายละเอียดในช่องแชท จากนั้นกดส่ง (จำเป็นต้องระบุ)",
-    "พิมพ์สิ่งที่ให้ช่วย",
+    "กดปุ่ม 'พิมพ์สิ่งที่ให้ช่วย' แล้วระบุสิ่งที่ต้องการพร้อมรายละเอียดในช่องแชท จากนั้นกดส่ง"
+)
+
+# เบิก/คืน: ข้อมูลที่ทีม IT ต้องใช้ (รายการ+จำนวน หรือรหัสทรัพย์สิน) ครบไปแล้วก่อนถึงขั้นนี้
+# รายละเอียดจึงเป็นของแถมเสมอ ไม่มีเคสที่ต้องบังคับ
+ASK_DESCRIPTION = _description_prompt(_DESC_GENERIC, "พิมพ์รายละเอียด", can_skip=True)
+
+ASK_DESCRIPTION_REPAIR = _description_prompt(
+    _DESC_REPAIR + _MUST_FILL, "พิมพ์อาการ/สาเหตุ", can_skip=False
+)
+ASK_DESCRIPTION_SERVICE = _description_prompt(
+    _DESC_SERVICE + _MUST_FILL, "พิมพ์สิ่งที่ให้ช่วย", can_skip=False
+)
+
+# ใช้เมื่อผู้ใช้เล่าเรื่องมาแล้วตั้งแต่ข้อความแรก (session.initial_message) — handler ยอมให้ข้าม
+# อยู่แล้วตั้งแต่ก่อนมีปุ่มนี้ แต่ข้อความยังบอกว่า "จำเป็นต้องระบุ" ซึ่งขัดกับของจริง
+_ASK_DESCRIPTION_REPAIR_SKIP = _description_prompt(
+    _DESC_REPAIR + _ALREADY_TOLD, "พิมพ์อาการ/สาเหตุ", can_skip=True
+)
+_ASK_DESCRIPTION_SERVICE_SKIP = _description_prompt(
+    _DESC_SERVICE + _ALREADY_TOLD, "พิมพ์สิ่งที่ให้ช่วย", can_skip=True
 )
 
 
-def ask_description(ticket_type: str | None) -> Reply:
-    return {"repair": ASK_DESCRIPTION_REPAIR, "it_service": ASK_DESCRIPTION_SERVICE}.get(ticket_type, ASK_DESCRIPTION)
+def ask_description(
+    ticket_type: str | None,
+    requester: dict | None = None,
+    *,
+    can_skip: bool | None = None,
+) -> Reply:
+    """ถามรายละเอียด — ถ้าบอทเติมชื่อผู้แจ้งให้อัตโนมัติ จะบอกไว้ตรงนี้พร้อมปุ่มเปลี่ยนคน
+
+    ทำไมมาแปะกับคำถามนี้แทนที่จะส่งเป็นอีกบับเบิล: ขั้น "รายละเอียด" คือขั้นถัดจากผู้แจ้งเสมอ
+    การรวมไว้ที่เดียวทำให้ผู้ใช้เห็นว่ากำลังแจ้งในชื่อใครโดยไม่ต้องเสียบับเบิลเพิ่มทุกครั้ง
+    — ซึ่งถ้าเพิ่มจริงจะกลายเป็นข้อความรกที่คนเลิกอ่านภายในไม่กี่ครั้ง
+    """
+    if can_skip is None:
+        # ค่าเริ่มต้นต้องตรงกับ flow._can_skip_description สำหรับเคสที่ไม่มี initial_message
+        can_skip = ticket_type not in ("repair", "it_service")
+    if ticket_type == "repair":
+        base = _ASK_DESCRIPTION_REPAIR_SKIP if can_skip else ASK_DESCRIPTION_REPAIR
+    elif ticket_type == "it_service":
+        base = _ASK_DESCRIPTION_SERVICE_SKIP if can_skip else ASK_DESCRIPTION_SERVICE
+    else:
+        base = ASK_DESCRIPTION
+    if not requester:
+        return base
+    name = requester.get("name") or "-"
+    dept = requester.get("department") or "-"
+    return Reply(
+        text=f"👤 แจ้งในชื่อ: {name} · {dept}\n\n{base.text}",
+        quick=[("👤 เปลี่ยนคนแจ้ง", "a=rq_change")] + list(base.quick),
+        flex=base.flex,
+    )
 
 
 def ticket_created(

@@ -142,6 +142,39 @@ class BackendClient:
         """
         return await self._get({"kind": "branch_lookup", "name": name})
 
+    async def get_requester(self, line_user_id: str) -> dict[str, Any] | None:
+        """ผู้แจ้งที่ผูกไว้กับบัญชี LINE นี้ (None = ยังไม่เคยผูก)"""
+        data = await self._get({"kind": "requester", "line_user_id": line_user_id})
+        return data.get("requester")
+
+    async def bind_requester(self, line_user_id: str, user_id: str) -> dict[str, Any] | None:
+        """ผูกบัญชี LINE เข้ากับพนักงาน 1 คน — ครั้งต่อไปบอทจะไม่ถามชื่ออีก"""
+        try:
+            res = await self._client.post(
+                "/api/internal/requester",
+                json={"line_user_id": line_user_id, "user_id": user_id},
+            )
+            res.raise_for_status()
+            return res.json().get("requester")
+        except httpx.HTTPError as exc:
+            logger.error("ผูกผู้แจ้งไม่สำเร็จ user_id=%s err=%s", user_id, exc)
+            raise BackendError(str(exc)) from exc
+
+    async def unbind_requester(self, line_user_id: str) -> None:
+        """ถอดการผูก — ใช้ตอนผู้ใช้กด "เปลี่ยนคนแจ้ง"
+
+        กลืน error ไว้โดยตั้งใจ: จุดเรียกคือ "ผู้ใช้อยากเลือกใหม่" ซึ่งทำต่อได้อยู่ดี
+        แม้การถอดจะล้มเหลว (การผูกครั้งใหม่จะเขียนทับให้เองอยู่แล้ว) การขึ้น error
+        ตรงนี้มีแต่จะขวางสิ่งที่ผู้ใช้ตั้งใจจะทำ
+        """
+        try:
+            res = await self._client.delete(
+                "/api/internal/requester", params={"line_user_id": line_user_id}
+            )
+            res.raise_for_status()
+        except httpx.HTTPError as exc:
+            logger.warning("ถอดการผูกผู้แจ้งไม่สำเร็จ err=%s", exc)
+
     async def fetch_knowledge(self) -> dict[str, Any]:
         """ดึงข้อมูลทั้งชุด (สาขา/ทรัพย์สิน/สต็อก/FAQ) มาให้ชั้น AI ใช้ — บอทจะ cache ต่อเอง"""
         return await self._get({"kind": "knowledge"})

@@ -1,0 +1,128 @@
+[
+  {
+    "display_name": "สมชาย ใจดี",
+    "employee_id": "E1001",
+    "department": "บัญชี",
+    "line_user_id": "U_mock_0001",
+    "email": "somchai@example.com",
+    "id": "1258068a-7fc0-4a76-9b34-c591dd5d26bb",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "สุนีย์ พงษ์สิน",
+    "employee_id": "E1002",
+    "department": "การตลาด",
+    "line_user_id": "U_mock_0002",
+    "email": "sunee@example.com",
+    "id": "acd60361-6739-452d-99c2-d48487eda43d",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "วิชัย ศรีสุข",
+    "employee_id": "E1003",
+    "department": "ขายหน้าร้าน",
+    "line_user_id": "U_mock_0003",
+    "email": null,
+    "id": "574f93a8-3bf4-4beb-b407-607d893a4195",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "กมลชนก อารีย์",
+    "employee_id": "E1004",
+    "department": "HR",
+    "line_user_id": "U_mock_0004",
+    "email": "kamolchanok@example.com",
+    "id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "ธนพล เจริญสุข",
+    "employee_id": "E1005",
+    "department": "คลังสินค้า",
+    "line_user_id": "U_mock_0005",
+    "email": null,
+    "id": "10013bc0-ee34-4cbb-b266-d04131926bc0",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "อรทัย บุญมี",
+    "employee_id": "E1006",
+    "department": "การเงิน",
+    "line_user_id": "U_mock_0006",
+    "email": "orathai@example.com",
+    "id": "01cc2029-30c6-46f8-95a7-28a820dfdec3",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "ปิยะพงษ์ วงศ์ษา",
+    "employee_id": "E1007",
+    "department": "IT",
+    "line_user_id": "U_mock_0007",
+    "email": "piyapong@example.com",
+    "id": "fedc08b3-1e5f-4219-a234-bb2636aa02c4",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "นภัสสร ทองดี",
+    "employee_id": "E1008",
+    "department": "ขายหน้าร้าน",
+    "line_user_id": "U_mock_0008",
+    "email": null,
+    "id": "f1ba82fb-9c5c-42fe-af79-dc511f25dddb",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "เอกชัย พันธุ์ดี",
+    "employee_id": "E1009",
+    "department": "จัดซื้อ",
+    "line_user_id": "U_mock_0009",
+    "email": "ekkachai@example.com",
+    "id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "ชลธิชา แสงทอง",
+    "employee_id": "E1010",
+    "department": "การตลาด",
+    "line_user_id": "U_mock_0010",
+    "email": null,
+    "id": "69c2e1e3-37c7-43c3-91ef-3d8e0bc14373",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "ณัฐวุฒิ ใจกล้า",
+    "employee_id": "E1011",
+    "department": "IT",
+    "line_user_id": "U_mock_0011",
+    "email": "natthawut@example.com",
+    "id": "39a7559c-c46c-4e1a-b171-1f458b31832e",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "display_name": "พิมพ์ชนก รุ่งเรือง",
+    "employee_id": "E1012",
+    "department": "บัญชี",
+    "line_user_id": "U_mock_0012",
+    "email": null,
+    "id": "a1f9ff69-8b66-4cc3-b858-f62c283f6268",
+    "created_at": "2026-09-14T16:22:45.061Z"
+  },
+  {
+    "id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "display_name": "สมัย",
+    "employee_id": null,
+    "department": null,
+    "line_user_id": null,
+    "email": null,
+    "created_at": "2026-09-14T16:26:03.151Z"
+  },
+  {
+    "id": "a475ea24-60b2-41ec-9362-ac0772096294",
+    "display_name": "ลำไย แผนกบัญชี",
+    "employee_id": null,
+    "department": null,
+    "line_user_id": null,
+    "email": null,
+    "created_at": "2026-09-15T08:47:13.989Z"
+  }
+]

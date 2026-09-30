@@ -65,14 +65,13 @@ class Settings(BaseSettings):
     max_images_per_ticket: int = 5
 
     # ----- Rich menu -----
-    # ติดตั้ง rich menu ให้อัตโนมัติตอนบอทสตาร์ท (idempotent — มีอยู่แล้วจะข้าม)
+    # ติดตั้ง rich menu 4 ปุ่มให้อัตโนมัติตอนบอทสตาร์ท (idempotent — ตรงกับโค้ดอยู่แล้วจะข้าม)
     # ปิดได้ถ้าอยากจัดการเมนูเองด้วย line-oa/setup_richmenu.py
     richmenu_auto_install: bool = True
     # path ในคอนเทนเนอร์ — docker-compose mount ./line-oa/assets มาไว้ที่นี่
     richmenu_image_path: str = "/app/line-oa/richmenu-main.png"
-    # รูปเมนูชั้นที่ 2 (เช็คข้อมูล) — ถ้าไม่มีไฟล์นี้ จะติดตั้งเป็นเมนูเดียวแบบเดิมให้อัตโนมัติ
-    richmenu_data_image_path: str = "/app/line-oa/richmenu-data.png"
-    # บังคับติดตั้งใหม่แม้มีอยู่แล้ว (ใช้ตอนเปลี่ยนรูปหรือเปลี่ยนปุ่ม แล้วค่อยตั้งกลับเป็น false)
+    # บังคับติดตั้งใหม่แม้มีอยู่แล้ว — ใช้เฉพาะตอน 'เปลี่ยนรูปโดยปุ่มเหมือนเดิม'
+    # (เปลี่ยนปุ่มไม่ต้องใช้ เพราะ richmenu.py เทียบลายเซ็นปุ่มแล้วติดตั้งใหม่ให้เอง)
     richmenu_force_reinstall: bool = False
 
     # ----- กันสแปม -----

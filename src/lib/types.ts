@@ -58,6 +58,23 @@ export interface User {
   line_user_id: string | null;
   email: string | null;
   created_at: string;
+
+  /* ---- ข้อมูลจากทะเบียนพนักงานของ HR (src/lib/db/employees.seed.json) ----
+   *
+   * ทุกช่องเป็น optional โดยตั้งใจ: data/users.json ที่มีอยู่แล้วในเครื่อง/บน volume
+   * ถูกสร้างก่อนจะมีช่องพวกนี้ ถ้าประกาศเป็น required แถวเก่าจะกลายเป็นข้อมูลผิด type ทันที
+   * โดยที่ไม่มีใครรู้ (JSON.parse ไม่ตรวจ type ให้) แล้วไปพังตอนอ่านค่าในหน้าเว็บแทน */
+
+  /** คำนำหน้า นาย/นาง/นางสาว — เก็บแยกจากชื่อ เพราะเมนูใน LINE ใช้แค่ชื่อจริงจะสั้นกว่า */
+  title?: string | null;
+  /** ชื่อเล่น — เป็นคำที่คนในบริษัทใช้เรียกกันจริง ใช้ค้นหาได้แม่นกว่าชื่อจริงในหลายกรณี */
+  nickname?: string | null;
+  position?: string | null;
+  /** ระดับตามผังองค์กร เช่น CEO / DM-3 / SF-2 */
+  level?: string | null;
+  company?: CompanyCode | null;
+  /** พนักงานลาออกให้ตั้ง false ไม่ใช่ลบทิ้ง เพราะ ticket เก่าอ้าง requester_id นี้อยู่ */
+  active?: boolean;
 }
 
 export interface Equipment {

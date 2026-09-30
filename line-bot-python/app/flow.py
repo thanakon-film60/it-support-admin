@@ -10,7 +10,11 @@
   ASK_TYPE ──(กดประเภท)──▶ ASK_ASSET
   ASK_ASSET ──(พิมพ์รหัส / กดข้าม)──┬─ ถ้าเป็น "เบิก" ─▶ ASK_ITEM ─▶ ASK_QTY ─▶ ASK_MORE_ITEMS ─┐
                                      └─ ถ้าเป็น "ซ่อม/คืน" ─────────────────────────────────────┴─▶ ASK_REQUESTER
-  ASK_REQUESTER ──(พิมพ์ชื่อ)──▶ ASK_DESC ──(พิมพ์รายละเอียด)──▶ สร้าง ticket ──▶ IDLE
+  ASK_REQUESTER ──(ค้นทะเบียนพนักงาน / เลือกจากเมนูฝ่าย)──▶ ASK_DESC
+  ASK_DESC ──(พิมพ์รายละเอียด)──▶ สร้าง ticket ──▶ IDLE
+
+ASK_REQUESTER จะถูก "ข้าม" ทั้งขั้นถ้าบัญชี LINE นี้เคยระบุตัวไปแล้ว (ผูกไว้ที่ users ฝั่งแอดมิน)
+ถามครั้งเดียวตลอดอายุการใช้งาน เปลี่ยนคนได้ด้วยปุ่ม "เปลี่ยนคนแจ้ง" ที่ติดอยู่กับขั้น ASK_DESC
 
 ทุกสถานะรับคำว่า "ยกเลิก" เพื่อล้างทิ้งได้เสมอ และ session หมดอายุเองตาม TTL
 """
@@ -187,6 +191,188 @@ def _clear_branch_picker(session: Session) -> None:
     session.pick_page = 0
 
 
+def _clear_requester_picker(session: Session) -> None:
+    session.rq_level = None
+    session.rq_dept = None
+    session.rq_page = 0
+    session.rq_values = []
+    session.rq_labels = []
+    session.rq_pending = None
+
+
+def _apply_requester(session: Session, emp: dict) -> None:
+    """เขียนผู้แจ้งที่เลือกแล้วลง session — ใช้ทางเดียวทั้งจากการค้นหาและจากเมนู"""
+    session.requester_user_id = str(emp.get("id") or "") or None
+    session.requester_name = str(emp.get("name") or "").strip() or None
+    department = str(emp.get("department") or "").strip()
+    session.requester_department = department or None
+    _clear_requester_picker(session)
+
+
+def _requester_badge(session: Session) -> dict | None:
+    """ข้อมูลย่อของผู้แจ้งไว้แปะท้ายคำถามถัดไป — เฉพาะตอนที่บอท "เติมให้เอง"
+
+    ถ้าผู้ใช้เพิ่งเลือกเองในบทสนทนานี้ก็ไม่ต้องบอกซ้ำ แต่แยกสองกรณีนี้ออกจากกันไม่ได้
+    จาก session เพียงอย่างเดียว จึงแสดงทุกครั้งที่ผูกกับทะเบียนแล้ว — ต้นทุนคือ 1 บรรทัด
+    แต่ได้ปุ่ม "เปลี่ยนคนแจ้ง" ติดมาด้วยตลอดทาง ซึ่งเป็นทางออกเดียวถ้าบอทเติมผิดคน
+    """
+    if not session.requester_user_id or not session.requester_name:
+        return None
+    return {"name": session.requester_name, "department": session.requester_department or "-"}
+
+
+def _can_skip_description(session: Session) -> bool:
+    """ขั้น "รายละเอียด" ข้ามได้ไหม
+
+    **ต้องตรงกับเงื่อนไขบังคับในตัวจัดการ ASK_DESC เป๊ะๆ** เพราะค่านี้เป็นตัวตัดสินว่าจะโชว์
+    ปุ่ม "ไม่มี ส่งเลย" หรือไม่ — ปุ่มที่กดแล้วบอทถามซ้ำแย่กว่าไม่มีปุ่มเลย ผู้ใช้จะสรุปว่า
+    บอทพังแล้วเลิกใช้ ไม่ใช่สรุปว่า "ต้องพิมพ์"
+
+    - เบิก / คืน : ข้อมูลที่ช่างต้องใช้ (รายการ+จำนวน หรือรหัสทรัพย์สิน) ครบไปแล้วก่อนถึงขั้นนี้
+    - แจ้งซ่อม / ขอใช้บริการ : ticket ที่ไม่มีข้อความอะไรเลยคือสิ่งที่ช่างเอาไปทำต่อไม่ได้
+      จึงข้ามได้เฉพาะตอนที่ผู้ใช้เล่ามาแล้วตั้งแต่ข้อความแรก (initial_message)
+    """
+    if session.ticket_type not in ("repair", "it_service"):
+        return True
+    return bool((session.initial_message or "").strip())
+
+
+def _ask_description(session: Session) -> M.Reply:
+    """คำถามขั้นรายละเอียด — ผ่านทางนี้ทางเดียวเท่านั้น
+
+    ถ้าเรียก M.ask_description() ตรงๆ จากหลายที่ จะมีวันที่บางเส้นทางลืมส่ง can_skip
+    แล้วปุ่มหายไปเฉพาะบางเส้นทางโดยไม่มีใครสังเกต (เทสต์ test_flow จับไว้แล้ว)
+    """
+    return M.ask_description(
+        session.ticket_type,
+        _requester_badge(session),
+        can_skip=_can_skip_description(session),
+    )
+
+
+async def _bound_requester(
+    session: Session, user_id: str | None, backend: BackendClient
+) -> dict | None:
+    """ผู้แจ้งที่บัญชี LINE นี้ผูกไว้ — ถามหลังบ้านครั้งเดียวต่อ 1 บทสนทนา
+
+    หลังบ้านล่มถือว่า "ยังไม่ผูก" แล้วถามผู้ใช้ตามปกติ ดีกว่าค้างรอ:
+    การถามชื่อเกินความจำเป็น 1 ครั้งเสียเวลาผู้ใช้ไม่กี่วินาที แต่การพังทั้งบทสนทนา
+    เพราะ endpoint เดียวล่มคือการทำให้แจ้งเรื่องไม่ได้เลย
+    """
+    if session.rq_checked or not user_id:
+        return None
+    session.rq_checked = True
+    try:
+        return await backend.get_requester(user_id)
+    except BackendError:
+        logger.warning("ดึงผู้แจ้งที่ผูกไว้ไม่สำเร็จ — ถามผู้ใช้ตามปกติ")
+        return None
+
+
+async def _requester_menu(
+    session: Session, knowledge, *, level: str = "dept", page: int = 0
+) -> M.Reply:
+    """เมนูเลือกผู้แจ้งทีละชั้น: ฝ่าย → ชื่อ
+
+    เป็นทางสำรองของการพิมพ์ค้นหา ไม่ใช่ทางหลัก — คนที่รู้ชื่อเล่นตัวเองพิมพ์ 2 ตัวอักษรก็จบ
+    ส่วนเมนูนี้ไว้ให้คนที่ไม่แน่ใจว่าชื่อตัวเองอยู่ในระบบว่ายังไง
+
+    ถ้าดึงทะเบียนไม่ได้ ตกกลับไปให้พิมพ์เอง — ห้ามทำให้ผู้ใช้ติดตายในเมนูที่ว่างเปล่า
+    """
+    if knowledge is None:
+        return M.ask_requester(session.ticket_type or "repair")
+    try:
+        kb = await knowledge.get()
+    except BackendError:
+        return M.ask_requester(session.ticket_type or "repair")
+
+    if level == "person" and session.rq_dept:
+        people = kb.employees_in(session.rq_dept)
+        options = [
+            {"value": str(e.get("id") or ""),
+             "label": f"{e.get('name')} ({e.get('nickname')})" if e.get("nickname") else str(e.get("name")),
+             "sub": e.get("position"), "count": 1}
+            for e in people
+        ]
+        if options:
+            session.rq_level = "person"
+            session.rq_page = page
+            session.rq_values = [o["value"] for o in options]
+            session.rq_labels = [o["label"] for o in options]
+            return M.ask_requester_person(options, session.rq_dept, page)
+
+    options = kb.department_options()
+    if not options:
+        return M.ask_requester(session.ticket_type or "repair")
+    session.rq_level = "dept"
+    session.rq_dept = None
+    session.rq_page = page
+    session.rq_values = [o["value"] for o in options]
+    session.rq_labels = [o["label"] for o in options]
+    return M.ask_requester_department(options, page)
+
+
+async def _requester_search(
+    session: Session, text: str, knowledge
+) -> list[M.Reply]:
+    """ผู้ใช้พิมพ์ชื่อมาตอนอยู่ขั้น "ระบุผู้แจ้ง" — ค้นทะเบียนให้
+
+    ไม่เจอ = ไม่บังคับ ให้กด "ใช้ชื่อที่พิมพ์" แจ้งไปก่อนได้ เพราะพนักงานใหม่ที่ HR
+    ยังไม่ได้เพิ่มเข้าทะเบียนก็ต้องแจ้งซ่อมได้เหมือนกัน การบังคับให้มีชื่อในทะเบียนก่อน
+    เท่ากับปิดประตูใส่คนที่เพิ่งเข้างาน ซึ่งเป็นกลุ่มที่ต้องพึ่ง IT มากที่สุด
+    """
+    ticket_type = session.ticket_type or "repair"
+    if knowledge is None:
+        return []
+    try:
+        kb = await knowledge.get()
+    except BackendError:
+        return []
+    if not kb.employees:
+        # หลังบ้านยังไม่ส่งทะเบียนมา (เว็บรุ่นเก่า/ดึงไม่สำเร็จ) -> ถอยไปใช้ "พิมพ์ชื่อ - แผนก" แบบเดิม
+        # ห้ามตอบว่า "ไม่พบในทะเบียน" เพราะไม่มีทะเบียนให้ค้นตั้งแต่แรก ผู้ใช้จะงงและติดตาย
+        return []
+    matches = kb.find_employees(text)
+    if not matches:
+        # เก็บคำที่พิมพ์ไว้ เพราะปุ่ม "ใช้ชื่อที่พิมพ์" ส่งกลับมาได้แค่ชื่อ action
+        # (postback ไม่ควรแบกข้อความผู้ใช้กลับไปกลับมา — ยาวเกิน 300 ไบต์ได้ง่ายมาก)
+        _clear_requester_picker(session)
+        session.rq_pending = {"manual": text}
+        return [M.requester_not_found(text, ticket_type)]
+    if len(matches) == 1:
+        session.rq_pending = matches[0]
+        return [M.requester_confirm(matches[0], ticket_type)]
+    session.rq_level = "search"
+    session.rq_values = [str(e.get("id") or "") for e in matches]
+    session.rq_labels = [str(e.get("name") or "") for e in matches]
+    session.rq_pending = None
+    return [M.requester_choices(matches, ticket_type)]
+
+
+async def _confirm_requester(
+    session: Session, emp: dict, user_id: str, backend: BackendClient, store: ConversationStore
+) -> list[M.Reply]:
+    """ยืนยันตัวผู้แจ้งแล้ว -> ผูกกับบัญชี LINE แล้วเดินบทสนทนาต่อ
+
+    ผูกไม่สำเร็จก็ไปต่อได้ (แค่ครั้งหน้าจะถามใหม่) — การผูกเป็นความสะดวก ไม่ใช่เงื่อนไข
+    ของการแจ้งเรื่อง จึงไม่ควรมีทางที่มันทำให้แจ้งเรื่องไม่ได้
+    """
+    _apply_requester(session, emp)
+    try:
+        await backend.bind_requester(user_id, session.requester_user_id or "")
+    except BackendError:
+        logger.warning("ผูกผู้แจ้งไม่สำเร็จ — ใช้ชื่อนี้กับเรื่องนี้ไปก่อน")
+
+    if session.description_collected or (
+        session.ticket_type == "it_service" and session.description
+    ):
+        if session.branch:
+            return await _submit_or_retry(session, user_id, backend, store)
+    replies = await _advance(session, backend, user_id=user_id)
+    await store.set(user_id, session)
+    return replies
+
+
 async def _try_question_answer(
     text: str, user_id: str, backend: BackendClient, knowledge
 ) -> M.Reply | None:
@@ -314,12 +500,16 @@ async def _asset_picker_prompt(
 
 
 async def _resolve_asset_code(
-    session: Session, backend: BackendClient, code: str
+    session: Session, backend: BackendClient, code: str, *,
+    user_id: str | None = None, confirm: bool = True,
 ) -> list[M.Reply]:
     """แปลงรหัสทรัพย์สินเป็นของจริง แล้วเดินบทสนทนาต่อ
 
     ใช้ร่วมกันทั้งทางที่ผู้ใช้พิมพ์รหัสเองและทางที่กดเลือกจากเมนู
     จะได้ไม่มีทางที่สองทางนี้ทำงานไม่เหมือนกัน (เคยเป็นบั๊กคลาสสิกของโค้ดที่ก๊อปกันไปมา)
+
+    confirm=False สำหรับทางที่ "ยืนยันไปแล้วด้วยข้อความอื่น" (ชั้น AI ขึ้นสรุปสิ่งที่จับได้อยู่แล้ว)
+    ไม่งั้นผู้ใช้จะเห็น 2 บับเบิลพูดเรื่องเดียวกันติดกัน ซึ่งอ่านแล้วเหมือนบอทพูดซ้ำเพราะบั๊ก
     """
     try:
         matches = await backend.lookup_equipment_matches(code)
@@ -327,21 +517,25 @@ async def _resolve_asset_code(
         matches = []
 
     if not matches:
+        # เก็บรหัสดิบไว้ให้แอดมินตามต่อ แต่ห้ามผูก equipment_id กับเครื่องที่ไม่มีอยู่
+        session.equipment_id = None
         return [M.asset_not_found(code)]
 
     # รหัสเดียวตรงหลายเครื่อง -> ถามก่อน ห้ามเดา (ดูเหตุผลที่ M.ask_which_asset)
     if len(matches) > 1:
         session.asset_choices = matches
+        session.equipment_id = None
         session.step = ASK_PICK_ASSET
         return [M.ask_which_asset(matches)]
 
     equipment = matches[0]
     session.asset_code = equipment["asset_code"]
     session.asset_label = M.asset_label(equipment)
+    session.equipment_id = equipment.get("id")
     session.asset_choices = []
     _clear_picker(session)
-    replies = [M.asset_confirmed(session.asset_label)]
-    replies += await _after_asset_step(session, backend)
+    replies = [M.asset_confirmed(session.asset_label)] if confirm else []
+    replies += await _after_asset_step(session, backend, user_id=user_id)
     return replies
 
 
@@ -363,7 +557,9 @@ def _clear_picker(session: Session) -> None:
     session.pick_labels = []
 
 
-async def _after_asset_step(session: Session, backend: BackendClient) -> list[M.Reply]:
+async def _after_asset_step(
+    session: Session, backend: BackendClient, *, user_id: str | None = None
+) -> list[M.Reply]:
     """ผ่านขั้นตอนถามรหัสทรัพย์สินไปแล้ว — ให้ _advance ตัดสินใจว่าจะถามอะไรต่อ
 
     เดิมฟังก์ชันนี้กระโดดไปถาม "เลือกอุปกรณ์" ทันทีเมื่อเป็นการเบิก ซึ่งผิดเมื่อชั้น AI
@@ -371,10 +567,12 @@ async def _after_asset_step(session: Session, backend: BackendClient) -> list[M.
     จึงรวมการตัดสินใจไว้ที่ _advance ที่เดียว
     """
     session.asset_asked = True
-    return await _advance(session, backend)
+    return await _advance(session, backend, user_id=user_id)
 
 
-async def _advance(session: Session, backend: BackendClient) -> list[M.Reply]:
+async def _advance(
+    session: Session, backend: BackendClient, *, user_id: str | None = None
+) -> list[M.Reply]:
     """หาช่องข้อมูลแรกที่ยังว่าง แล้วถามเฉพาะอันนั้น
 
     ใช้กับเส้นทางที่ AI เติมข้อมูลให้ล่วงหน้าจากประโยคเดียว — ถ้าผู้ใช้บอกสาขากับประเภท
@@ -390,7 +588,7 @@ async def _advance(session: Session, backend: BackendClient) -> list[M.Reply]:
 
     if session.ticket_type == "it_service" and not session.description:
         session.step = ASK_DESC
-        return [M.ask_description(session.ticket_type)]
+        return [_ask_description(session)]
 
     if session.ticket_type != "it_service" and not session.asset_asked and not session.asset_code:
         session.asset_asked = True
@@ -410,11 +608,17 @@ async def _advance(session: Session, backend: BackendClient) -> list[M.Reply]:
         return [M.ask_item(items)]
 
     if not session.requester_name:
-        session.step = ASK_REQUESTER
-        return [M.ask_requester(session.ticket_type)]
+        # เคยบอกไปแล้วว่าเป็นใครในครั้งก่อนๆ -> ไม่ถามซ้ำ นี่คือขั้นตอนที่เสียเวลาผู้ใช้มากที่สุด
+        # เพราะต้องพิมพ์ชื่อ-นามสกุล-แผนกใหม่ทุกครั้งที่แจ้ง ทั้งที่เป็นข้อมูลที่ไม่เคยเปลี่ยน
+        bound = await _bound_requester(session, user_id, backend)
+        if bound:
+            _apply_requester(session, bound)
+        else:
+            session.step = ASK_REQUESTER
+            return [M.ask_requester(session.ticket_type or "repair")]
 
     session.step = ASK_DESC
-    return [M.ask_description(session.ticket_type)]
+    return [_ask_description(session)]
 
 
 async def _prompt_for_step(session: Session, backend: BackendClient) -> M.Reply | None:
@@ -457,7 +661,7 @@ async def _prompt_for_step(session: Session, backend: BackendClient) -> M.Reply 
     if step == ASK_REQUESTER:
         return M.ask_requester(session.ticket_type or "repair")
     if step in (ASK_DESC, RETRY_SUBMIT):
-        return M.ask_description(session.ticket_type)
+        return _ask_description(session)
     return None
 
 
@@ -509,11 +713,19 @@ async def _handle_image(
 async def _submit(session: Session, user_id: str, backend: BackendClient) -> list[M.Reply]:
     """ยิงสร้าง ticket จริงไปที่ระบบ admin แล้วสรุปผลกลับไปหาผู้ใช้"""
     payload = {
+        # หลังบ้านใช้คู่ (request_id, line_user_id) กันการสร้าง ticket ซ้ำ
+        # ถ้าไม่ส่งมา การกด "ลองส่งใหม่" หลัง timeout จะได้ ticket ใบที่ 2 และตัดสต็อกซ้ำ
+        "request_id": session.request_id,
+        "initial_message": session.initial_message,
+        # ผูกกับเครื่องที่ผู้ใช้เลือกไว้จริง ไม่ให้หลังบ้านเดาจากรหัสที่ซ้ำกันได้
+        "equipment_id": session.equipment_id,
         "type": session.ticket_type,
         "location": session.branch or "",
         "description": session.description or "",
         "requester_name": session.requester_name or "",
         "requester_department": session.requester_department,
+        # ผูกกับแถวเดิมของคนนั้นในระบบแอดมิน ไม่ให้หลังบ้านต้องเดาจากชื่อ
+        "requester_user_id": session.requester_user_id,
         "asset_code": session.asset_code,
         "items": session.items,
         "line_user_id": user_id,
@@ -563,6 +775,8 @@ async def _handle_idle_text(
 
     คืน None = วิเคราะห์ไม่ได้/ไม่มีชั้น AI ให้ผู้เรียกไปใช้พฤติกรรมสำรอง (ถือว่าเป็นชื่อสาขา)
     """
+    user_id = incoming.user_id
+
     # ไม่มีชั้น AI (เช่นในเทสต์ที่ไม่ได้ใส่มา) -> ใช้การค้น FAQ แบบเดิมของหลังบ้าน
     if knowledge is None:
         try:
@@ -606,26 +820,47 @@ async def _handle_idle_text(
             ticket_type=analysis.intent,
             branch=analysis.branch,
             line_display_name=incoming.display_name,
+            # ประโยคที่ผู้ใช้พิมพ์มาเองมีบริบทครบที่สุด เก็บไว้ทั้งดุ้นแล้วส่งไปกับ ticket
+            # ไม่งั้นข้อมูลที่ดีที่สุดที่เคยมีจะหายไปตั้งแต่ข้อความแรก เหลือแค่ค่าที่ AI แกะได้
+            initial_message=text,
         )
-        if analysis.asset_code:
-            session.asset_code = analysis.asset_code
-            session.asset_asked = True
-            equipment = next(
-                (e for e in kb.equipment if e["asset_code"] == analysis.asset_code), None
-            )
-            if equipment and equipment.get("brand_model"):
-                session.asset_label = f"{analysis.asset_code} — {equipment['brand_model']}"
-            else:
-                session.asset_label = analysis.asset_code
         if analysis.item_name:
             # ถ้าไม่ได้บอกจำนวนมา ให้ถือว่า 1 ชิ้น (ค่าที่คนคาดหวังที่สุด)
             session.items = [{"name": analysis.item_name, "qty": analysis.quantity or 1}]
 
         replies: list[M.Reply] = []
+        tail: list[M.Reply] = []
+
+        if analysis.asset_code:
+            # ผูกเครื่องผ่านตัวเดียวกับทางอื่นทั้งหมด (พิมพ์รหัสเอง / ไล่เมนู)
+            #
+            # เดิมทางนี้ตั้ง asset_code กับ asset_label เองจาก cache แล้วเดินต่อเลย ซึ่งข้าม
+            # การถาม "เครื่องไหน" ตอนรหัสซ้ำไปเงียบๆ — ข้อมูลจริงมีรหัสซ้ำอยู่ 28 แถว
+            # แปลว่าคนที่พิมพ์รหัสมาในประโยคแรกมีโอกาสได้ ticket ที่ผูกผิดเครื่อง/ผิดสาขา
+            # ทั้งที่คนที่พิมพ์รหัสทีหลังถูกถามให้เลือก
+            session.asset_asked = True
+            tail = await _resolve_asset_code(
+                session, backend, analysis.asset_code, user_id=user_id, confirm=False
+            )
+            if not session.asset_code and session.step != ASK_PICK_ASSET:
+                # รหัสที่ AI จับได้ไม่มีในระบบแล้ว (cache เก่ากว่าของจริง) — ไม่ต้องทักเรื่องรหัส
+                # เพราะผู้ใช้ยังไม่ทันถูกถามเรื่องนี้เลย พาเดินตามลำดับปกติดีกว่า
+                session.asset_asked = False
+                tail = await _advance(session, backend, user_id=user_id)
+        else:
+            tail = await _advance(session, backend, user_id=user_id)
+
         slots = analysis.filled_slots()
+        if session.asset_label:
+            # แทนรหัสดิบด้วยฉลากที่ผูกกับเครื่องจริงแล้ว (มียี่ห้อ/รุ่นต่อท้าย)
+            # ผู้ใช้จึงตรวจได้ตั้งแต่บับเบิลแรกว่าบอทหยิบถูกเครื่อง โดยไม่ต้องมีบับเบิลยืนยันแยก
+            slots = [
+                f"ทรัพย์สิน: {session.asset_label}" if p.startswith("ทรัพย์สิน:") else p
+                for p in slots
+            ]
         if slots:
             replies.append(M.understood(slots))
-        replies += await _advance(session, backend)
+        replies += tail
         await store.set(incoming.user_id, session)
         return replies
 
@@ -716,7 +951,7 @@ async def handle(
         if incoming.kind == "postback" and incoming.data.get("a") in (
             "pk_cat", "pk_brand", "pk_code", "pk_page", "pk_back", "asset_manual", "skip_asset", "pick_asset",
         ):
-            return [M.ask_description("it_service")]
+            return [_ask_description(session)]
 
     if incoming.kind == "postback":
         action = incoming.data.get("a", "")
@@ -858,7 +1093,7 @@ async def handle(
                 session.pick_group_label = None
                 if pending:
                     session.branch = pending
-                    replies = await _advance(session, backend)
+                    replies = await _advance(session, backend, user_id=user_id)
                     await store.set(user_id, session)
                     return replies
                 reply = await _branch_prompt(backend, knowledge, session=session)
@@ -901,7 +1136,7 @@ async def handle(
                 )
                 if session.pick_company == "central" and len(session.pick_values) == 1:
                     session.branch = session.pick_values[0]
-                    replies = await _advance(session, backend)
+                    replies = await _advance(session, backend, user_id=user_id)
                     await store.set(user_id, session)
                     return replies
                 await store.set(user_id, session)
@@ -909,7 +1144,7 @@ async def handle(
 
             # bk_branch — เลือกสาขาเสร็จแล้ว เดินบทสนทนาต่อ
             session.branch = value
-            replies = await _advance(session, backend)
+            replies = await _advance(session, backend, user_id=user_id)
             await store.set(user_id, session)
             return replies
 
@@ -922,13 +1157,124 @@ async def handle(
             if session is None:
                 session = Session(line_display_name=incoming.display_name)
             session.branch = chosen
-            replies = await _advance(session, backend)
+            replies = await _advance(session, backend, user_id=user_id)
             await store.set(user_id, session)
             return replies
 
         # ปุ่มที่เหลือต้องมี session อยู่ ถ้าหมดอายุไปแล้วให้บอกตรงๆ ดีกว่าทำเงียบๆ แล้วพัง
         if session is None:
             return [M.session_expired()]
+
+        # ---------- ระบุ/เปลี่ยนผู้แจ้ง ----------
+        if action in ("rq_menu", "rq_dept", "rq_pick", "rq_page", "rq_again",
+                      "rq_yes", "rq_manual", "rq_change"):
+            if action in ("rq_change", "rq_again"):
+                if action == "rq_change":
+                    # ถอดการผูกออกจริงๆ ไม่ใช่แค่ล้างใน session — ไม่งั้นครั้งหน้าบอทจะเติม
+                    # ชื่อเดิมกลับมาอีก ทั้งที่ผู้ใช้เพิ่งบอกไปว่าไม่ใช่คนนั้น
+                    await backend.unbind_requester(user_id)
+                    session.requester_user_id = None
+                    session.requester_name = None
+                    session.requester_department = None
+                    session.rq_checked = True
+                _clear_requester_picker(session)
+                session.step = ASK_REQUESTER
+                await store.set(user_id, session)
+                return [M.ask_requester(session.ticket_type or "repair")]
+
+            if action in ("rq_menu", "rq_page", "rq_dept") and not M.REQUESTER_PICKER_ENABLED:
+                # เมนูเลือกผู้แจ้งถูกปิดไว้ (ดู M.REQUESTER_PICKER_ENABLED) แต่การ์ดที่ส่งไปแล้ว
+                # ยังค้างอยู่ในห้องแชทของผู้ใช้ตลอดไป ลบออกไม่ได้ — คนที่เลื่อนขึ้นไปกดของเก่า
+                # ต้องได้หน้าพิมพ์ชื่อ ไม่ใช่ปุ่มที่กดแล้วเงียบ ซึ่งอ่านได้อย่างเดียวว่า "บอทเสีย"
+                _clear_requester_picker(session)
+                session.step = ASK_REQUESTER
+                await store.set(user_id, session)
+                return [M.ask_requester(session.ticket_type or "repair")]
+
+            if action in ("rq_menu", "rq_page"):
+                level = "dept" if action == "rq_menu" else (session.rq_level or "dept")
+                page = 0 if action == "rq_menu" else max(0, _to_int(incoming.data.get("p")) or 0)
+                session.step = ASK_REQUESTER
+                reply = await _requester_menu(session, knowledge, level=level, page=page)
+                await store.set(user_id, session)
+                return [reply]
+
+            if action == "rq_dept":
+                idx = _to_int(incoming.data.get("i"))
+                value = (
+                    session.rq_values[idx]
+                    if idx is not None and 0 <= idx < len(session.rq_values)
+                    else None
+                )
+                if value is None:
+                    # กดจากการ์ดเก่าที่ตัวเลือกไม่ตรงกับ session แล้ว — เริ่มเลือกใหม่ดีกว่าเดาให้ผิดฝ่าย
+                    reply = await _requester_menu(session, knowledge, level="dept")
+                else:
+                    session.rq_dept = value
+                    reply = await _requester_menu(session, knowledge, level="person")
+                await store.set(user_id, session)
+                return [reply]
+
+            if action == "rq_manual":
+                typed = str((session.rq_pending or {}).get("manual") or "").strip()
+                if not typed:
+                    session.step = ASK_REQUESTER
+                    await store.set(user_id, session)
+                    return [M.ask_requester(session.ticket_type or "repair")]
+                name, department = parse_requester(typed)
+                session.requester_user_id = None
+                session.requester_name = name
+                session.requester_department = department
+                _clear_requester_picker(session)
+                if (
+                    session.description_collected
+                    or (session.ticket_type == "it_service" and session.description)
+                ) and session.branch:
+                    return await _submit_or_retry(session, user_id, backend, store)
+                replies = await _advance(session, backend, user_id=user_id)
+                await store.set(user_id, session)
+                return replies
+
+            if action == "rq_yes":
+                emp = session.rq_pending if isinstance(session.rq_pending, dict) else None
+                if not emp or not emp.get("id"):
+                    session.step = ASK_REQUESTER
+                    await store.set(user_id, session)
+                    return [M.ask_requester(session.ticket_type or "repair")]
+                return await _confirm_requester(session, emp, user_id, backend, store)
+
+            # rq_pick — เลือกคนเองจากผลค้นหา/เมนูฝ่าย จึงไม่ต้องให้ยืนยันซ้ำอีกชั้น
+            # (ต่างจาก rq_yes ที่เป็นการยืนยัน "คนที่บอทเดาให้" ซึ่งต้องถามก่อนเสมอ)
+            idx = _to_int(incoming.data.get("i"))
+            emp_id = (
+                session.rq_values[idx]
+                if idx is not None and 0 <= idx < len(session.rq_values)
+                else None
+            )
+            emp = None
+            if emp_id and knowledge is not None:
+                try:
+                    kb = await knowledge.get()
+                    emp = next((e for e in kb.employees if str(e.get("id")) == emp_id), None)
+                except BackendError:
+                    emp = None
+            if emp is None:
+                reply = await _requester_menu(session, knowledge, level="dept")
+                await store.set(user_id, session)
+                return [reply]
+            return await _confirm_requester(session, emp, user_id, backend, store)
+
+        if action == "desc_skip":
+            # การ์ดเก่าค้างบนจออยู่ได้เสมอ — กดจากที่อื่นต้องไม่ส่ง ticket ออกไป
+            if session.step not in (ASK_DESC, RETRY_SUBMIT):
+                return [await _prompt_for_step(session, backend) or M.menu()]
+            if not _can_skip_description(session):
+                # ไม่ควรเกิด เพราะปุ่มจะไม่ถูกส่งไปตั้งแต่แรก — แต่การ์ดเก่าจากก่อน deploy
+                # หรือจาก session ที่ข้อมูลเปลี่ยนไปแล้ว ยังกดเข้ามาได้
+                session.step = ASK_DESC
+                await store.set(user_id, session)
+                return [_ask_description(session)]
+            return await _finish_description(session, None, user_id, backend, store)
 
         if action == "write_description":
             # Opening the keyboard must not submit a ticket or skip another step.
@@ -944,7 +1290,7 @@ async def handle(
             _clear_picker(session)
             session.step = ASK_DESC
             await store.set(user_id, session)
-            return [M.ask_description(session.ticket_type)]
+            return [_ask_description(session)]
 
         if action == "type":
             ticket_type = incoming.data.get("v", "")
@@ -953,7 +1299,7 @@ async def handle(
             session.ticket_type = ticket_type
             if ticket_type == "it_service":
                 _clear_picker(session)
-                replies = await _advance(session, backend)
+                replies = await _advance(session, backend, user_id=user_id)
                 await store.set(user_id, session)
                 return replies
             session.step = ASK_ASSET
@@ -998,7 +1344,7 @@ async def handle(
                 await store.set(user_id, session)
                 return [reply]
 
-            replies = await _resolve_asset_code(session, backend, value)
+            replies = await _resolve_asset_code(session, backend, value, user_id=user_id)
             await store.set(user_id, session)
             return replies
 
@@ -1033,9 +1379,10 @@ async def handle(
         if action == "skip_asset":
             session.asset_code = None
             session.asset_label = None
+            session.equipment_id = None
             session.asset_choices = []
             _clear_picker(session)
-            replies = await _after_asset_step(session, backend)
+            replies = await _after_asset_step(session, backend, user_id=user_id)
             await store.set(user_id, session)
             return replies
 
@@ -1053,9 +1400,10 @@ async def handle(
                 return [M.ASK_ASSET_CODE]
             session.asset_code = chosen.get("asset_code")
             session.asset_label = M.asset_label(chosen)
+            session.equipment_id = chosen.get("id")
             session.asset_choices = []
             replies = [M.asset_confirmed(session.asset_label)]
-            replies += await _after_asset_step(session, backend)
+            replies += await _after_asset_step(session, backend, user_id=user_id)
             await store.set(user_id, session)
             return replies
 
@@ -1090,13 +1438,17 @@ async def handle(
         if action == "retry_submit":
             if session.step != RETRY_SUBMIT:
                 return [await _prompt_for_step(session, backend) or M.menu()]
-            if session.ticket_type in ("repair", "it_service") and (
-                not (session.description or "").strip()
-                or session.description.strip().lower() in M.NO_DETAIL_WORDS
+            if (
+                session.ticket_type in ("repair", "it_service")
+                and not (session.initial_message or "").strip()
+                and (
+                    not (session.description or "").strip()
+                    or session.description.strip().lower() in M.NO_DETAIL_WORDS
+                )
             ):
                 session.step = ASK_DESC
                 await store.set(user_id, session)
-                return [M.ask_description(session.ticket_type)]
+                return [_ask_description(session)]
             try:
                 replies = await _submit(session, user_id, backend)
             except BackendError:
@@ -1183,7 +1535,7 @@ async def handle(
             return [M.ask_which_company(labels, matched)]
 
         session.branch = matched
-        replies = await _advance(session, backend)
+        replies = await _advance(session, backend, user_id=user_id)
         await store.set(user_id, session)
         return replies
 
@@ -1195,7 +1547,7 @@ async def handle(
         session.ticket_type = guessed
         if guessed == "it_service":
             _clear_picker(session)
-            replies = await _advance(session, backend)
+            replies = await _advance(session, backend, user_id=user_id)
             await store.set(user_id, session)
             return replies
         session.step = ASK_ASSET
@@ -1204,7 +1556,7 @@ async def handle(
         return [reply]
 
     if step in (ASK_ASSET, ASK_PICK_ASSET):
-        replies = await _resolve_asset_code(session, backend, text)
+        replies = await _resolve_asset_code(session, backend, text, user_id=user_id)
         await store.set(user_id, session)
         return replies
 
@@ -1241,7 +1593,16 @@ async def handle(
         return [M.ask_qty(text, session.pending_item_unit)]
 
     if step == ASK_REQUESTER:
+        # ค้นจากทะเบียนพนักงานก่อนเสมอ — ผู้แจ้งที่ผูกกับแถวจริงในระบบทำให้ดูประวัติรายคนได้
+        # และทำให้ครั้งต่อไปไม่ต้องถามอีก ส่วนการพิมพ์ชื่อลอยๆ ให้ผลทั้งสองอย่างนั้นไม่ได้เลย
+        found = await _requester_search(session, text, knowledge)
+        if found:
+            await store.set(user_id, session)
+            return found
+
+        # ไม่มีชั้น AI (เทสต์เก่า) หรือดึงทะเบียนไม่ได้ -> ใช้พฤติกรรมเดิม พิมพ์ "ชื่อ - แผนก"
         name, department = parse_requester(text)
+        session.requester_user_id = None
         session.requester_name = name
         session.requester_department = department
         if (session.description_collected or (session.ticket_type == "it_service" and session.description)) and session.branch:
@@ -1250,26 +1611,48 @@ async def handle(
             return await _submit_or_retry(session, user_id, backend, store)
         session.step = ASK_DESC
         await store.set(user_id, session)
-        return [M.ask_description(session.ticket_type)]
+        return [_ask_description(session)]
 
     if step in (ASK_DESC, RETRY_SUBMIT):
         description = None if not text or text.lower() in M.NO_DETAIL_WORDS else text
-        if session.ticket_type in ("repair", "it_service") and not description:
+        # บังคับให้มีรายละเอียดเฉพาะตอนที่ "ยังไม่เคยเล่าอะไรมาเลย"
+        # คนที่พิมพ์ "NB2501001 เปิดไม่ติด" มาตั้งแต่ข้อความแรกแล้วตอบ "ไม่มี" ตรงนี้
+        # ไม่ได้แปลว่าไม่มีข้อมูล — การถามซ้ำคือการให้เขาพิมพ์สิ่งเดิมอีกรอบ
+        if not description and not _can_skip_description(session):
             session.step = ASK_DESC
             await store.set(user_id, session)
-            return [M.ask_description(session.ticket_type)]
-        session.description = description
-        session.description_collected = True
-        if not session.requester_name or not session.branch or (session.ticket_type == "withdraw" and not session.items):
-            replies = await _advance(session, backend)
-            await store.set(user_id, session)
-            return replies
-        return await _submit_or_retry(session, user_id, backend, store)
+            return [_ask_description(session)]
+        return await _finish_description(session, description, user_id, backend, store)
 
     # สถานะแปลกปลอม (ไม่ควรเกิด) — ล้างทิ้งแล้วกลับเมนู ดีกว่าปล่อยให้ผู้ใช้ติดอยู่
     logger.warning("พบ step ที่ไม่รู้จัก: %s", step)
     await store.clear(user_id)
     return [M.menu()]
+
+
+async def _finish_description(
+    session: Session,
+    description: str | None,
+    user_id: str | None,
+    backend: BackendClient,
+    store: ConversationStore,
+) -> list[M.Reply]:
+    """ปิดขั้นรายละเอียดแล้วไปต่อ — ใช้ร่วมกันระหว่าง "พิมพ์มา" กับ "กดปุ่มไม่มี ส่งเลย"
+
+    ห้ามแยกสองเส้นทางนี้ออกจากกัน ไม่งั้นวันที่แก้เงื่อนไขการส่งจะแก้แค่ทางเดียว
+    แล้วได้บั๊กที่ "พิมพ์ - ผ่าน แต่กดปุ่มไม่ผ่าน" ซึ่งไล่หายากเพราะดูเหมือนเรื่องเดียวกัน
+    """
+    session.description = description
+    session.description_collected = True
+    if (
+        not session.requester_name
+        or not session.branch
+        or (session.ticket_type == "withdraw" and not session.items)
+    ):
+        replies = await _advance(session, backend, user_id=user_id)
+        await store.set(user_id, session)
+        return replies
+    return await _submit_or_retry(session, user_id, backend, store)
 
 
 def _parse_qty(text: str) -> int | None:

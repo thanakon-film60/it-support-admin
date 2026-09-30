@@ -15,6 +15,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from linebot.v3 import WebhookParser
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import FollowEvent, MessageEvent, PostbackEvent
@@ -25,7 +26,14 @@ from .backend import BackendClient, BackendError
 from .config import settings
 from .flow import ASK_BRANCH, BRANCH_START_LEVEL, Incoming, handle, parse_postback
 from .line_api import ImageTooLarge, LineApi
-from .richmenu import RichMenuError, ensure_rich_menu
+from .richmenu import (
+    STATE_DISABLED,
+    STATE_FAILED,
+    STATE_INSTALLING,
+    STATE_UNKNOWN,
+    RichMenuError,
+    ensure_rich_menu,
+)
 from .store import build_rate_limiter, build_store
 
 logging.basicConfig(
@@ -85,9 +93,11 @@ async def lifespan(app: FastAPI):
     # ทำไมต้อง background: LINE จะกด Verify webhook หรือส่ง event เข้ามาเมื่อไหร่ก็ได้
     # ถ้าเรารอ 3 คำขอไป-กลับหา api.line.me ให้เสร็จก่อนค่อยเปิดรับ request บอทจะดูเหมือน
     # "ไม่ตอบ" อยู่หลายวินาทีตอนเพิ่ง deploy ซึ่งเป็นช่วงเดียวกับที่คนมักกด Verify พอดี
-    app.state.richmenu_status = "ปิดการติดตั้งอัตโนมัติ" if not settings.richmenu_auto_install else "กำลังติดตั้ง..."
     if settings.richmenu_auto_install:
+        app.state.richmenu_state, app.state.richmenu_status = STATE_INSTALLING, "กำลังติดตั้ง..."
         asyncio.create_task(_install_rich_menu(app))
+    else:
+        app.state.richmenu_state, app.state.richmenu_status = STATE_DISABLED, "ปิดการติดตั้งอัตโนมัติ"
 
     try:
         yield
@@ -102,37 +112,45 @@ app = FastAPI(title="IT Support LINE Bot", lifespan=lifespan)
 async def _install_rich_menu(app: FastAPI) -> None:
     """ติดตั้ง rich menu — ห้ามทำให้บอทตายไม่ว่าจะพังยังไง
 
-    เก็บผลไว้ที่ app.state.richmenu_status เพื่อให้ /health บอกได้ว่าติดตั้งผ่านไหม
+    เก็บผลไว้ที่ app.state.richmenu_state (ASCII ไว้ให้สคริปต์อ่าน) คู่กับ
+    app.state.richmenu_status (ข้อความไทยไว้ให้คนอ่าน) เพื่อให้ /health บอกได้ว่าติดตั้งผ่านไหม
     ไม่งั้นต้องไปไล่อ่าน log ซึ่งคนที่ deploy มักไม่ได้ดู
     """
     try:
-        app.state.richmenu_status = await ensure_rich_menu(
+        result = await ensure_rich_menu(
             settings.line_channel_access_token,
             settings.richmenu_image_path,
-            data_image_path=settings.richmenu_data_image_path,
             # line_api_host ถูกตั้งเฉพาะตอนทดสอบ e2e — ถ้ามีค่าให้ชี้ไปที่นั่นทั้งคู่
             # จะได้ไม่มีทางยิงไป LINE จริงระหว่างเทสต์
             api_host=settings.line_api_host or "https://api.line.me",
             blob_host=settings.line_api_host or settings.line_blob_host,
             force=settings.richmenu_force_reinstall,
         )
-        logger.info("rich menu: %s", app.state.richmenu_status)
+        app.state.richmenu_state = result.state
+        app.state.richmenu_status = result.message
+        logger.info("rich menu: %s [%s]", result.message, result.state)
     except RichMenuError as exc:
+        app.state.richmenu_state = STATE_FAILED
         app.state.richmenu_status = f"ล้มเหลว: {exc}"
         logger.error("ติดตั้ง rich menu ไม่สำเร็จ: %s", exc)
     except Exception as exc:  # noqa: BLE001 - บอทต้องทำงานต่อได้แม้เมนูติดตั้งไม่ขึ้น
+        app.state.richmenu_state = STATE_FAILED
         app.state.richmenu_status = f"ล้มเหลว: {exc}"
         logger.exception("ติดตั้ง rich menu ไม่สำเร็จ (ข้อผิดพลาดที่ไม่คาดคิด)")
 
 
 @app.get("/health")
 async def health():
-    return {
+    body = {
         "ok": True,
         "state_backend": "redis" if settings.use_redis else "memory",
         "accept_images": settings.accept_images,
         "rate_limit_per_minute": settings.rate_limit_per_minute,
+        # สองฟิลด์นี้คู่กันเสมอ: richmenu_state ไว้ให้เครื่องตัดสินใจ (ASCII ไม่ขึ้นกับ
+        # ภาษาและ encoding) ส่วน richmenu ไว้ให้คนอ่าน — สคริปต์ห้ามเทียบจากฟิลด์หลัง
+        # เด็ดขาด เพราะ PowerShell 5.1 ถอดรหัสไทยเพี้ยนถ้า Content-Type ไม่มี charset
         "richmenu": getattr(app.state, "richmenu_status", "ยังไม่ทราบ"),
+        "richmenu_state": getattr(app.state, "richmenu_state", STATE_UNKNOWN),
         # ขั้นตอนแรกของบทสนทนาที่โค้ดชุดนี้ใช้ — ให้ deploy.ps1 ตรวจได้ว่าบอทรันโค้ดใหม่จริง
         # (ดูจากอาการไม่ได้ เพราะบอทเก่าก็ตอบข้อความเหมือนกัน แค่ไม่มีขั้นตอนเลือกบริษัท)
         "first_step": ASK_BRANCH,
@@ -141,6 +159,11 @@ async def health():
         # ต้องรอให้มีคนหายไปครบตามกำหนดแล้วกลับมาถึงจะรู้ว่าโค้ดชุดใหม่ขึ้นแล้วหรือยัง
         "welcome_back_days": settings.welcome_back_days,
     }
+    # ระบุ charset ให้ชัด: Starlette เติม "; charset=utf-8" ให้เฉพาะ media type ที่ขึ้นต้น
+    # ด้วย text/ เท่านั้น application/json จึงออกไปแบบไม่มี charset — แล้ว
+    # Invoke-WebRequest ของ Windows PowerShell 5.1 จะเดาเป็น ISO-8859-1 ทำให้ภาษาไทย
+    # ที่คนอ่านกลายเป็นอักษรขยะบนหน้าจอคนที่ deploy (เจอจริง 2026-09-26)
+    return JSONResponse(body, media_type="application/json; charset=utf-8")
 
 
 # ทำไมต้องรับที่ "/" ด้วย: reverse proxy หลายตัว (รวมถึง `tailscale funnel --set-path=/webhook`

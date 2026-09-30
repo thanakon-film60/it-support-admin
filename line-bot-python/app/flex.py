@@ -188,7 +188,17 @@ def _bubble(*, header: dict | None, body: list[dict], footer: list[dict] | None 
 # ---------------------------------------------------------------- การ์ดจริง
 
 
-def description_prompt(text: str, button_label: str) -> dict:
+# ป้ายปุ่ม "ข้ามรายละเอียด" — LINE ตัดป้ายปุ่มที่ 20 ตัวอักษร ป้ายนี้ 14 ตัวจึงไม่โดนตัด
+SKIP_DESC_LABEL = "✅ ไม่มี ส่งเลย"
+
+
+def description_prompt(text: str, button_label: str, *, can_skip: bool = False) -> dict:
+    """การ์ดถามรายละเอียด
+
+    can_skip=True เพิ่มปุ่ม "ไม่มี ส่งเลย" ให้จบด้วยการกด 1 ครั้ง แทนที่จะต้องพิมพ์ "-"
+    ใส่เฉพาะตอนที่ handler ยอมให้ข้ามจริงๆ (ดู flow._can_skip_description) — ปุ่มที่กดแล้ว
+    ไม่ผ่านแย่กว่าไม่มีปุ่ม เพราะผู้ใช้จะเชื่อว่าบอทพัง แล้วเลิกใช้ไปเลย
+    """
     button = _button(button_label, "a=write_description", color=INFO_COLOR)
     button["action"]["inputOption"] = "openKeyboard"
     paragraphs = text.split("\n\n")
@@ -205,10 +215,14 @@ def description_prompt(text: str, button_label: str) -> dict:
             })
         else:
             body.append(_text(paragraph, size="xs", color=MUTED, margin="md"))
+    footer = [button]
+    if can_skip:
+        footer.append(_button(SKIP_DESC_LABEL, "a=desc_skip", style="secondary"))
+    footer.append(_button("ยกเลิก", "a=cancel", style="secondary"))
     return _bubble(
         header=_header("เล่าเรื่องที่ให้เราช่วย", INFO_COLOR, "รายละเอียดชัดเจน ช่วยให้ทีม IT ดูแลได้เร็วขึ้น"),
         body=body,
-        footer=[button, _button("ยกเลิก", "a=cancel", style="secondary")],
+        footer=footer,
     )
 
 

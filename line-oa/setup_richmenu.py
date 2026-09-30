@@ -29,31 +29,34 @@ API = "https://api.line.me/v2/bot"
 API_DATA = "https://api-data.line.me/v2/bot"
 
 MENU_NAME = "IT Support Main Menu"      # ใช้เป็นกุญแจในการลบของเก่า ห้ามเปลี่ยนโดยไม่จำเป็น
+LEGACY_DATA_MENU_NAME = "IT Support Data Menu"   # เมนูชั้นที่ 2 ของเวอร์ชันก่อน — เก็บชื่อไว้ตามลบเท่านั้น
 CHAT_BAR_TEXT = "เมนู IT"               # LINE จำกัดไม่เกิน 14 ตัวอักษร
 
+# LINE รับรูปเมนูแค่ 2 ขนาด: 2500x1686 (2 แถว) กับ 2500x843 (แถวเดียว)
+# ตั้งแต่ 2026-09-26 เมนูเป็น 4 ปุ่มแบบ 2x2 จึงใช้รูปสูง
 W, H = 2500, 1686
-CW, CH = W // 3, H // 2                 # 833 x 843 ต่อ 1 ปุ่ม (คอลัมน์สุดท้ายกว้าง 834 ให้เต็มพอดี)
+COLS, ROWS = 2, 2
+CW, CH = W // COLS, H // ROWS           # 1250 x 843 ต่อ 1 ปุ่ม
 
-# ปุ่มเรียงซ้าย->ขวา บน->ล่าง ตรงกับรูปใน assets/richmenu-main.png
-# ใช้ action แบบ message เป็นหลัก เพราะบอทมีชั้นจับ intent อยู่แล้ว (ai.py -> INTENT_KEYWORDS)
+# ปุ่มเรียงซ้าย->ขวา ต้องตรงกับ MAIN_BUTTONS ใน line-bot-python/app/richmenu.py และรูปใน
+# assets/richmenu-main.png — ทั้งสามที่ต้องขยับพร้อมกันเสมอ ไม่งั้นได้ "กดปุ่มนี้แล้วได้อีกเรื่อง"
+#
+# ใช้ action แบบ message ล้วน เพราะบอทมีชั้นจับ intent อยู่แล้ว (ai.py -> INTENT_KEYWORDS)
 # ข้อความที่ส่งจึงเปิด flow ให้ทันทีโดยไม่ต้องแก้โค้ดบอทเลยแม้แต่บรรทัดเดียว
 BUTTONS = [
     {"action": {"type": "message", "text": "แจ้งซ่อม"}},
     {"action": {"type": "message", "text": "เบิกอุปกรณ์"}},
     {"action": {"type": "message", "text": "คืนอุปกรณ์"}},
     {"action": {"type": "message", "text": "ขอใช้บริการ IT"}},
-    {"action": {"type": "message", "text": "เรื่องที่ฉันแจ้ง"}},
-    # FAQ ใช้ postback เพราะ flow.py รองรับ a=faq_menu อยู่แล้ว และไม่ต้องให้ข้อความผู้ใช้โผล่ในแชท
-    {"action": {"type": "postback", "data": "a=faq_menu", "displayText": "คำถามที่พบบ่อย"}},
 ]
 
 
 def _areas() -> list[dict]:
     out = []
     for i, btn in enumerate(BUTTONS):
-        col, row = i % 3, i // 3
+        col, row = i % COLS, i // COLS
         x = col * CW
-        width = (W - x) if col == 2 else CW
+        width = (W - x) if col == COLS - 1 else CW
         out.append({
             "bounds": {"x": x, "y": row * CH, "width": width, "height": CH},
             "action": btn["action"],
@@ -99,11 +102,27 @@ def list_menus(token: str) -> list[dict]:
     return _call("GET", f"{API}/richmenu/list", token).get("richmenus", [])
 
 
+def remove_aliases(token: str) -> None:
+    """ลบ alias ทั้งหมดในแชนแนล — alias อยู่ระดับแชนแนล ไม่หายไปพร้อมเมนูที่ถูกลบ
+
+    ถ้าไม่ลบ alias ของเมนูชั้นที่ 2 ("itsupport-data") จะค้างอยู่ตลอดไปหลังเลิกใช้เมนูนั้น
+    """
+    try:
+        aliases = _call("GET", f"{API}/richmenu/alias/list", token).get("aliases", [])
+    except SystemExit:
+        return  # แชนแนลที่ไม่เคยมี alias ตอบ 404 — ไม่ใช่ข้อผิดพลาด
+    for alias in aliases:
+        aid = alias["richMenuAliasId"]
+        _call("DELETE", f"{API}/richmenu/alias/{aid}", token)
+        print(f"ลบ alias {aid}")
+
+
 def remove_all(token: str) -> None:
     try:
         _call("DELETE", f"{API}/user/all/richmenu", token)
     except SystemExit:
         pass  # ยังไม่เคยตั้งเมนูเริ่มต้นไว้ — ไม่ใช่ข้อผิดพลาด
+    remove_aliases(token)
     for menu in list_menus(token):
         _call("DELETE", f"{API}/richmenu/{menu['richMenuId']}", token)
         print(f"ลบเมนูเก่า {menu['richMenuId']} ({menu.get('name')})")
@@ -116,10 +135,12 @@ def install(token: str) -> str:
     if size > 1_000_000:
         sys.exit(f"รูปเมนูใหญ่เกินลิมิตของ LINE (1 MB) ตอนนี้ {size/1024:.0f} KB")
 
+    # ลบทั้งเมนูหลักรุ่นก่อนและเมนูชั้นที่ 2 ที่เลิกใช้แล้ว ไม่งั้นเมนูข้อมูลจะค้างในแชนแนลถาวร
     for menu in list_menus(token):
-        if menu.get("name") == MENU_NAME:
+        if menu.get("name") in (MENU_NAME, LEGACY_DATA_MENU_NAME):
             _call("DELETE", f"{API}/richmenu/{menu['richMenuId']}", token)
-            print(f"ลบเมนูเดิมชื่อเดียวกัน {menu['richMenuId']}")
+            print(f"ลบเมนูเดิม {menu['richMenuId']} ({menu.get('name')})")
+    remove_aliases(token)
 
     payload = {
         "size": {"width": W, "height": H},

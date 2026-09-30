@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/tickets", icon: "🎫", label: "Tickets" },
   { href: "/assets", icon: "💻", label: "ทรัพย์สิน" },
   { href: "/custodian", icon: "👤", label: "ผู้ครอบครอง" },
+  { href: "/employees", icon: "🧑\u200d💼", label: "พนักงาน" },
   { href: "/branches", icon: "🏢", label: "สาขา" },
   { href: "/resolved", icon: "✅", label: "แก้ไขปัญหาแล้ว" },
   { href: "/repair-history", icon: "🔧", label: "ประวัติซ่อม" },

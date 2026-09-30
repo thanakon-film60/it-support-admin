@@ -4,8 +4,16 @@ import { listStockItemsWithStatus } from "@/lib/db/stock";
 import { findEquipmentByAssetCode, listEquipment, listEquipmentSummary, listAssetFilterOptions } from "@/lib/db/equipment";
 import { matchFaqByKeyword, listFaqItems } from "@/lib/db/faq";
 import { listUsers } from "@/lib/db/users";
+import {
+  departmentLabel,
+  departmentSummary,
+  fullName,
+  listEmployees,
+  toBound,
+} from "@/lib/db/employees";
 import { listTickets, listTicketsWithRelations } from "@/lib/db/tickets";
 import {
+  BRANCH_DIRECTORY,
   companiesWithBranch,
   listAllBranches,
   listBranchOptions,
@@ -237,6 +245,16 @@ export async function GET(request: NextRequest) {
     return Response.json({ branches: listBranches() });
   }
 
+  // ใครคือผู้แจ้งของบัญชี LINE นี้ — บอทถามตอนเริ่มบทสนทนาเพื่อข้ามขั้นตอน "ระบุชื่อผู้แจ้ง"
+  if (kind === "requester") {
+    const lineUserId = (searchParams.get("line_user_id") || "").trim();
+    if (!lineUserId) {
+      return Response.json({ error: "ต้องส่ง line_user_id" }, { status: 400 });
+    }
+    const hit = listEmployees(true).find((u) => u.line_user_id === lineUserId);
+    return Response.json({ requester: hit ? toBound(hit) : null });
+  }
+
   if (kind === "knowledge") {
     // ชุดข้อมูลรวมสำหรับให้ชั้น AI ของบอทใช้ทำความเข้าใจข้อความผู้ใช้
     // (ชื่อสาขา รหัสทรัพย์สิน ชื่อของในสต็อก และ FAQ ทั้งหมด)
@@ -246,6 +264,32 @@ export async function GET(request: NextRequest) {
     // ต้องเปลี่ยนเป็นส่งเฉพาะรหัส หรือทำ endpoint ค้นหาแทนการส่งทั้งก้อน
     return Response.json({
       branches: listBranches(),
+      // สาขาแบบละเอียด + ทะเบียนบริษัท: ชั้น AI ของบอทใช้เดาบริษัทจากชื่อสาขาที่ผู้ใช้พิมพ์มา
+      // (ai.py -> Knowledge.companies_of_branch) ถ้าไม่ส่งมา บอทจะถามบริษัทซ้ำทุกครั้ง
+      // ทั้งที่ผู้ใช้พิมพ์ชื่อสาขาที่มีอยู่บริษัทเดียวมาแล้ว — เงียบ ไม่ error แต่ถามเกินจำเป็น
+      branch_items: listAllBranches()
+        .filter((b) => b.active !== false)
+        .map((b) => ({ company: b.company, name: b.name, group: b.group, floor: b.floor })),
+      // ทะเบียนพนักงาน: บอทเอาไปค้นหา "ผู้แจ้ง" เองในหน่วยความจำ ไม่ต้องยิงถามทุกตัวอักษรที่พิมพ์
+      //
+      // ส่งทั้ง 326 คน (~40 KB) เพราะบอท cache ก้อนนี้ไว้ 5 นาทีอยู่แล้ว การย้ายการค้นหาไปฝั่งบอท
+      // ทำให้ใช้ rapidfuzz จับคำที่พิมพ์ผิดได้ด้วย ซึ่งทำฝั่งนี้ไม่ได้ (ไม่มีไลบรารีและจะช้ากว่า)
+      employees: listEmployees().map((u) => ({
+        id: u.id,
+        code: u.employee_id,
+        name: u.display_name,
+        full_name: fullName(u),
+        nickname: u.nickname ?? null,
+        department: departmentLabel(u),
+        position: u.position ?? null,
+      })),
+      departments: departmentSummary(),
+      companies: BRANCH_DIRECTORY.map((c) => ({
+        code: c.company,
+        label: c.label,
+        group_label: c.groupLabel,
+        groups: c.groups.map((g) => ({ key: g.key, name: g.label, count: g.branches.length })),
+      })),
       stock_items: listStockItemsWithStatus().map((s) => ({
         id: s.id,
         name: s.name,
@@ -270,7 +314,7 @@ export async function GET(request: NextRequest) {
   return Response.json(
     {
       error:
-        "kind ต้องเป็น stock | equipment | faq | knowledge | branches | ticket | my_tickets",
+        "kind ต้องเป็น stock | equipment | faq | knowledge | branches | requester | ticket | my_tickets",
     },
     { status: 400 }
   );

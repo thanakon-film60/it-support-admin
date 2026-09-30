@@ -1,4 +1,4 @@
-"""ติดตั้ง Rich Menu ของ LINE OA ให้อัตโนมัติตอนบอทสตาร์ท — รองรับเมนู 2 ชั้น
+"""ติดตั้ง Rich Menu ของ LINE OA ให้อัตโนมัติตอนบอทสตาร์ท — เมนูเดียว 4 ปุ่ม จัดเป็น 2x2
 
 ทำไมต้องย้ายมาอยู่ในบอท ทั้งที่มี line-oa/setup_richmenu.py อยู่แล้ว:
 
@@ -7,45 +7,92 @@
     และ "ลืมติดตั้ง rich menu" มีอาการเหมือนระบบพังสนิทในสายตาพนักงาน คือแอดเข้ามาแล้ว
     เจอห้องแชทเปล่าๆ ไม่มีปุ่มอะไรให้กด ต้องเดาเองว่าพิมพ์อะไรได้บ้าง
 
-ทำไมต้อง 2 ชั้น:
+ทำไมเหลือ 4 ปุ่ม (2026-09-25) และทำไมจัดเป็น 2x2 (2026-09-26):
 
-    LINE ให้ปุ่มได้ 6 ปุ่มต่อ 1 เมนู แต่บอทตัวนี้ทำได้มากกว่านั้น ความสามารถอย่าง
-    "ดูสต็อกคงเหลือ" หรือ "ทรัพย์สินที่ฉันถืออยู่" เดิมต้องพิมพ์เอาเองเท่านั้น
-    ซึ่งแทบไม่มีใครรู้ว่าทำได้ — แยกเป็น "แจ้งเรื่อง" (เมนูหลัก) กับ "เช็คข้อมูล" (เมนูย่อย)
-    ทำให้เห็นครบทุกอย่างโดยที่แต่ละหน้าจอยังไม่แน่น
+    เดิมเป็นเมนู 2 ชั้น 6 ปุ่ม โดยปุ่ม "เช็คข้อมูล" ทำหน้าที่สลับไปเมนูชั้นที่ 2
+    และมีปุ่ม "คำถามที่พบบ่อย" อยู่ทั้งสองชั้น — ทั้งสองอย่างถูกถอดออกตามที่ตกลงกันไว้
+    เหลือเฉพาะสิ่งที่ผู้ใช้ "ทำ" จริง 4 อย่าง คือ แจ้งซ่อม / เบิก / คืน / ขอใช้บริการ IT
 
-    การสลับเมนูใช้ action `richmenuswitch` ซึ่งต้องอ้างผ่าน "alias" ไม่ใช่ id ตรงๆ
-    (เพราะ id เปลี่ยนทุกครั้งที่สร้างเมนูใหม่ ถ้าอ้าง id ปุ่มสลับจะพังทุกครั้งที่ติดตั้งซ้ำ)
+    ผลข้างเคียงที่ต้องรู้: ความสามารถที่เคยอยู่ในเมนูชั้น 2 (สต็อกคงเหลือ, เรื่องที่ฉันแจ้ง,
+    ทรัพย์สินของฉัน, ค้นหาทรัพย์สิน) ไม่ได้ถูกลบทิ้ง แต่ "ไม่มีปุ่มให้กด" แล้ว
+    ยังเรียกได้ด้วยการพิมพ์ เพราะ ai.py จับ intent จากข้อความอยู่ และ FAQ ยังอยู่ใน
+    quick reply (messages.MENU_BUTTONS) ถ้าจะถอดออกให้หมดจริงๆ ต้องแก้ที่นั่นด้วย
 
-ออกแบบให้ปลอดภัยต่อการรันซ้ำ (idempotent): ถ้าเมนูครบ + alias ชี้ถูก + เมนูหลักเป็น default อยู่แล้ว
-จะข้ามไปเลย ไม่อัปโหลดรูปซ้ำทุกครั้งที่ restart — สำคัญเพราะ LINE ให้ 1 แชนแนลมีเมนูได้ถึง 1,000 อัน
-การสร้างใหม่ทุก restart จะค่อยๆ ถมจนเต็มโดยไม่มีใครสังเกต
+การอัปเกรดจากของเดิม:
+
+    LINE ไม่ลบเมนูเก่าให้เอง และ alias ก็อยู่ระดับแชนแนล ไม่ได้หายไปพร้อมเมนูที่ถูกลบ
+    โค้ดชุดนี้จึง "ตามลบ" เมนูชั้น 2 กับ alias ของมันให้ด้วย (LEGACY_*) ไม่งั้นจะค้างถาวร
+
+ออกแบบให้ปลอดภัยต่อการรันซ้ำ (idempotent): ถ้าเมนูที่ติดตั้งอยู่ "ตรงกับโค้ดชุดนี้แล้ว"
+(ขนาดรูป + ชุดปุ่มตรงกัน) และเป็น default อยู่แล้ว จะข้ามไปเลย ไม่อัปโหลดรูปซ้ำทุก restart
+— สำคัญเพราะ LINE ให้ 1 แชนแนลมีเมนูได้ถึง 1,000 อัน การสร้างใหม่ทุก restart จะค่อยๆ ถมจนเต็ม
+
+ที่เทียบ "ชุดปุ่ม" ไม่ใช่แค่ "มีเมนูชื่อนี้อยู่ไหม" เพราะตอนเปลี่ยนจาก 6 ปุ่มเป็น 4 ปุ่ม
+เมนูเก่าก็ชื่อเดียวกันและเป็น default อยู่ ถ้าเช็คแค่ชื่อ deploy ไปแล้วเมนูจะไม่เปลี่ยน
+และคนที่ deploy จะเห็นว่า "โค้ดขึ้นแล้วแต่เมนูยังเป็นของเก่า" โดยไม่รู้ว่าต้องไปตั้ง
+RICHMENU_FORCE_REINSTALL=true เอง
 """
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import NamedTuple
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
+# ---- สถานะการติดตั้ง: ASCII ล้วน ห้ามเป็นภาษาไทย ----
+#
+# ทำไมต้องแยกจากข้อความไทย (บทเรียนจาก deploy 2026-09-26):
+#
+#   deploy.ps1 เคยตัดสินผลด้วยการเทียบข้อความไทยที่ได้จาก /health ตรงๆ
+#   แต่ Windows PowerShell 5.1 (ซึ่ง deploy.bat เรียกใช้) ถอดรหัส body ของ
+#   Invoke-WebRequest เป็น ISO-8859-1 เมื่อ Content-Type ไม่ได้ระบุ charset มาด้วย
+#   ข้อความไทยจึงกลายเป็นอักษรขยะก่อนถึงบรรทัดที่เทียบ ทำให้ "เทียบไม่ตรง" ทุกกรณี
+#   ผลคือลูปที่รอให้ติดตั้งเสร็จหลุดออกทันที แล้วรายงานว่า "ติดตั้งไม่สำเร็จ"
+#   ทั้งที่ตอนนั้นบอทยังติดตั้งอยู่และสำเร็จในอีกไม่กี่วินาที
+#
+# กฎที่ได้มา: ค่าที่ "เครื่องอ่านเพื่อตัดสินใจ" กับค่าที่ "คนอ่านเพื่อเข้าใจ"
+# ต้องเป็นคนละฟิลด์เสมอ อย่าให้ค่าเดียวทำสองหน้าที่ เพราะวันที่ข้อความเปลี่ยน
+# (แปลภาษา แก้คำ หรือโดน encoding เล่นงาน) ตรรกะจะพังเงียบๆ โดยไม่มี error ที่ไหนเลย
+STATE_OK = "ok"                  # ติดตั้งถูกต้องอยู่แล้ว รอบนี้ไม่ได้แตะอะไร
+STATE_INSTALLED = "installed"    # เพิ่งติดตั้งใหม่สำเร็จในรอบนี้
+STATE_INSTALLING = "installing"  # กำลังติดตั้งอยู่ (main.py ตั้งไว้ก่อนเรียก)
+STATE_DISABLED = "disabled"      # ปิดการติดตั้งอัตโนมัติไว้
+STATE_FAILED = "failed"          # ล้มเหลว — ดูรายละเอียดที่ message
+STATE_UNKNOWN = "unknown"        # ยังไม่ทราบ (ถามมาก่อนบอทตั้งค่าเสร็จ)
+
+
+class RichMenuResult(NamedTuple):
+    """ผลการติดตั้ง แยกส่วนที่เครื่องอ่าน ออกจากส่วนที่คนอ่าน"""
+
+    state: str    # หนึ่งใน STATE_* ด้านบน — ใช้ตัดสินใจได้อย่างเดียว
+    message: str  # ข้อความไทยไว้ใส่ log และให้คนดู — ห้ามเอาไปเทียบในสคริปต์
+
 MENU_MAIN_NAME = "IT Support Main Menu"
-MENU_DATA_NAME = "IT Support Data Menu"
 
 # alias id ต้องเป็น a-z, 0-9, _, - เท่านั้น และไม่ซ้ำกันในแชนแนล
 ALIAS_MAIN = "itsupport-main"
-ALIAS_DATA = "itsupport-data"
+
+# ของเวอร์ชันก่อน (เมนู 2 ชั้น) — เก็บชื่อไว้เพื่อ "ตามลบ" เท่านั้น ห้ามเอาไปสร้างใหม่
+LEGACY_MENU_DATA_NAME = "IT Support Data Menu"
+LEGACY_ALIAS_DATA = "itsupport-data"
 
 CHAT_BAR_TEXT = "เมนู IT"  # LINE จำกัด 14 ตัวอักษร — "เมนู IT Support" (15) ถูกปฏิเสธทั้ง request
 
+# LINE รับรูป rich menu แค่ 2 ขนาด: 2500x1686 (สูง, 2 แถว) กับ 2500x843 (เตี้ย, 1 แถว)
+#
+# 2x2 บนรูปสูง: ปุ่มละ 1250x843 ใหญ่กว่าแบบแถวเดียว (625x843) เท่าตัวในแนวนอน
+# ทั้งพื้นที่กดและตัวหนังสืออ่านง่ายขึ้นชัดเจนบนมือถือ แลกกับเมนูที่สูงขึ้นเมื่อเปิดค้างไว้
 W, H = 2500, 1686
-CW, CH = W // 3, H // 2  # 833 x 843 ต่อปุ่ม
+COLS, ROWS = 2, 2
+CW, CH = W // COLS, H // ROWS  # 1250 x 843 ต่อปุ่ม
 MAX_IMAGE_BYTES = 1_000_000
 
 # ---- ปุ่มเมนูหลัก: สิ่งที่ "ทำ" ----
-# 4 ปุ่มแรกใช้ action แบบ message โดยตั้งใจ ไม่ใช่ postback เพราะบอทมีชั้นจับ intent อยู่แล้ว
+# ใช้ action แบบ message โดยตั้งใจ ไม่ใช่ postback เพราะบอทมีชั้นจับ intent อยู่แล้ว
 # (ai.py -> INTENT_KEYWORDS) ข้อความธรรมดาจึงเปิด flow ได้เลย และผู้ใช้เห็นคำที่ตัวเองส่งในแชท
 # ทำให้เรียนรู้ว่า "พิมพ์เองก็ได้" ไม่ติดอยู่กับการกดปุ่มอย่างเดียว
 MAIN_BUTTONS = [
@@ -53,54 +100,50 @@ MAIN_BUTTONS = [
     {"type": "message", "text": "เบิกอุปกรณ์"},
     {"type": "message", "text": "คืนอุปกรณ์"},
     {"type": "message", "text": "ขอใช้บริการ IT"},
-    {"type": "richmenuswitch", "richMenuAliasId": ALIAS_DATA, "data": "a=menu&v=data"},
-    {"type": "postback", "data": "a=faq_menu", "displayText": "คำถามที่พบบ่อย"},
-]
-
-# ---- ปุ่มเมนูข้อมูล: สิ่งที่ "ดู" ----
-# สต็อก/เรื่องที่ฉันแจ้ง ใช้ message เพราะ ai.analyze() จับ intent ได้แม่นอยู่แล้ว
-# (ตรวจจริง: "สต็อกคงเหลือ" -> stock_query 0.80, "เรื่องที่ฉันแจ้ง" -> my_tickets_query 0.85)
-# ส่วนอีก 2 ปุ่มใช้ postback เพราะยังไม่มี keyword รองรับ และไม่อยากให้เดาผิดเป็นการแจ้งเรื่องใหม่
-DATA_BUTTONS = [
-    {"type": "message", "text": "สต็อกคงเหลือ"},
-    {"type": "message", "text": "เรื่องที่ฉันแจ้ง"},
-    {"type": "postback", "data": "a=my_assets", "displayText": "ทรัพย์สินของฉัน"},
-    {"type": "postback", "data": "a=find_asset", "displayText": "ค้นหาทรัพย์สิน"},
-    {"type": "postback", "data": "a=faq_menu", "displayText": "คำถามที่พบบ่อย"},
-    {"type": "richmenuswitch", "richMenuAliasId": ALIAS_MAIN, "data": "a=menu&v=main"},
-]
-
-# ใช้ตอนที่ไม่มีรูปเมนูข้อมูล — ถอยกลับไปเป็นเมนูเดียวที่ยังใช้งานได้ครบ
-# (ห้ามปล่อยให้เมนูหลักมีปุ่มสลับไปเมนูที่ไม่มีอยู่จริง เพราะกดแล้วจะเงียบ ไม่มีอะไรเกิดขึ้น)
-MAIN_BUTTONS_SOLO = [
-    {"type": "message", "text": "แจ้งซ่อม"},
-    {"type": "message", "text": "เบิกอุปกรณ์"},
-    {"type": "message", "text": "คืนอุปกรณ์"},
-    {"type": "message", "text": "ขอใช้บริการ IT"},
-    {"type": "message", "text": "เรื่องที่ฉันแจ้ง"},
-    {"type": "postback", "data": "a=faq_menu", "displayText": "คำถามที่พบบ่อย"},
 ]
 
 
 def _areas(buttons: list[dict]) -> list[dict]:
     """แปลงลำดับปุ่มเป็นพิกัดพื้นที่กด — คอลัมน์สุดท้ายกินส่วนที่เหลือทั้งหมด
-    เพราะ 2500 หาร 3 ไม่ลงตัว ถ้าใช้ 833 ทั้งสามคอลัมน์จะเหลือขอบขวา 1px ที่กดไม่ได้"""
+
+    ที่ต้องเผื่อ "ส่วนที่เหลือ" เพราะ W อาจหารจำนวนคอลัมน์ไม่ลงตัว (3 คอลัมน์ในเวอร์ชันก่อน
+    เหลือขอบขวา 1px ที่กดไม่ได้) ตอนนี้ 2500/4 = 625 ลงตัวพอดี แต่คงสูตรไว้กันพลาดตอนแก้ COLS
+    """
     areas = []
     for index, action in enumerate(buttons):
-        col, row = index % 3, index // 3
+        col, row = index % COLS, index // COLS
         x = col * CW
         areas.append(
             {
                 "bounds": {
                     "x": x,
                     "y": row * CH,
-                    "width": (W - x) if col == 2 else CW,
+                    "width": (W - x) if col == COLS - 1 else CW,
                     "height": CH,
                 },
                 "action": action,
             }
         )
     return areas
+
+
+def _signature(areas: list[dict]) -> list[str]:
+    """ลายเซ็นของเมนู 1 ใบ: ชนิดปุ่ม + ข้อความ/ข้อมูลที่ส่ง เรียงตามตำแหน่ง
+
+    ใช้เทียบว่าเมนูที่ติดตั้งอยู่บนแชนแนล "ตรงกับโค้ดชุดนี้" ไหม โดยอ่านเฉพาะฟิลด์ที่เรากำหนดเอง
+    ไม่เทียบทั้ง dict เพราะ LINE เติมฟิลด์ของตัวเอง (เช่น label) กลับมาได้ ถ้าเทียบทั้งก้อน
+    จะเจอ "ไม่ตรง" ตลอดเวลา แล้วกลายเป็นสร้างเมนูใหม่ทุก restart ซึ่งคือสิ่งที่พยายามเลี่ยงอยู่
+    """
+    out = []
+    for area in areas:
+        action = area.get("action") or {}
+        detail = action.get("text") or action.get("data") or action.get("richMenuAliasId") or ""
+        out.append(f"{action.get('type', '')}:{detail}")
+    return out
+
+
+CURRENT_SIGNATURE = _signature(_areas(MAIN_BUTTONS))
+CURRENT_SIZE = {"width": W, "height": H}
 
 
 class RichMenuError(Exception):
@@ -141,9 +184,13 @@ class _Client:
     async def delete_menu(self, menu_id: str) -> None:
         await self.http.delete(f"{self.api}/v2/bot/richmenu/{menu_id}")
 
+    async def delete_alias(self, alias_id: str) -> None:
+        """ลบ alias ที่ไม่ได้ใช้แล้ว — ไม่เช็คผลลัพธ์เพราะ 404 (ไม่มีอยู่แล้ว) คือผลที่ต้องการอยู่ดี"""
+        await self.http.delete(f"{self.api}/v2/bot/richmenu/alias/{alias_id}")
+
     async def create_menu(self, name: str, buttons: list[dict]) -> str:
         payload = {
-            "size": {"width": W, "height": H},
+            "size": CURRENT_SIZE,
             # selected=True = เปิดเมนูค้างไว้ตั้งแต่เข้าห้องแชท ผู้ใช้ไม่ต้องกดเปิดเอง
             "selected": True,
             "name": name,
@@ -203,37 +250,33 @@ def _check_image(path: str, label: str) -> Path:
     return image
 
 
+def _is_current(menu: dict) -> bool:
+    """เมนูใบนี้คือของที่โค้ดชุดนี้จะสร้างพอดีไหม (ขนาด + ชุดปุ่มตรงกัน)"""
+    size = menu.get("size") or {}
+    if (size.get("width"), size.get("height")) != (W, H):
+        return False
+    return _signature(menu.get("areas") or []) == CURRENT_SIGNATURE
+
+
 async def ensure_rich_menu(
     access_token: str,
     image_path: str,
     *,
-    data_image_path: str = "",
     api_host: str = "https://api.line.me",
     blob_host: str = "https://api-data.line.me",
     force: bool = False,
-) -> str:
+) -> RichMenuResult:
     """ทำให้แน่ใจว่า rich menu ถูกติดตั้งและตั้งเป็นเมนูเริ่มต้นของผู้ใช้ทุกคน
 
-    มีรูปเมนูข้อมูล -> ติดตั้งแบบ 2 ชั้น (เมนูหลัก + เมนูข้อมูล สลับกันได้)
-    ไม่มี            -> ติดตั้งเมนูเดียวแบบเดิม (ยังใช้งานได้ครบ แค่ไม่มีเมนูย่อย)
-
-    คืนข้อความสรุปผลสั้นๆ ไว้ใส่ log และ /health
-    force=True เพื่อบังคับติดตั้งใหม่แม้มีอยู่แล้ว (ใช้ตอนเปลี่ยนรูป/เปลี่ยนปุ่ม)
+    คืน RichMenuResult(state, message): state เป็น ASCII ไว้ให้สคริปต์ตัดสินผล
+    ส่วน message เป็นข้อความไทยไว้ใส่ log และ /health ให้คนอ่าน
+    force=True เพื่อบังคับติดตั้งใหม่แม้มีอยู่แล้ว (ใช้ตอนเปลี่ยนรูปโดยที่ปุ่มเหมือนเดิม —
+    เปลี่ยนปุ่มไม่ต้องใช้ force เพราะลายเซ็นปุ่มจะไม่ตรงและติดตั้งใหม่ให้เอง)
     """
     main_image = _check_image(image_path, "เมนูหลัก")
 
-    two_level = bool(data_image_path)
-    data_image: Path | None = None
-    if two_level:
-        try:
-            data_image = _check_image(data_image_path, "เมนูข้อมูล")
-        except RichMenuError as exc:
-            # ไม่มีรูปเมนูย่อย -> ถอยไปเมนูเดียว ดีกว่าไม่ติดตั้งอะไรเลย
-            logger.warning("%s — ติดตั้งเป็นเมนูเดียวแทน", exc)
-            two_level = False
-
     headers = {"Authorization": f"Bearer {access_token}"}
-    # timeout สูงกว่าปกติเพราะขั้นอัปโหลดรูปส่งไฟล์ ~200 KB สองครั้ง
+    # timeout สูงกว่าปกติเพราะขั้นอัปโหลดรูปส่งไฟล์ ~200 KB
     async with httpx.AsyncClient(timeout=30.0, headers=headers) as http:
         c = _Client(http, api_host, blob_host)
 
@@ -241,58 +284,44 @@ async def ensure_rich_menu(
         menus = await c.list_menus()
         aliases = await c.list_aliases()
 
-        by_name = {m.get("name"): m["richMenuId"] for m in menus}
-        main_id = by_name.get(MENU_MAIN_NAME)
-        data_id = by_name.get(MENU_DATA_NAME)
+        installed = next((m for m in menus if m.get("name") == MENU_MAIN_NAME), None)
+        leftovers = [m for m in menus if m.get("name") == LEGACY_MENU_DATA_NAME]
 
         # ---- ติดตั้งถูกต้องอยู่แล้วไหม ----
-        if not force and main_id and current_default == main_id:
-            if not two_level:
-                logger.info("rich menu (เมนูเดียว) ติดตั้งไว้แล้ว %s", main_id)
-                return f"ok (มีอยู่แล้ว: {main_id})"
-            if (
-                data_id
-                and aliases.get(ALIAS_MAIN) == main_id
-                and aliases.get(ALIAS_DATA) == data_id
-            ):
-                logger.info("rich menu 2 ชั้นติดตั้งไว้แล้ว main=%s data=%s", main_id, data_id)
-                return f"ok (2 ชั้น มีอยู่แล้ว: {main_id})"
+        # เงื่อนไขครบทุกข้อถึงจะข้ามได้ ขาดข้อไหนแปลว่ายังเป็นของเวอร์ชันก่อนหรือติดตั้งค้างไว้
+        if (
+            not force
+            and installed
+            and current_default == installed["richMenuId"]
+            and _is_current(installed)
+            and not leftovers
+            and LEGACY_ALIAS_DATA not in aliases
+        ):
+            logger.info("rich menu ติดตั้งไว้แล้ว %s", installed["richMenuId"])
+            return RichMenuResult(STATE_OK, f"ok (มีอยู่แล้ว: {installed['richMenuId']})")
 
-        # ---- ลบของเก่าที่ชื่อเดียวกัน กันสะสมจนเต็มโควตา 1,000 อัน ----
+        # ---- ลบของเก่า: ทั้งเมนูหลักรุ่นก่อนและเมนูชั้น 2 ที่เลิกใช้แล้ว ----
+        # กันสะสมจนเต็มโควตา 1,000 อัน และกันไม่ให้เมนูชั้น 2 ค้างอยู่ในแชนแนลตลอดไป
         for menu in menus:
-            if menu.get("name") in (MENU_MAIN_NAME, MENU_DATA_NAME):
+            if menu.get("name") in (MENU_MAIN_NAME, LEGACY_MENU_DATA_NAME):
                 await c.delete_menu(menu["richMenuId"])
                 logger.info("ลบเมนูเดิม %s (%s)", menu["richMenuId"], menu.get("name"))
 
+        # alias ของเมนูชั้น 2 ต้องลบแยก เพราะมันอยู่ระดับแชนแนล ไม่ได้หายไปพร้อมเมนู
+        if LEGACY_ALIAS_DATA in aliases:
+            await c.delete_alias(LEGACY_ALIAS_DATA)
+            logger.info("ลบ alias ที่เลิกใช้แล้ว %s", LEGACY_ALIAS_DATA)
+
         # ---- สร้างใหม่ ----
-        if two_level and data_image is not None:
-            new_main = await c.create_menu(MENU_MAIN_NAME, MAIN_BUTTONS)
-            new_data = await c.create_menu(MENU_DATA_NAME, DATA_BUTTONS)
-            try:
-                await c.upload_image(new_main, main_image)
-                await c.upload_image(new_data, data_image)
-            except RichMenuError:
-                # เก็บกวาดเมนูที่สร้างค้างไว้ ไม่งั้นเหลือเมนูไม่มีรูปลอยอยู่ในแชนแนล
-                await c.delete_menu(new_main)
-                await c.delete_menu(new_data)
-                raise
-
-            # alias ต้องตั้งหลังมีเมนูจริงแล้ว เพราะมันชี้ไปที่ id ของเมนู
-            await c.upsert_alias(ALIAS_MAIN, new_main)
-            await c.upsert_alias(ALIAS_DATA, new_data)
-            await c.set_default(new_main)
-
-            logger.info("ติดตั้ง rich menu 2 ชั้นสำเร็จ main=%s data=%s", new_main, new_data)
-            return f"installed 2 ชั้น (main={new_main})"
-
-        new_main = await c.create_menu(MENU_MAIN_NAME, MAIN_BUTTONS_SOLO)
+        new_main = await c.create_menu(MENU_MAIN_NAME, MAIN_BUTTONS)
         try:
             await c.upload_image(new_main, main_image)
         except RichMenuError:
+            # เก็บกวาดเมนูที่สร้างค้างไว้ ไม่งั้นเหลือเมนูไม่มีรูปลอยอยู่ในแชนแนล
             await c.delete_menu(new_main)
             raise
         await c.upsert_alias(ALIAS_MAIN, new_main)
         await c.set_default(new_main)
 
-        logger.info("ติดตั้ง rich menu (เมนูเดียว) สำเร็จ: %s", new_main)
-        return f"installed ({new_main})"
+        logger.info("ติดตั้ง rich menu (%d ปุ่ม) สำเร็จ: %s", len(MAIN_BUTTONS), new_main)
+        return RichMenuResult(STATE_INSTALLED, f"installed ({new_main})")

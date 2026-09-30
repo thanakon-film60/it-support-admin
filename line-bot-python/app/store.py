@@ -18,6 +18,7 @@ import json
 import time
 from dataclasses import asdict, dataclass, field, fields
 from typing import Any, Protocol
+from uuid import uuid4
 
 
 @dataclass
@@ -25,10 +26,23 @@ class Session:
     """สถานะบทสนทนาของผู้ใช้ 1 คน"""
 
     step: str = "IDLE"
+
+    # ---- กันสร้าง ticket ซ้ำตอนกด "ลองส่งใหม่" ----
+    #
+    # "บอทส่งไม่สำเร็จ" ไม่ได้แปลว่าหลังบ้านไม่ได้สร้าง ticket — timeout หลังจากเขียนข้อมูล
+    # ลงไปแล้วเป็นเคสคลาสสิก ถ้ากดส่งซ้ำแล้วยิงเข้าไปเฉยๆ จะได้ ticket 2 ใบและตัดสต็อกซ้ำ 2 รอบ
+    #
+    # request_id เกิดพร้อม session และคงเดิมตลอด รวมถึงตอนถูก serialize ลง Redis แล้วอ่านกลับมา
+    # (เป็นฟิลด์ธรรมดาจึงติดไปกับ asdict/from_json) หลังบ้านเจอค่าซ้ำจะคืน ticket เดิมแทนการสร้างใหม่
+    request_id: str = field(default_factory=lambda: uuid4().hex)
+
     ticket_type: str | None = None
     branch: str | None = None
     asset_code: str | None = None
-    asset_label: str | None = None  # ข้อความสวยๆ ของทรัพย์สินที่เจอ เช่น "NB2501001 — LENOVO ThinkPad E14"
+    asset_label: str | None = None
+    # id ของ "เครื่อง" ที่ผูกแล้วจริงๆ — ไม่ใช่รหัสที่พิมพ์มา เพราะรหัสซ้ำกันได้ (ของจริงซ้ำอยู่ 28 แถว)
+    # ถ้าส่งแต่ asset_code หลังบ้านต้องเดาเอง แล้ว ticket จะผูกกับเครื่องผิดสาขาโดยไม่มีใครรู้
+    equipment_id: str | None = None  # ข้อความสวยๆ ของทรัพย์สินที่เจอ เช่น "NB2501001 — LENOVO ThinkPad E14"
     asset_asked: bool = False  # ถามเรื่องรหัสทรัพย์สินไปแล้วหรือยัง (กันถามซ้ำตอน AI เติมให้ล่วงหน้า)
     items: list[dict[str, Any]] = field(default_factory=list)  # [{"name": str, "qty": int}]
     pending_item_name: str | None = None  # ของที่เพิ่งเลือก กำลังรอให้พิมพ์จำนวน
@@ -36,6 +50,11 @@ class Session:
     requester_name: str | None = None
     requester_department: str | None = None
     description: str | None = None
+    # ข้อความแรกที่ผู้ใช้พิมพ์มาตอนเปิดเรื่อง (เช่น "NB2501001 เปิดไม่ติด ที่สำนักงานใหญ่")
+    #
+    # เก็บแยกจาก description เพราะมันคือ "คำบอกเล่าของผู้ใช้" ที่มีบริบทครบที่สุด
+    # และเป็นเหตุผลที่บอทไม่ต้องบังคับให้พิมพ์รายละเอียดซ้ำอีกรอบตอนถึงขั้น ASK_DESC
+    initial_message: str | None = None
     description_collected: bool = False  # Free-text shortcut may collect details before requester/items.
     line_display_name: str | None = None
     # URL รูปที่ผู้ใช้ส่งเข้ามาระหว่างแจ้งเรื่อง (อัปโหลดเข้าระบบแล้ว) — แนบไปกับ ticket ตอนส่ง
@@ -65,6 +84,26 @@ class Session:
     # เก็บ "ชื่อที่คนอ่าน" ของประเภทที่เลือกไว้ด้วย (เช่น notebook -> โน้ตบุ๊ค)
     # เพราะฝั่งบอทไม่มีตารางแปลชื่อประเภท ตัวแปลอยู่ฝั่ง Next.js ที่เดียว
     pick_category_label: str | None = None
+
+    # ---- ผู้แจ้ง (จากทะเบียนพนักงาน) ----
+    # requester_user_id = id แถวใน users ของระบบแอดมิน ส่งไปกับ ticket เพื่อผูกประวัติให้ถูกคน
+    # ถ้าไม่มีค่านี้ หลังบ้านจะตกไปใช้ "หาจากชื่อ ถ้าไม่เจอสร้างใหม่" ซึ่งทำให้คนคนเดียว
+    # กลายเป็นหลายแถวได้ถ้าสะกดต่างกันนิดเดียว
+    requester_user_id: str | None = None
+    # เคยถามหลังบ้านแล้วว่าบัญชีนี้ผูกกับใคร (True แม้ผลจะเป็น "ยังไม่ผูก")
+    # ถ้าไม่มีธงนี้ บอทจะยิงถามซ้ำทุกครั้งที่เดินผ่านขั้นตอนผู้แจ้ง ซึ่งเกิดได้หลายรอบต่อ 1 เรื่อง
+    rq_checked: bool = False
+    #
+    # เมนูเลือกผู้แจ้งใช้ช่องของตัวเอง ไม่ใช้ pick_* ร่วมกับเมนูสาขา/ทรัพย์สิน
+    # เพราะผู้ใช้กด "เปลี่ยนคนแจ้ง" ย้อนกลับมาตอนไหนก็ได้ รวมถึงตอนที่ค่าของเมนูอื่นยังต้องใช้อยู่
+    rq_level: str | None = None            # "dept" | "person"
+    rq_dept: str | None = None
+    rq_page: int = 0
+    rq_values: list[str] = field(default_factory=list)
+    rq_labels: list[str] = field(default_factory=list)
+    # คนที่ค้นเจอแล้วรอให้กดยืนยัน — เก็บทั้ง dict เพราะต้องใช้ชื่อ/ฝ่ายไปแสดงตอนยืนยัน
+    rq_pending: dict[str, Any] | None = None
+
     updated_at: float = field(default_factory=time.time)
 
     def to_json(self) -> str:

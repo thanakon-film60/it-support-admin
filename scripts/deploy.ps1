@@ -42,11 +42,31 @@ function Write-Fail  { param($m) Write-Host "  [ไม่ผ่าน] $m" -Fore
 function Write-Info  { param($m) Write-Host "  $m" -ForegroundColor Gray }
 
 # เรียก URL ในเครื่องแล้วคืน [int]status กับ [string]body — ไม่ throw ถ้าต่อไม่ได้
+# อ่าน body ของ HTTP ให้เป็น UTF-8 เสมอ
+#
+# Windows PowerShell 5.1 (ตัวที่ deploy.bat เรียกใช้) ถอดรหัส $r.Content ตาม charset
+# ที่ติดมากับ Content-Type ถ้าไม่มี charset จะเดาเป็น ISO-8859-1 — ภาษาไทยที่ API ส่งมา
+# จึงกลายเป็นอักษรขยะ และที่ร้ายกว่าคือ "การเทียบข้อความไทยทุกจุดจะพลาดหมด"
+#
+# เจอจริง 2026-09-26: ลูปที่รอ rich menu ติดตั้งให้เสร็จเทียบกับคำว่า "กำลังติดตั้ง"
+# แล้วเทียบไม่ตรงเพราะ body เพี้ยน ลูปจึงหลุดทันทีและรายงานว่า "ติดตั้งไม่สำเร็จ"
+# ทั้งที่บอทกำลังติดตั้งอยู่และสำเร็จในอีกไม่กี่วินาที
+#
+# RawContentStream มีทั้งใน 5.1 และ 7.x จึงใช้ได้ทั้งสองรุ่นโดยไม่ต้องแยกเคส
+function Get-Utf8Body {
+    param($Response)
+    try {
+        $bytes = $Response.RawContentStream.ToArray()
+        if ($bytes.Length -gt 0) { return [Text.Encoding]::UTF8.GetString($bytes) }
+    } catch { }
+    return $Response.Content
+}
+
 function Invoke-Local {
     param([string]$Url, [int]$TimeoutSec = 10)
     try {
         $r = Invoke-WebRequest -Uri $Url -TimeoutSec $TimeoutSec -UseBasicParsing -ErrorAction Stop
-        return @{ Status = [int]$r.StatusCode; Body = $r.Content; Headers = $r.Headers }
+        return @{ Status = [int]$r.StatusCode; Body = (Get-Utf8Body $r); Headers = $r.Headers }
     } catch {
         # ต้องรองรับ PowerShell ทั้ง 2 รุ่นที่เจอบน Windows จริง:
         #   5.1 (powershell.exe เรียก) -> HTTP 4xx/5xx โยน System.Net.WebException
@@ -68,7 +88,7 @@ function Invoke-Local {
             } else {
                 try {
                     $stream = $resp.GetResponseStream()
-                    if ($stream) { $body = (New-Object System.IO.StreamReader($stream)).ReadToEnd() }
+                    if ($stream) { $body = (New-Object System.IO.StreamReader($stream, [Text.Encoding]::UTF8)).ReadToEnd() }
                 } catch { }
             }
 
@@ -168,9 +188,29 @@ if (-not ($appReady -and $botReady)) { return }
 
 Write-Step "3. ตรวจว่าของใหม่ทำงานจริง"
 
-$health = Invoke-Local 'http://127.0.0.1:8000/health'
+# rich menu ถูกติดตั้งเป็น background task (main.py -> _install_rich_menu) บอทจึงตอบ /health ได้
+# ตั้งแต่ก่อนติดตั้งเสร็จ ถ้าอ่านครั้งเดียวจะได้สถานะ "กำลังติดตั้ง..." แล้วสรุปว่าพัง
+# ทั้งที่อีกไม่กี่วินาทีก็สำเร็จ — ต้องรอให้สถานะนิ่งก่อนค่อยตัดสิน
+#
+# เดิมแทบไม่เจอ เพราะกรณีปกติคือ "มีอยู่แล้ว" ซึ่งใช้แค่ 3 คำขอ GET (ไม่ถึงครึ่งวินาที)
+# แต่รอบที่ปุ่มเปลี่ยนจริง ต้องลบเมนูเก่า + ลบ alias + สร้างใหม่ + อัปโหลดรูป + ตั้ง alias
+# + ตั้งเป็นเมนูเริ่มต้น รวม 6-7 คำขอไป api.line.me ใช้เวลาหลายวินาที จึงชนแทบทุกครั้ง
 $h = $null
-try { $h = $health.Body | ConvertFrom-Json } catch { }
+$menuDeadline = (Get-Date).AddSeconds(60)
+$menuWaitShown = $false
+while ($true) {
+    $health = Invoke-Local 'http://127.0.0.1:8000/health'
+    try { $h = $health.Body | ConvertFrom-Json } catch { $h = $null }
+    # เทียบจาก richmenu_state ที่เป็น ASCII เท่านั้น ห้ามเทียบข้อความไทยจาก body
+    # (บอทรุ่นก่อน 2026-09-26 ยังไม่มีฟิลด์นี้ ให้หลุดลูปไปตัดสินด้านล่างเลย)
+    if ($null -eq $h -or $h.richmenu_state -ne 'installing') { break }
+    if ((Get-Date) -ge $menuDeadline) { break }
+    if (-not $menuWaitShown) {
+        Write-Info "บอทกำลังติดตั้ง rich menu อยู่ (ลบเมนูเก่า + อัปโหลดรูปใหม่) รอสักครู่..."
+        $menuWaitShown = $true
+    }
+    Start-Sleep -Seconds 2
+}
 
 if ($null -eq $h) {
     Write-Fail "อ่านผลจาก /health ไม่ได้"
@@ -178,13 +218,34 @@ if ($null -eq $h) {
     if ($null -ne $h.richmenu) {
         Write-Pass "บอทรันโค้ดชุดใหม่แล้ว"
 
-        if ($h.richmenu -like 'installed*') {
-            Write-Pass "ติดตั้ง rich menu สำเร็จ — $($h.richmenu)"
-            Write-Info "เปิดแชท LINE OA แล้วปิด/เปิดห้องแชทใหม่ 1 ครั้งจะเห็นปุ่ม (LINE แคชเมนูไว้ฝั่งเครื่อง)"
-        } elseif ($h.richmenu -like 'ok*') {
-            Write-Pass "rich menu ติดตั้งไว้อยู่แล้ว — $($h.richmenu)"
-        } else {
-            Write-Fail "ติดตั้ง rich menu ไม่สำเร็จ — $($h.richmenu)"
+        # บอทรุ่นก่อน 2026-09-26 ไม่มี richmenu_state — เดาจากคำนำหน้าที่เป็น ASCII แทน
+        # (ข้อความไทยเชื่อถือไม่ได้ เพราะรุ่นนั้นยังไม่ได้ส่ง charset มาด้วย)
+        $menuState = $h.richmenu_state
+        if ([string]::IsNullOrEmpty($menuState)) {
+            if ($h.richmenu -like 'installed*') { $menuState = 'installed' }
+            elseif ($h.richmenu -like 'ok*')    { $menuState = 'ok' }
+            else                                { $menuState = 'failed' }
+        }
+
+        switch ($menuState) {
+            'installed' {
+                Write-Pass "ติดตั้ง rich menu สำเร็จ — $($h.richmenu)"
+                Write-Info "เปิดแชท LINE OA แล้วปิด/เปิดห้องแชทใหม่ 1 ครั้งจะเห็นปุ่ม (LINE แคชเมนูไว้ฝั่งเครื่อง)"
+            }
+            'ok' {
+                Write-Pass "rich menu ติดตั้งไว้อยู่แล้ว — $($h.richmenu)"
+            }
+            'installing' {
+                Write-Fail "ติดตั้ง rich menu ไม่เสร็จใน 60 วินาที — ยังค้างอยู่ที่ $($h.richmenu)"
+                Write-Info "ดูว่าค้างตรงไหน: docker compose logs bot --tail 50"
+            }
+            'disabled' {
+                Write-Warn "ปิดการติดตั้ง rich menu อัตโนมัติไว้ (RICHMENU_AUTO_INSTALL=false ใน .env)"
+            }
+            default {
+                Write-Fail "ติดตั้ง rich menu ไม่สำเร็จ — $($h.richmenu)"
+                Write-Info "ข้อความเต็มอยู่ใน log: docker compose logs bot --tail 50"
+            }
         }
 
         if ($h.accept_images -eq $true) { Write-Pass "รับรูปจากผู้ใช้: เปิด" }
@@ -373,9 +434,9 @@ if ($script:Failures.Count -eq 0) {
     Write-Host ""
     Write-Host "  ทดสอบด้วยตัวเองจากมือถือ:" -ForegroundColor White
     Write-Host "    1. เพิ่ม LINE OA เป็นเพื่อน (QR อยู่ที่ qr\line-oa-qr-logo.png)" -ForegroundColor Gray
-    Write-Host "    2. ต้องเห็นปุ่ม 6 ปุ่มด้านล่าง (ถ้าไม่เห็น ปิด/เปิดห้องแชทใหม่ 1 ครั้ง)" -ForegroundColor Gray
+    Write-Host "    2. ต้องเห็นปุ่ม 4 ปุ่มเรียงแบบ 2x2 ด้านล่าง (ถ้าไม่เห็น ปิด/เปิดห้องแชทใหม่ 1 ครั้ง)" -ForegroundColor Gray
     Write-Host "    3. ส่งรูปหน้าจอเข้าไป -> บอทต้องตอบ 'ได้รับรูปแล้วครับ'" -ForegroundColor Gray
-    Write-Host "    4. กด 'แจ้งเรื่องใหม่' -> ต้องขึ้นปุ่มบริษัท (Montipa / Motta / ส่วนกลาง) ก่อนถามสาขา" -ForegroundColor Gray
+    Write-Host "    4. กด 'แจ้งซ่อม' บนเมนู -> ต้องขึ้นปุ่มบริษัท (Montipa / Motta / ส่วนกลาง) ก่อนถามสาขา" -ForegroundColor Gray
     Write-Host "    5. เลือก Motta -> ต้องขึ้นปุ่มทีม แล้วเลือกทีมจึงเห็นสาขาของทีมนั้น" -ForegroundColor Gray
     Write-Host "    6. แจ้งเรื่องจนจบ แล้วเปิด http://127.0.0.1:3000/tickets ดูว่ารูปขึ้นและคอลัมน์บริษัทถูกต้อง" -ForegroundColor Gray
     Write-Host "    7. กดเปลี่ยนสถานะเป็น 'แก้ไขแล้ว' -> ต้องได้ข้อความแจ้งเตือนกลับเข้า LINE" -ForegroundColor Gray

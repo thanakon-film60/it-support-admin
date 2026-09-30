@@ -144,6 +144,10 @@ class Knowledge:
     # สาขาแบบละเอียด [{"company","name","group","floor",...}] — ใช้หาว่าสาขาหนึ่งอยู่บริษัทไหน
     branch_items: list[dict[str, Any]] = field(default_factory=list)
     companies: list[dict[str, Any]] = field(default_factory=list)
+    # ทะเบียนพนักงาน [{"id","code","name","full_name","nickname","department","position"}]
+    # ส่งมาทั้งชุดเพื่อให้ค้นหาในหน่วยความจำได้ ไม่ต้องยิงถามหลังบ้านทุกครั้งที่ผู้ใช้พิมพ์
+    employees: list[dict[str, Any]] = field(default_factory=list)
+    departments: list[dict[str, Any]] = field(default_factory=list)
     stock_items: list[dict[str, Any]] = field(default_factory=list)
     equipment: list[dict[str, Any]] = field(default_factory=list)
     faq: list[dict[str, Any]] = field(default_factory=list)
@@ -181,6 +185,63 @@ class Knowledge:
                 if code and code not in found:
                     found.append(code)
         return found
+
+    # ------------------------------------------------------------ ทะเบียนพนักงาน
+
+    def department_options(self) -> list[dict[str, Any]]:
+        """ฝ่ายทั้งหมดในรูปแบบที่เมนูเลือกใช้ได้เลย — เรียงตามผังองค์กรที่หลังบ้านจัดมาแล้ว"""
+        return [
+            {"value": d.get("name", ""), "label": d.get("name", ""), "sub": None,
+             "count": d.get("count", 0)}
+            for d in self.departments
+            if d.get("name")
+        ]
+
+    def employees_in(self, department: str) -> list[dict[str, Any]]:
+        return [e for e in self.employees if e.get("department") == department]
+
+    def find_employees(self, text: str, limit: int = 8) -> list[dict[str, Any]]:
+        """ค้นหาพนักงานจากสิ่งที่ผู้ใช้พิมพ์ — รหัส / ชื่อจริง / นามสกุล / ชื่อเล่น
+
+        ไล่จากแม่นไปหยาบแล้ว "หยุดทันทีที่เจอชั้นที่แม่นกว่า" ไม่เอาผลทุกชั้นมารวมกัน
+        เพราะถ้าพิมพ์ชื่อเล่นตรงเป๊ะแล้วยังมีคนที่แค่คล้ายโผล่มาปนด้วย ผู้ใช้จะลังเลว่า
+        อันไหนคือตัวเอง — ซึ่งแย่กว่าการเห็นตัวเลือกเดียวที่ถูกต้อง
+
+        ชั้นสุดท้ายใช้ fuzzy เพื่อรับคำพิมพ์ผิด แต่ตั้ง threshold ไว้สูง (86) เพราะเดาผิด
+        แล้วผู้ใช้กดยืนยันผ่านไป = ticket ไปอยู่ชื่อคนอื่นถาวร แก้ได้แต่ในหน้าแอดมินเท่านั้น
+        """
+        query = _normalize_search(text)
+        if len(query) < 2:
+            return []
+
+        def norm(emp: dict[str, Any], key: str) -> str:
+            return _normalize_search(str(emp.get(key) or ""))
+
+        exact_code = [e for e in self.employees if norm(e, "code") == query]
+        if exact_code:
+            return exact_code[:limit]
+
+        exact_name = [
+            e for e in self.employees
+            if norm(e, "name") == query or norm(e, "nickname") == query
+        ]
+        if exact_name:
+            return exact_name[:limit]
+
+        partial = [
+            e for e in self.employees
+            if query in norm(e, "name")
+            or (norm(e, "nickname") and query in norm(e, "nickname"))
+            or (norm(e, "code") and norm(e, "code").startswith(query))
+        ]
+        if partial:
+            return partial[:limit]
+
+        names = [str(e.get("name") or "") for e in self.employees]
+        best, score = _fuzzy_best(text, names, threshold=86)
+        if best:
+            return [e for e in self.employees if e.get("name") == best][:limit]
+        return []
 
     def branch_groups(self, company: str) -> list[dict[str, Any]]:
         """กลุ่ม/ทีมของบริษัทหนึ่ง เรียงตามลำดับที่หลังบ้านจัดไว้ (ภูมิภาค/ผังทีม)"""
@@ -237,6 +298,8 @@ class KnowledgeCache:
             branches=raw.get("branches", []),
             branch_items=raw.get("branch_items", []),
             companies=raw.get("companies", []),
+            employees=raw.get("employees", []),
+            departments=raw.get("departments", []),
             stock_items=raw.get("stock_items", []),
             equipment=raw.get("equipment", []),
             faq=faq,
@@ -358,6 +421,15 @@ class Analysis:
 
 
 _MAX_ENTITY_WINDOW = 5  # ชื่อสาขา/ชื่อของยาวสุดประมาณ 5 คำหลังตัดคำ
+
+
+def _normalize_search(value: str) -> str:
+    """ตัดช่องว่างทั้งหมดทิ้งแล้วทำเป็นตัวพิมพ์เล็ก
+
+    ตัดช่องว่าง "ทั้งหมด" ไม่ใช่แค่หัวท้าย เพราะคนพิมพ์ชื่อ-นามสกุลไทยเว้นวรรคไม่เหมือนกัน
+    ("ธนากร โฮงทอง" / "ธนากรโฮงทอง" / "ธนากร  โฮงทอง") ถ้าไม่ตัดจะกลายเป็นคนละคำทันที
+    """
+    return "".join((value or "").split()).lower()
 
 
 def _fuzzy_best(query: str, candidates: Iterable[str], threshold: int) -> tuple[str | None, float]:

@@ -1,29 +1,22 @@
 import { patchOne, readCollection, upsertOne } from "./store";
 import { newId } from "../utils";
+import { ensureEmployeeRegistry, seedUsersFromRegistry } from "./employees";
 import type { User } from "../types";
 
 const COLLECTION = "users";
 
-function seed(): User[] {
-  const now = new Date().toISOString();
-  const rows: Omit<User, "id" | "created_at">[] = [
-    { display_name: "สมชาย ใจดี", employee_id: "E1001", department: "บัญชี", line_user_id: "U_mock_0001", email: "somchai@example.com" },
-    { display_name: "สุนีย์ พงษ์สิน", employee_id: "E1002", department: "การตลาด", line_user_id: "U_mock_0002", email: "sunee@example.com" },
-    { display_name: "วิชัย ศรีสุข", employee_id: "E1003", department: "ขายหน้าร้าน", line_user_id: "U_mock_0003", email: null },
-    { display_name: "กมลชนก อารีย์", employee_id: "E1004", department: "HR", line_user_id: "U_mock_0004", email: "kamolchanok@example.com" },
-    { display_name: "ธนพล เจริญสุข", employee_id: "E1005", department: "คลังสินค้า", line_user_id: "U_mock_0005", email: null },
-    { display_name: "อรทัย บุญมี", employee_id: "E1006", department: "การเงิน", line_user_id: "U_mock_0006", email: "orathai@example.com" },
-    { display_name: "ปิยะพงษ์ วงศ์ษา", employee_id: "E1007", department: "IT", line_user_id: "U_mock_0007", email: "piyapong@example.com" },
-    { display_name: "นภัสสร ทองดี", employee_id: "E1008", department: "ขายหน้าร้าน", line_user_id: "U_mock_0008", email: null },
-    { display_name: "เอกชัย พันธุ์ดี", employee_id: "E1009", department: "จัดซื้อ", line_user_id: "U_mock_0009", email: "ekkachai@example.com" },
-    { display_name: "ชลธิชา แสงทอง", employee_id: "E1010", department: "การตลาด", line_user_id: "U_mock_0010", email: null },
-    { display_name: "ณัฐวุฒิ ใจกล้า", employee_id: "E1011", department: "IT", line_user_id: "U_mock_0011", email: "natthawut@example.com" },
-    { display_name: "พิมพ์ชนก รุ่งเรือง", employee_id: "E1012", department: "บัญชี", line_user_id: "U_mock_0012", email: null },
-  ];
-  return rows.map((r) => ({ ...r, id: newId(), created_at: now }));
-}
+/* รายชื่อตั้งต้นมาจากทะเบียนพนักงานของ HR (ดู db/employees.ts) ไม่ใช่ข้อมูลตัวอย่างอีกต่อไป
+ *
+ * เดิม seed เป็นคนสมมติ 12 คน ซึ่งทำให้ ticket จาก LINE สร้าง user ใหม่ทุกครั้งที่มีคนใหม่พิมพ์ชื่อเข้ามา
+ * ("สมชาย ใจดี" ไม่เคยแมตช์กับใครจริง) users จึงค่อยๆ กลายเป็นรายชื่อที่สะกดต่างกันของคนคนเดียวกัน
+ * พอมีทะเบียนจริงแล้ว ผู้แจ้งจะถูกผูกกับ "แถวเดิม" ของคนนั้นเสมอ ประวัติต่อคนจึงเชื่อถือได้
+ */
+const seed = seedUsersFromRegistry;
 
 export function listUsers(): User[] {
+  // ซิงก์ทะเบียนให้ก่อน (รอบแรกของแต่ละเวอร์ชันเท่านั้น) — ไม่งั้นเครื่องที่มี data/users.json
+  // อยู่แล้วจะไม่มีวันเห็นรายชื่อใหม่ เพราะ seedFn รันเฉพาะตอนยังไม่มีไฟล์
+  ensureEmployeeRegistry();
   return readCollection<User>(COLLECTION, seed);
 }
 
@@ -55,6 +48,7 @@ export function findOrCreateUserByName(input: {
     line_user_id: null,
     email: null,
     created_at: new Date().toISOString(),
+    active: true,
   };
   upsertOne<User>(COLLECTION, user, seed);
   return user;
@@ -89,6 +83,7 @@ export function upsertLineUser(lineUserId: string, displayName: string): User {
     line_user_id: lineUserId,
     email: null,
     created_at: new Date().toISOString(),
+    active: true,
   };
   upsertOne<User>(COLLECTION, user, seed);
   return user;

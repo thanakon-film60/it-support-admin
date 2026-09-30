@@ -1,0 +1,3262 @@
+[
+{
+"code": "A63001",
+"title": "นาง",
+"name": "พิชาพัทธ์ วิจิตร์โรจนธร",
+"nickname": "ปุ๋ย",
+"department": "สำนักงานผู้บริหารและกำกับดูแลกิจการ",
+"position": "General Manager (Corporate Services / IT · รักษาการ HR Manager)",
+"level": "DM-3",
+"company": "motta"
+},
+{
+"code": "A67025",
+"title": "นาย",
+"name": "การุณย์ อ่อนศิริ",
+"nickname": "ต่อ",
+"department": "สำนักงานผู้บริหารและกำกับดูแลกิจการ",
+"position": "Managing Director (Motta Fashion Accessories BU)",
+"level": "DM-3",
+"company": "motta"
+},
+{
+"code": "MD001",
+"title": "นาย",
+"name": "จิรวัฒน์ วงศ์พิมลพร",
+"nickname": "วัฒน์",
+"department": "สำนักงานผู้บริหารและกำกับดูแลกิจการ",
+"position": "Chief Executive Officer / MD Montipa",
+"level": "CEO",
+"company": "motta"
+},
+{
+"code": "A63003",
+"title": "นางสาว",
+"name": "ศรัณญา สง่าจิตร",
+"nickname": "เมย์",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A64007",
+"title": "นางสาว",
+"name": "จันจิรา แนบกลาง",
+"nickname": "จัน",
+"department": "ฝ่ายขาย",
+"position": "Customer Service",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A65010",
+"title": "นางสาว",
+"name": "ยศวรรณ วีระสวัสดิ์",
+"nickname": "ปอ",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A65012",
+"title": "นางสาว",
+"name": "ณัทพร อยู่ยืน",
+"nickname": "ใบตอง",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A66011",
+"title": "นางสาว",
+"name": "อินทิรา ปัจฉิม",
+"nickname": "อิน",
+"department": "ฝ่ายขาย",
+"position": "Ads Optimization Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A67006",
+"title": "นางสาว",
+"name": "ลลิตา ณ พิกุล",
+"nickname": "ลลิ",
+"department": "ฝ่ายขาย",
+"position": "Senior E-Commerce Supervisor",
+"level": "SV-3",
+"company": "motta"
+},
+{
+"code": "A67012",
+"title": "นางสาว",
+"name": "พิชามญชุ์ เสื่อพรหม",
+"nickname": "มะลิ",
+"department": "ฝ่ายขาย",
+"position": "Retail Operations Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A67020",
+"title": "นางสาว",
+"name": "เกศกนก เดชภูแก้ว",
+"nickname": "แนท",
+"department": "ฝ่ายขาย",
+"position": "Customer Service",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A67021",
+"title": "นางสาว",
+"name": "สาวิตรี ทีไธสง",
+"nickname": "อีฟ",
+"department": "ฝ่ายขาย",
+"position": "Retail Operations Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A68012",
+"title": "นางสาว",
+"name": "สิริวรรณ แก้วสว่าง",
+"nickname": "แอน",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A68028",
+"title": "นางสาว",
+"name": "ปภาวรินท์ พึ่งจะงาม",
+"nickname": "ผิง",
+"department": "ฝ่ายขาย",
+"position": "Affiliate Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68043",
+"title": "นางสาว",
+"name": "พิมพ์วลัญช์ ธรรมวัตร",
+"nickname": "บีม",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A69015",
+"title": "นางสาว",
+"name": "ภณิดา ร่มพุฒตาล",
+"nickname": "แนน",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A69017",
+"title": "นางสาว",
+"name": "นิพาวรรณ ชาญสูงเนิน",
+"nickname": "อุ้ม",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A69022",
+"title": "นางสาว",
+"name": "พิมพ์ประภา เมฆขุนทด",
+"nickname": "น้ำฝน",
+"department": "ฝ่ายขาย",
+"position": "Live Streaming",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69028",
+"title": "นางสาว",
+"name": "บุศรา ศรีบ้าน",
+"nickname": "เอ็ม",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A69038",
+"title": "นางสาว",
+"name": "พศร แทนนิกร",
+"nickname": "ปอ",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "motta"
+},
+{
+"code": "A69042",
+"title": "นางสาว",
+"name": "ณัฐวดี บุญธรรม",
+"nickname": "ฝ้าย",
+"department": "ฝ่ายขาย",
+"position": "Sale Admin",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69047",
+"title": "นางสาว",
+"name": "นันทมาศ บุญอิ่ม",
+"nickname": "นัน",
+"department": "ฝ่ายขาย",
+"position": "Retail Operations Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "M65007",
+"title": "นางสาว",
+"name": "สกุลเกตุ แซ่จุ้ง",
+"nickname": "เกตุ",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "montipa"
+},
+{
+"code": "M67035",
+"title": "นางสาว",
+"name": "ชฎาพร ตนศิริ",
+"nickname": "ป๊อปปี้",
+"department": "ฝ่ายขาย",
+"position": "Area Manager (เริ่มเดือน 10)",
+"level": "AM-1",
+"company": "montipa"
+},
+{
+"code": "M68019",
+"title": "นางสาว",
+"name": "ทรรศนีย์ รัตนกูล",
+"nickname": "ก้อย",
+"department": "ฝ่ายขาย",
+"position": "Area Manager (เริ่มเดือน 10)",
+"level": "AM-1",
+"company": "montipa"
+},
+{
+"code": "M68032",
+"title": "นางสาว",
+"name": "มัลลิกา นุกูลชัย",
+"nickname": "ปุ้ย",
+"department": "ฝ่ายขาย",
+"position": "Retail Operations Manager",
+"level": "DM-1",
+"company": "montipa"
+},
+{
+"code": "M69002",
+"title": "นางสาว",
+"name": "พิมพ์พิชชา กมลสุวรรณ",
+"nickname": "ทับทิม",
+"department": "ฝ่ายขาย",
+"position": "Area Manager (เริ่มเดือน 10)",
+"level": "AM-1",
+"company": "montipa"
+},
+{
+"code": "M69003",
+"title": "นางสาว",
+"name": "ศรัณยา ไชยพงศ์",
+"nickname": "จอย",
+"department": "ฝ่ายขาย",
+"position": "Area Manager",
+"level": "AM-1",
+"company": "montipa"
+},
+{
+"code": "M69018",
+"title": "นางสาว",
+"name": "ภัทรีพันธ์ วรมงคลพฤกษ์",
+"nickname": "แนท",
+"department": "ฝ่ายขาย",
+"position": "Brand Manager (Montipa · ดูแล Sale/Marketing/Planning/VM/Sale Online)",
+"level": "DM-2",
+"company": "montipa"
+},
+{
+"code": "M69020",
+"title": "นางสาว",
+"name": "พนิดา สุทธิสบาย",
+"nickname": "มินท์",
+"department": "ฝ่ายขาย",
+"position": "Retail Operations Manager (ใหม่)",
+"level": "DM-1",
+"company": "montipa"
+},
+{
+"code": "M65004",
+"title": "นางสาว",
+"name": "ปรีดาภรณ์ สุทธิประภา",
+"nickname": "จอย",
+"department": "ฝ่ายขายออนไลน์",
+"position": "E-Commerce Supervisor",
+"level": "SV-2",
+"company": "montipa"
+},
+{
+"code": "M68016",
+"title": "นางสาว",
+"name": "มุฑิตา อร่ามศรี",
+"nickname": "จูน",
+"department": "ฝ่ายขายออนไลน์",
+"position": "E-Commerce Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M68022",
+"title": "นางสาว",
+"name": "จิราภรณ์ จิตรจร",
+"nickname": "มิว",
+"department": "ฝ่ายขายออนไลน์",
+"position": "E-Commerce Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M69017",
+"title": "นางสาว",
+"name": "พรชิตา อินเเพง",
+"nickname": "กู๊ด",
+"department": "ฝ่ายขายออนไลน์",
+"position": "E-Commerce Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M69023",
+"title": "นางสาว",
+"name": "กนกวรรณ ร่วมพุ่ม",
+"nickname": "เจน",
+"department": "ฝ่ายขายออนไลน์",
+"position": "Senior E-Commerce Supervisor",
+"level": "SV-3",
+"company": "montipa"
+},
+{
+"code": "A66010",
+"title": "นางสาว",
+"name": "นัทธมน เฟื่องวิริยะทรัพย์",
+"nickname": "ปอ",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Data Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A66014",
+"title": "นางสาว",
+"name": "ภาริตา ลาภผลพูนทวี",
+"nickname": "ตา",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Graphic Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A67026",
+"title": "นางสาว",
+"name": "ภัทรานันท์ จะรอนรัมย์",
+"nickname": "มิ้นท์",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Project Coordinator",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68009",
+"title": "นางสาว",
+"name": "ระพีพร โภคทรัพย์",
+"nickname": "ฝน",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Graphic Supervisor",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A68044",
+"title": "นางสาว",
+"name": "วรรณชนก สิงห์ทอง",
+"nickname": "ตะวัน",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Coordinator Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68046",
+"title": "นางสาว",
+"name": "ภัคจิรา ปราณี",
+"nickname": "ใบว่าน",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Communications Supervisor",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A69032",
+"title": "นางสาว",
+"name": "พิชญาพันธ์ กุลภัทรพงศ์",
+"nickname": "พลอย",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A69040",
+"title": "นางสาว",
+"name": "พลอย ทรัพย์ศฤงฆรา",
+"nickname": "ฟอร์ด",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Digital Marketing Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "M68023",
+"title": "นางสาว",
+"name": "ศรัญญา กลัดเขียว",
+"nickname": "นุ๊ก",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Communications Supervisor",
+"level": "SV-2",
+"company": "montipa"
+},
+{
+"code": "M68026",
+"title": "นางสาว",
+"name": "ภาวินี สีดาวเรือง",
+"nickname": "แพร",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Manager",
+"level": "DM-2",
+"company": "montipa"
+},
+{
+"code": "M68029",
+"title": "นางสาว",
+"name": "ชมพูนุท จะรอนรัมย์",
+"nickname": "มาย",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Coordinator Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M68033",
+"title": "นางสาว",
+"name": "นภเกตน์ ค้ำจุ้น",
+"nickname": "ผิง",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Marketing Communications Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M68036",
+"title": "นาย",
+"name": "จิรวัฒน์ สมร่าง",
+"nickname": "เอ็ม",
+"department": "ฝ่ายการตลาดและพาณิชย์",
+"position": "Digital Marketing Supervisor",
+"level": "SV-2",
+"company": "montipa"
+},
+{
+"code": "A63002",
+"title": "นาย",
+"name": "MIN AUNG ZAW HTET",
+"nickname": "แคป",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Maintenance",
+"level": "SF-1",
+"company": "motta"
+},
+{
+"code": "A64009",
+"title": "นางสาว",
+"name": "อารียา ทรงโฉม",
+"nickname": "ปาล์ม",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Senior Visual Merchandiser",
+"level": "SF-3",
+"company": "motta"
+},
+{
+"code": "A65005",
+"title": "นาย",
+"name": "CHAI THUN",
+"nickname": "ชัย",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Maintenance",
+"level": "SF-1",
+"company": "motta"
+},
+{
+"code": "A65007",
+"title": "นางสาว",
+"name": "จาวตาล ด้วงไพรี",
+"nickname": "จาว",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Senior Manager Visual Merchandiser",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A66013",
+"title": "นางสาว",
+"name": "สาธิดา หน่ายทุกข์",
+"nickname": "ไอติม",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Admin Coordinator Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69011",
+"title": "นางสาว",
+"name": "ศศิกานต์ แสงศรีจันทร์",
+"nickname": "จูน",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Graphic Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69043",
+"title": "นาย",
+"name": "บัญญวัต เทพทอง",
+"nickname": "กุ๊ก",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Interior Designer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "M66015",
+"title": "นางสาว",
+"name": "นันทิกานต์ บุญทศ",
+"nickname": "มาย",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Visual Merchandiser Audit & Training",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M66026",
+"title": "นาย",
+"name": "วศิน ตรีบุพชาติสกุล",
+"nickname": "เบส",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Visual Merchandiser Manager",
+"level": "DM-2",
+"company": "montipa"
+},
+{
+"code": "M69021",
+"title": "นางสาว",
+"name": "ภัณฑิภา ศรีประสงค์",
+"nickname": "แพร",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Visual Merchandiser & Graphic Designer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M69024",
+"title": "นาย",
+"name": "นรภัทร แสงหิรัญ",
+"nickname": "หนุ่ม",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Interior Designer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "P69007",
+"title": "นาย",
+"name": "เทต ทเว",
+"nickname": "หอม",
+"department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+"position": "Maintenance",
+"level": "SF-1",
+"company": null
+},
+{
+"code": "A61001",
+"title": "นางสาว",
+"name": "ฟาริดา มูลป๊อก",
+"nickname": "มิ้นท์",
+"department": "ฝ่ายพัฒนาสินค้าและฝึกอบรม",
+"position": "Product Training Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A68016",
+"title": "นางสาว",
+"name": "นนทนันท์ หมื่นชาติ",
+"nickname": "เอวา",
+"department": "ฝ่ายพัฒนาสินค้าและฝึกอบรม",
+"position": "Product Designer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68020",
+"title": "นางสาว",
+"name": "ดรัลพร สัจจาศิริ",
+"nickname": "หมวย",
+"department": "ฝ่ายพัฒนาสินค้าและฝึกอบรม",
+"position": "Merchandiser Junior",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68030",
+"title": "นาย",
+"name": "สนั่น นวยฮา",
+"nickname": "บอย",
+"department": "ฝ่ายพัฒนาสินค้าและฝึกอบรม",
+"position": "Planning Supervisor",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A64002",
+"title": "นาง",
+"name": "บุณยนุช โกมุขณวรกุล",
+"nickname": "แหม่ม",
+"department": "ฝ่ายฝึกอบรม",
+"position": "Training Supervisor",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68047",
+"title": "นางสาว",
+"name": "พรรณธิภา คงเพ็ชร",
+"nickname": "เมย์",
+"department": "ฝ่ายฝึกอบรม",
+"position": "Training Officer (และ HR Training Officer)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "M68035",
+"title": "นางสาว",
+"name": "ธันยพร เพชรบุรี",
+"nickname": "ฝ้าย",
+"department": "ฝ่ายวางแผน",
+"position": "Executive Assistant & Coordinator",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M69011",
+"title": "นาย",
+"name": "ธนกร สกุลอือ",
+"nickname": "เนส",
+"department": "ฝ่ายวางแผน",
+"position": "Sale & Inventory Analytics Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M69022",
+"title": "นางสาว",
+"name": "อรญา เครื่องพันธ์",
+"nickname": "แอ้ม",
+"department": "ฝ่ายวางแผน",
+"position": "Planning Officer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M67030",
+"title": "นางสาว",
+"name": "จิราภรณ์ ศรีกาหลง",
+"nickname": "แต๋ม",
+"department": "ฝ่ายออกแบบ",
+"position": "Designer",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M68034",
+"title": "นางสาว",
+"name": "เบญจมินทร์ ปิยะเขตต์",
+"nickname": "เบลล์ล่า",
+"department": "ฝ่ายออกแบบ",
+"position": "Stylish",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M68037",
+"title": "นางสาว",
+"name": "มนัญญา จำปาศรี",
+"nickname": "นิว",
+"department": "ฝ่ายออกแบบ",
+"position": "Merchandiser",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "A68007",
+"title": "นางสาว",
+"name": "ญาณิศา วงศ์วิทยวณิช",
+"nickname": "ป๊อก",
+"department": "ฝ่ายครีเอทีฟและภาพลักษณ์แบรนด์",
+"position": "Brand Creative & Audit",
+"level": null,
+"company": "motta"
+},
+{
+"code": "A69027",
+"title": "นางสาว",
+"name": "พรรณฎา คงพินิจ",
+"nickname": "กุ๊งกิ๊ง",
+"department": "ฝ่ายครีเอทีฟและภาพลักษณ์แบรนด์",
+"position": "Creative & Brand Image Team Lead",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "M66027",
+"title": "นางสาว",
+"name": "อรปรียา ธารแม้น",
+"nickname": "ป๊อป",
+"department": "ฝ่ายครีเอทีฟและภาพลักษณ์แบรนด์",
+"position": "Creative Designer (และ Graphic Officer ของ Montipa)",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M67026",
+"title": "นางสาว",
+"name": "นิษฐา สุขสมกรณ์",
+"nickname": "เนม",
+"department": "ฝ่ายครีเอทีฟและภาพลักษณ์แบรนด์",
+"position": "Brand Image Audit Coordinator",
+"level": "SV-2",
+"company": "montipa"
+},
+{
+"code": "MD002",
+"title": "นางสาว",
+"name": "มนทิพา ทิพย์พยอม",
+"nickname": "ปุ้ย",
+"department": "ฝ่ายครีเอทีฟและภาพลักษณ์แบรนด์",
+"position": "Creative Brand Image Director",
+"level": "DM-3",
+"company": "motta"
+},
+{
+"code": "A65002",
+"title": "นางสาว",
+"name": "อินทร์อุบล สิทธิปรุ",
+"nickname": "มิ้น",
+"department": "ฝ่ายสกินแคร์",
+"position": "Commercial / Marketing / VM Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A69007",
+"title": "นางสาว",
+"name": "อุตคนีรัต เวียงจันทร์",
+"nickname": "อั่ว",
+"department": "ฝ่ายสกินแคร์",
+"position": "Product Manager / Administration Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A68006",
+"title": "นางสาว",
+"name": "ขวัญใจ ทับทิมทอง",
+"nickname": "บี",
+"department": "ฝ่ายจัดซื้อ",
+"position": "Overseas Purchasing",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68032",
+"title": "นางสาว",
+"name": "ชนาภัทร กองยอด",
+"nickname": "ไก่",
+"department": "ฝ่ายจัดซื้อ",
+"position": "Purchasing Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A69037",
+"title": "นาย",
+"name": "ปรีชา เเซ่ย่าง",
+"nickname": "อาโน",
+"department": "ฝ่ายจัดซื้อ",
+"position": "Overseas Purchasing & Shipping",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A64011",
+"title": "นางสาว",
+"name": "เพ็ญนภา สุนสนาม",
+"nickname": "แก้ม",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Accounts Payable",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A65004",
+"title": "นางสาว",
+"name": "ปภัชรา บึงมุม",
+"nickname": "ปอ",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Assistant Manager",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A66007",
+"title": "นางสาว",
+"name": "ชุติมา นากร",
+"nickname": "แคท",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Senior Accounts Payable",
+"level": "SF-3",
+"company": "motta"
+},
+{
+"code": "A67004",
+"title": "นางสาว",
+"name": "พรณภัส กิจวิบูลย์",
+"nickname": "ไอซ์",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Accounts Payable",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A67018",
+"title": "นางสาว",
+"name": "นุสรา โข่ศรี",
+"nickname": "ฟักแฟง",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Accounts Receivable",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69010",
+"title": "นางสาว",
+"name": "วารุณี ลักษณะโยธิน",
+"nickname": "อ้อม",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Assistant Supervisor Accounting Payable",
+"level": "SV-1",
+"company": "motta"
+},
+{
+"code": "A69036",
+"title": "นางสาว",
+"name": "อุไรวรรณ แสวงกิจ",
+"nickname": "น้อง",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Accounting Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "M69010",
+"title": "นางสาว",
+"name": "วรัญญา บุุญกิจ",
+"nickname": "มุก",
+"department": "ฝ่ายบัญชีและการเงิน",
+"position": "Accounts Receivable",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "A52002",
+"title": "นางสาว",
+"name": "บุญส่ง วัดนครใหญ่",
+"nickname": "ส่ง",
+"department": "ฝ่ายทรัพยากรบุคคลและธุรการ",
+"position": "Facilities Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68036",
+"title": "นาย",
+"name": "ทวีทรัพย์ ไฝเพชร",
+"nickname": "โชค",
+"department": "ฝ่ายทรัพยากรบุคคลและธุรการ",
+"position": "Recruitment Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68041",
+"title": "นางสาว",
+"name": "กันยารัตน์ ศิริธรรม",
+"nickname": "แน๊ต",
+"department": "ฝ่ายทรัพยากรบุคคลและธุรการ",
+"position": "HR Supervisor & Payroll",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A68048",
+"title": "นางสาว",
+"name": "นฤมล นาคบุรี",
+"nickname": "มิคกี้",
+"department": "ฝ่ายทรัพยากรบุคคลและธุรการ",
+"position": "HR Admin Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69041",
+"title": "นางสาว",
+"name": "สุนิตา บุตรดี",
+"nickname": "การ์ตูน",
+"department": "ฝ่ายทรัพยากรบุคคลและธุรการ",
+"position": "Assistant HR Payroll Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "P60001",
+"title": "นาง",
+"name": "อำพร มีเครือ",
+"nickname": "หมวย",
+"department": "ฝ่ายทรัพยากรบุคคลและธุรการ",
+"position": "Maid",
+"level": "SF-1",
+"company": null
+},
+{
+"code": "A52001",
+"title": "นางสาว",
+"name": "ลำพูน บัวชุม",
+"nickname": "แอ๋ม",
+"department": "ฝ่ายคลังสินค้า",
+"position": "QC Officer (Montipa)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A64001",
+"title": "นางสาว",
+"name": "MA YIN YIN AYE",
+"nickname": "เอ",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Assistant Warehouse Supervisor (Montipa)",
+"level": "SV-1",
+"company": "motta"
+},
+{
+"code": "A64006",
+"title": "นาย",
+"name": "SAI TUN WIN",
+"nickname": "วิน",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A64010",
+"title": "นาง",
+"name": "ชนิศา สระหนองจอก",
+"nickname": "ก้อย",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Warehouse Manager",
+"level": "DM-2",
+"company": "motta"
+},
+{
+"code": "A64012",
+"title": "นางสาว",
+"name": "PA PA CHO AYE",
+"nickname": "ดาว",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A65001",
+"title": "นาง",
+"name": "สนม ทรัพย์สมบัติ",
+"nickname": "สนม",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Packing Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A65008",
+"title": "นาย",
+"name": "SAI NAW KHAM",
+"nickname": "คำ",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A65013",
+"title": "นางสาว",
+"name": "ปฏิมา สุขทอง",
+"nickname": "น้ำตาล",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Warehouse Supervisor",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A66012",
+"title": "นางสาว",
+"name": "คเณศ์พร เสนแก้ว",
+"nickname": "ปอ",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68027",
+"title": "นางสาว",
+"name": "NAN PAO HOM",
+"nickname": "หอม",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Packing Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69016",
+"title": "นาย",
+"name": "ไซ บี",
+"nickname": "บี",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa online)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69019",
+"title": "นางสาว",
+"name": "อัญธิญาน์ ชมพักตร์",
+"nickname": "นิว",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Admin Store Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69023",
+"title": "นาย",
+"name": "ขุน จอว์ ฮลา",
+"nickname": "ปาย",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69024",
+"title": "นาย",
+"name": "จอ เลือนอุ๊",
+"nickname": "โจ",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Packing Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69034",
+"title": "นางสาว",
+"name": "ปณิดา หนองหารพิทักษ์",
+"nickname": "ฝ้าย",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69039",
+"title": "นางสาว",
+"name": "Ma Nan Khin May Lay",
+"nickname": "เมย์",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69050",
+"title": "นางสาว",
+"name": "กิตติมากร พ่วงพี",
+"nickname": "ข้าวโอ๊ต",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "M66016",
+"title": "นางสาว",
+"name": "ชัญนิชชา วงษ์ไกร",
+"nickname": "มายด์",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa online)",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M66020",
+"title": "นางสาว",
+"name": "NANG THEINGI",
+"nickname": "นาง",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (AT)",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M66021",
+"title": "นาย",
+"name": "AUNG THAN OO",
+"nickname": "อู",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa)",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M67022",
+"title": "นาย",
+"name": "HTET PAING LIN",
+"nickname": "แท็ก",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa)",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M67023",
+"title": "นาย",
+"name": "AUNG MYO LATT",
+"nickname": "มิว",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa online)",
+"level": "SF-2",
+"company": "montipa"
+},
+{
+"code": "M69014",
+"title": "นางสาว",
+"name": "รัตนาภรณ์ ยาโน",
+"nickname": "ปิ่น",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Assistant QC Supervisor",
+"level": "SV-1",
+"company": "montipa"
+},
+{
+"code": "P54001",
+"title": "นาง",
+"name": "อุดมศรี ขำเย็น",
+"nickname": "เล็ก",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Packing Officer",
+"level": "SF-2",
+"company": null
+},
+{
+"code": "P59001",
+"title": "นางสาว",
+"name": "จารุนันท์ แสนแก้วใส",
+"nickname": "นันท์",
+"department": "ฝ่ายคลังสินค้า",
+"position": "QC Officer (AT)",
+"level": "SF-2",
+"company": null
+},
+{
+"code": "P69002",
+"title": "นาย",
+"name": "อ่อง เย ซิน",
+"nickname": "ซิน",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Packing Officer",
+"level": "SF-2",
+"company": null
+},
+{
+"code": "P69006",
+"title": "นาย",
+"name": "ไซ ออง เฮ็ง เท็ด",
+"nickname": "ชัย",
+"department": "ฝ่ายคลังสินค้า",
+"position": "Logistics Officer (Montipa)",
+"level": "SF-2",
+"company": null
+},
+{
+"code": "A64003",
+"title": "นางสาว",
+"name": "วรรณพร อุ่นแดง",
+"nickname": "เดียร์",
+"department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+"position": "IT Admin",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69014",
+"title": "นางสาว",
+"name": "พัณณิตา ต๊ะนำ",
+"nickname": "เเพรว",
+"department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+"position": "IT Admin",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69035",
+"title": "นาย",
+"name": "ธีรภัทร บัวหอม",
+"nickname": "จ๊อบ",
+"department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+"position": "IT Support",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69044",
+"title": "นาย",
+"name": "สถาปัตย์ วิมลพิมพ์",
+"nickname": "เเชมป์",
+"department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+"position": "IT Supervisor",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A69048",
+"title": "นาย",
+"name": "ธนากร โฮงทอง",
+"nickname": "ฟิล์ม",
+"department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+"position": "IT Software/Network",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A65011",
+"title": "นาง",
+"name": "จิณนภา เจริญฤทธิ์",
+"nickname": "ลูกหมู",
+"department": "ฝ่ายปฏิบัติการและตรวจสอบ",
+"position": "Executive Secretary MD",
+"level": "DM-3",
+"company": "motta"
+},
+{
+"code": "A67015",
+"title": "นางสาว",
+"name": "ยุวันดา พินิจจันทร์",
+"nickname": "ดา",
+"department": "ฝ่ายปฏิบัติการและตรวจสอบ",
+"position": "Internal Auditor",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68008",
+"title": "นางสาว",
+"name": "วาสนา ทองธาตุ",
+"nickname": "กระต่าย",
+"department": "ฝ่ายปฏิบัติการและตรวจสอบ",
+"position": "Shop Auditor Supervisor",
+"level": "SV-2",
+"company": "motta"
+},
+{
+"code": "A68049",
+"title": "นางสาว",
+"name": "พรพรรณ คำมูล",
+"nickname": "ส้ม",
+"department": "ฝ่ายปฏิบัติการและตรวจสอบ",
+"position": "Shop Auditor",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A69018",
+"title": "นางสาว",
+"name": "สิริกมล สมิตะสิริ",
+"nickname": "แป้ง",
+"department": "ฝ่ายปฏิบัติการและตรวจสอบ",
+"position": "Tenant Coordinator Officer",
+"level": "SF-2",
+"company": "motta"
+},
+{
+"code": "A68025",
+"title": "นางสาว",
+"name": "จินตนา กาเรือง",
+"nickname": "เอ๋",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS63001",
+"title": "นางสาว",
+"name": "จุรีรัตน์ กำพลรัตน์",
+"nickname": "ปอ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS64001",
+"title": "นางสาว",
+"name": "สุพัตรา เกิดแก้ว",
+"nickname": "ตูน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS65002",
+"title": "นางสาว",
+"name": "เพ็ญนภา สุวรรณศรี",
+"nickname": "จ๊ะจ๋า",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS65007",
+"title": "นางสาว",
+"name": "จุรีรัตน์ ศรีนภาลัย",
+"nickname": "ฝ้าย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS65010",
+"title": "นางสาว",
+"name": "ศมาภรณ์ สีสมแสงพลอย",
+"nickname": "เป้",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS66019",
+"title": "นางสาว",
+"name": "วิจิตรา วงศ์เขียว",
+"nickname": "น้ำฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS66021",
+"title": "นางสาว",
+"name": "สุนิสา ทองแสงเขียว",
+"nickname": "ปลา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS66025",
+"title": "นางสาว",
+"name": "ภัทรานิษฐ์ ขัตติยะวงศ์",
+"nickname": "ก้อย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67004",
+"title": "นางสาว",
+"name": "บุบผา ศรีสวัสดิ์",
+"nickname": "แนน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67005",
+"title": "นางสาว",
+"name": "กิตติยา ทุมชะ",
+"nickname": "ฟ้า",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67006",
+"title": "นางสาว",
+"name": "ปิยะดา โสตะบรรณ",
+"nickname": "ดา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67007",
+"title": "นางสาว",
+"name": "กมลทิพย์ ทำโคก",
+"nickname": "เจน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67009",
+"title": "นางสาว",
+"name": "สุธาทิพย์ ปานทน",
+"nickname": "ป๊อบ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67011",
+"title": "นางสาว",
+"name": "ชาลินี มามื่อ",
+"nickname": "แคท",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67012",
+"title": "นางสาว",
+"name": "วรรณา รักกสิวิทย์",
+"nickname": "น้ำหวาน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67013",
+"title": "นางสาว",
+"name": "ศรัณญา อรรคสังข์",
+"nickname": "ส้มโอ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67017",
+"title": "นางสาว",
+"name": "อรวรรณ โพธิ์ศรี",
+"nickname": "เกต",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67019",
+"title": "นางสาว",
+"name": "ทัศนีย์ ชาคำฤทธิ์",
+"nickname": "ก้อย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67024",
+"title": "นางสาว",
+"name": "ธิดาทิพย์ โม้หมุน",
+"nickname": "ตูน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67027",
+"title": "นางสาว",
+"name": "รัตนาวลี ศรีสอาด",
+"nickname": "หญิง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67028",
+"title": "นางสาว",
+"name": "ธิติมา มั่งมี",
+"nickname": "มีน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67030",
+"title": "นางสาว",
+"name": "กัญญนัทธ์ ปกป้อง",
+"nickname": "อุ้ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67035",
+"title": "นางสาว",
+"name": "มินตรา มาตฤทธิ์",
+"nickname": "เมย์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67043",
+"title": "นางสาว",
+"name": "ภิรฌา เหมือนหงษ์",
+"nickname": "หน่อย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67046",
+"title": "นางสาว",
+"name": "ปภาดา หมอจีด",
+"nickname": "พลอย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67047",
+"title": "นางสาว",
+"name": "สุดารัตน์ วรรณทิตย์",
+"nickname": "แคท",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67053",
+"title": "นางสาว",
+"name": "สุธิรา เที่ยงธรรม",
+"nickname": "ยี่",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67054",
+"title": "นางสาว",
+"name": "วริทธิ์นันท์ เลาหมู่",
+"nickname": "เหมียว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67055",
+"title": "นางสาว",
+"name": "มนิสรา ขันใกล้",
+"nickname": "หนิง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67056",
+"title": "นางสาว",
+"name": "พิณทิพย์ ไชยมาตย์",
+"nickname": "พิน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67058",
+"title": "นางสาว",
+"name": "สุภัคสร วงพิมล",
+"nickname": "ก๊อบแก๊บ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67065",
+"title": "นางสาว",
+"name": "ผกามาศ เผือกทา",
+"nickname": "แพรวา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67067",
+"title": "นางสาว",
+"name": "ศรัญญา ลีกา",
+"nickname": "ไนซ์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67076",
+"title": "นางสาว",
+"name": "เสาวภา วงษ์พะโสม",
+"nickname": "น้ำทิพย์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67080",
+"title": "นางสาว",
+"name": "ปวีณา ประโพธิง",
+"nickname": "ปลา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67083",
+"title": "นางสาว",
+"name": "ณัฐฑริกา พฤษสุภี",
+"nickname": "ส้ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67085",
+"title": "นางสาว",
+"name": "จิราภรณ์ เจ๊ะมะสุขเกษม",
+"nickname": "เจน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67089",
+"title": "นางสาว",
+"name": "อามีเนาะห์ ลาเตะ",
+"nickname": "นี",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67091",
+"title": "นางสาว",
+"name": "ปัณณลดา เนียมอ่ำ",
+"nickname": "กุ๊ก",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67093",
+"title": "นางสาว",
+"name": "นันทิดา จงทวี",
+"nickname": "ดา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67105",
+"title": "นางสาว",
+"name": "สโรชา รักสัตย์มั่น",
+"nickname": "เบ้น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67108",
+"title": "นางสาว",
+"name": "สังวาล ธาตุวิสัย",
+"nickname": "กิ๊ก",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67111",
+"title": "นางสาว",
+"name": "ธัญวรัตน์ อุดมปรีชากุล",
+"nickname": "ซี",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67115",
+"title": "นางสาว",
+"name": "นันท์นภัส วุ้นประเสริฐ",
+"nickname": "ต้อม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67117",
+"title": "นางสาว",
+"name": "เอมอร ศรีกาลัง",
+"nickname": "แอน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67118",
+"title": "นางสาว",
+"name": "รัตนาพร ชินสา",
+"nickname": "กุ๊งกิ๊ง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67129",
+"title": "นางสาว",
+"name": "น้ำฝน หน่อคำ",
+"nickname": "ฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS67136",
+"title": "นางสาว",
+"name": "จริยา รุ้งกสัตรา",
+"nickname": "โอปอ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68011",
+"title": "นางสาว",
+"name": "พรจิตร วงษาเนาว์",
+"nickname": "จั๊กจั่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68012",
+"title": "นางสาว",
+"name": "วนิดา พันเพ็ง",
+"nickname": "ครีม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68013",
+"title": "นางสาว",
+"name": "อลิษา ตินทอง",
+"nickname": "ปาล์มมี่",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68014",
+"title": "นางสาว",
+"name": "วราพร พิมิตร",
+"nickname": "ฟ้า",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68017",
+"title": "นางสาว",
+"name": "พลอยไพลิน จุลนีย์",
+"nickname": "พลอย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68025",
+"title": "นางสาว",
+"name": "วรรณา ศรีดอกบัว",
+"nickname": "ลูกปลา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68026",
+"title": "นางสาว",
+"name": "แคทลียา คำดี",
+"nickname": "แคท",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68027",
+"title": "นางสาว",
+"name": "กุลนาถ พันไธสง",
+"nickname": "อาย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68030",
+"title": "นางสาว",
+"name": "กนกวรรณ สุวรรณหงษ์",
+"nickname": "ปูเป้",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68032",
+"title": "นางสาว",
+"name": "ประภาพรรณ มากพา",
+"nickname": "ฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68034",
+"title": "นาง",
+"name": "กิรภรณ์ รู้ข่าว",
+"nickname": "แหม่ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68042",
+"title": "นางสาว",
+"name": "สุดารัตน์ ศรีสนาย",
+"nickname": "หวาน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68043",
+"title": "นางสาว",
+"name": "อนงค์รัตน์ สิมมาโคตร",
+"nickname": "คะแนน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68052",
+"title": "นางสาว",
+"name": "เบญจมาศ สุมิตร",
+"nickname": "เบญ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68058",
+"title": "นางสาว",
+"name": "รุ่งนภา ศิลทวีป",
+"nickname": "ตุ่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68060",
+"title": "นางสาว",
+"name": "นุชนาฎ ลิ้มมณี",
+"nickname": "กิฟท์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68061",
+"title": "นางสาว",
+"name": "อภิชญา ณีวงศ์",
+"nickname": "อุ้ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68062",
+"title": "นางสาว",
+"name": "ปภาวดี ชัยสอน",
+"nickname": "ตอง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68072",
+"title": "นางสาว",
+"name": "ปณิตา ชาวโพม",
+"nickname": "นุ่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68075",
+"title": "นางสาว",
+"name": "เกษริน ไพเราะ",
+"nickname": "มาย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68081",
+"title": "นางสาว",
+"name": "นวพร ราชสงฆ์",
+"nickname": "บูม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68083",
+"title": "นางสาว",
+"name": "ศริวรรณ จำปี",
+"nickname": "แบม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68088",
+"title": "นางสาว",
+"name": "ศุภรดา รัตนรุ่งเรือง",
+"nickname": "เนม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68090",
+"title": "นางสาว",
+"name": "สุภาภรณ์ แก้วขันตรี",
+"nickname": "จอย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS68099",
+"title": "นางสาว",
+"name": "อนงค์ เย็นจิต",
+"nickname": "แอนนี่",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69001",
+"title": "นางสาว",
+"name": "ญาณิศา บุญประคอง",
+"nickname": "เตย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69002",
+"title": "นางสาว",
+"name": "ธิดารัตน์ ประมะทง",
+"nickname": "น้ำขิง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69004",
+"title": "นางสาว",
+"name": "จุฬาลักษณ์ จำปานวน",
+"nickname": "ปาย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69009",
+"title": "นางสาว",
+"name": "นภสินธุ์ ชูสุวรรณ",
+"nickname": "บิว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69012",
+"title": "นางสาว",
+"name": "ศศิวิมล เนื่องรินทร์",
+"nickname": "เตย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69015",
+"title": "นางสาว",
+"name": "กันต์ฤทัย ควบพิมาย",
+"nickname": "กันต์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69016",
+"title": "นางสาว",
+"name": "นภาวรรณ ไวยเขตรกรณ์",
+"nickname": "มายด์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69017",
+"title": "นางสาว",
+"name": "กัญญาพัชร ธะสุทธิ์",
+"nickname": "แพรว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69020",
+"title": "นางสาว",
+"name": "ภัทรธิดา เกิดผล",
+"nickname": "นุ่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69021",
+"title": "นางสาว",
+"name": "อาริสา นวนเทศ",
+"nickname": "เอ้",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69022",
+"title": "นางสาว",
+"name": "ภคมน วงษ์น้อย",
+"nickname": "เดือน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69025",
+"title": "นางสาว",
+"name": "ชินีนาด โอบอ้อม",
+"nickname": "อ้อม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69028",
+"title": "นางสาว",
+"name": "ปาริชาติ จันทรวงศ์",
+"nickname": "ไอซ์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69030",
+"title": "นางสาว",
+"name": "กฤติยา มีสวนนิล",
+"nickname": "จีจี้",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69032",
+"title": "นางสาว",
+"name": "ธิดารัตน์ ทองประศรี",
+"nickname": "แตงโม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69033",
+"title": "นางสาว",
+"name": "ประภาดา โฉมเกลอ",
+"nickname": "น้ำหวาน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69035",
+"title": "นางสาว",
+"name": "ชฎาพร กากแก้ว",
+"nickname": "หมิว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69036",
+"title": "นางสาว",
+"name": "นันธวรรณ ทิ้งโคตร",
+"nickname": "นุ่มนิ่ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69037",
+"title": "นางสาว",
+"name": "ชฎาพร ชายทวีป",
+"nickname": "นุ่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69039",
+"title": "นางสาว",
+"name": "นฤศพร เชื้อเงิน",
+"nickname": "ปอเปี๊ยะ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69040",
+"title": "นางสาว",
+"name": "ขวัญฤดี อุคำ",
+"nickname": "ขวัญ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69041",
+"title": "นางสาว",
+"name": "เกษศรา ใจเอื้อ",
+"nickname": "หมวย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69043",
+"title": "นางสาว",
+"name": "พนิดา แก้วลาน",
+"nickname": "แป้ง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69046",
+"title": "นางสาว",
+"name": "กนกวรรณ ชาญเจริญ",
+"nickname": "ใบเฟิร์น",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69047",
+"title": "นางสาว",
+"name": "อิสราภรณ์ วรรณประเสริฐ",
+"nickname": "น้ำหวาน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69049",
+"title": "นางสาว",
+"name": "ชนกานต์ เจียงทอง",
+"nickname": "กานต์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69054",
+"title": "นางสาว",
+"name": "ปิยธิดา โลมาสา",
+"nickname": "จ๋า",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69055",
+"title": "นางสาว",
+"name": "กุลธิดา ผาดีอุ่น",
+"nickname": "คอม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69056",
+"title": "นางสาว",
+"name": "วิชญาดา รองเลื่อน",
+"nickname": "ฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69060",
+"title": "นางสาว",
+"name": "ตุ้มทอง บุญตา",
+"nickname": "แก้ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69062",
+"title": "นางสาว",
+"name": "นฤมล จันทร์น้อย",
+"nickname": "เอ",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69063",
+"title": "นางสาว",
+"name": "รัชดาภรณ์ เเซ่ตั๋น",
+"nickname": "โมเมย์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69067",
+"title": "นางสาว",
+"name": "แพรวา พิรา",
+"nickname": "แพร",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69069",
+"title": "นางสาว",
+"name": "นิตยา บัวนอก",
+"nickname": "ตุ๊กตา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69070",
+"title": "นางสาว",
+"name": "กัลยาณี ชมภูพื้น",
+"nickname": "ตุ๊กตา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69072",
+"title": "นางสาว",
+"name": "รัฐภรณ์ ไชยวารี",
+"nickname": "แบม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69076",
+"title": "นางสาว",
+"name": "น้ำฝน อุระโลก",
+"nickname": "เบียร์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69079",
+"title": "นางสาว",
+"name": "รุ่งทิพย์ เสือบัญชา",
+"nickname": "ทิพย์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69080",
+"title": "นางสาว",
+"name": "จารุวรรณ กิตติยังกุล",
+"nickname": "จา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69081",
+"title": "นางสาว",
+"name": "ฉัตรธิดา อินทำ",
+"nickname": "มีน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69082",
+"title": "นางสาว",
+"name": "ปวรรัตน์ กิ่งนอก",
+"nickname": "นีน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69084",
+"title": "นางสาว",
+"name": "กาญจนา พิมพาสร้อย",
+"nickname": "ตาล",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69086",
+"title": "นางสาว",
+"name": "ณฐมน สถิ่น",
+"nickname": "มะเฟือง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69089",
+"title": "นางสาว",
+"name": "ภัทราภรณ์ พงษ์นารายณ์",
+"nickname": "ปาล์ม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69091",
+"title": "นางสาว",
+"name": "แพรวรรณ ผาชา",
+"nickname": "ครีม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69092",
+"title": "นางสาว",
+"name": "ปรียารัตน์ สกุณา",
+"nickname": "น้ำมนต์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69093",
+"title": "นางสาว",
+"name": "ปรียาภรณ์ บุญแสง",
+"nickname": "พู่",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69094",
+"title": "นางสาว",
+"name": "กัญณฏา โฉมงาม",
+"nickname": "นุ๊กนิ๊ก",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69095",
+"title": "นางสาว",
+"name": "ณัฐธิตา กิจแก้ว",
+"nickname": "ครีม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69096",
+"title": "นางสาว",
+"name": "กัญญาภัทร สุตพรม",
+"nickname": "มิ้นท์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69099",
+"title": "นางสาว",
+"name": "พรพรรณ เรือนดี",
+"nickname": "โบว์",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69100",
+"title": "นางสาว",
+"name": "วารุณี ศรีเมือง",
+"nickname": "แนน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69101",
+"title": "นางสาว",
+"name": "ศุภการ พุกบ้านเก่า",
+"nickname": null,
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69102",
+"title": "นางสาว",
+"name": "พรไพลิน บุญรอด",
+"nickname": "แพรว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69103",
+"title": "นางสาว",
+"name": "ดารานารถ พลสันเทียะ",
+"nickname": "ครีม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69105",
+"title": "นางสาว",
+"name": "ชลธิชา พุทธรัตน์",
+"nickname": "ติว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69106",
+"title": "นางสาว",
+"name": "สิริกร มาลัย",
+"nickname": "ฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69107",
+"title": "นางสาว",
+"name": "จิดาภา หนูจันทร์",
+"nickname": "หมิว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69108",
+"title": "นางสาว",
+"name": "กุลธิดา ชัยมุงคุณ",
+"nickname": "หนูนา",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69109",
+"title": "นางสาว",
+"name": "นุษบา ประทีปทอง",
+"nickname": "เปรี้ยว",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69111",
+"title": "นางสาว",
+"name": "อรทัย จอมศรี",
+"nickname": "เจนนี่",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69112",
+"title": "นางสาว",
+"name": "ปวริศา ทาปลัด",
+"nickname": "เนย",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69115",
+"title": "นางสาว",
+"name": "พุธิตา โพธิ์ตาก",
+"nickname": "คิม",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69116",
+"title": "นางสาว",
+"name": "สมฤทัย พิจัย",
+"nickname": "กวาง",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "AS69117",
+"title": "นางสาว",
+"name": "วรรณิภา ตู๋ปาน",
+"nickname": "แอปเปิ้ล",
+"department": null,
+"position": null,
+"level": null,
+"company": "motta"
+},
+{
+"code": "M69025",
+"title": "นางสาว",
+"name": "รวิพร ทองเชื้อ",
+"nickname": "โบว์",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS65001",
+"title": "นางสาว",
+"name": "กิตติญา แววสุวรรณ",
+"nickname": "หญิง",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS65004",
+"title": "นางสาว",
+"name": "ศศิธร ปานทน",
+"nickname": "ปิ่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS66020",
+"title": "นางสาว",
+"name": "วารุณี สมจิตร",
+"nickname": "นุ่น",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS67011",
+"title": "นางสาว",
+"name": "นุจรินทร์ บุญเนตร",
+"nickname": "นุช",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS67037",
+"title": "นางสาว",
+"name": "ปวีณา หลวงสอน",
+"nickname": "เพชรพลอย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS67053",
+"title": "นางสาว",
+"name": "สายสมร ดวงแก้ว",
+"nickname": "กุ๊กไก่",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS67075",
+"title": "นางสาว",
+"name": "สิริลักษณ์ โพธิ์จันทึก",
+"nickname": "กี้",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS67082",
+"title": "นางสาว",
+"name": "พริมวรินทร์ ถิรกิจหิรัญ",
+"nickname": "น้ำฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS67083",
+"title": "นางสาว",
+"name": "ธนัฐศุภา กิจธาดาวงค์",
+"nickname": "แพรว",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68004",
+"title": "นางสาว",
+"name": "ขจี การรื่นศรี",
+"nickname": "รถเมย์",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68009",
+"title": "นางสาว",
+"name": "อารียา เรืองช่วย",
+"nickname": "อ๊ะอาย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68026",
+"title": "นางสาว",
+"name": "พัชรพร ปะวันนา",
+"nickname": "แนน",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68030",
+"title": "นางสาว",
+"name": "วิภาดา เหล็กกล้า",
+"nickname": "กวาง",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68037",
+"title": "นางสาว",
+"name": "ปิยธิดา อ่อนศรี",
+"nickname": "ออย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68043",
+"title": "นางสาว",
+"name": "มัลลิกา บัวจันทร์",
+"nickname": "ฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68049",
+"title": "นางสาว",
+"name": "เจนนิกา ลูกศร",
+"nickname": "เจส",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68053",
+"title": "นางสาว",
+"name": "พรนภา ทองไชย",
+"nickname": "ใบพลู",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68059",
+"title": "นางสาว",
+"name": "กัญญารัตน์ สังข์นิมิตร",
+"nickname": "เบนซ์",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68089",
+"title": "นางสาว",
+"name": "นีตา มูซอ",
+"nickname": "นีตา",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS68096",
+"title": "นางสาว",
+"name": "อริสา จำรัสศรี",
+"nickname": "ตั๊ก",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69002",
+"title": "นางสาว",
+"name": "ชมัยพร คล้ายวิมุติ",
+"nickname": "ข้าวตัง",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69003",
+"title": "นางสาว",
+"name": "สุภาพร อุดมรัตน์",
+"nickname": "แป้ง",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69011",
+"title": "นางสาว",
+"name": "ประภาพร อุปะละ",
+"nickname": "เจี๊ยบ",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69013",
+"title": "นางสาว",
+"name": "ศุภานิช จันทรักษ์",
+"nickname": "เมย์",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69014",
+"title": "นางสาว",
+"name": "เพชรรัตน์ เผือกเชาว์ไว",
+"nickname": "กวาง",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69015",
+"title": "นางสาว",
+"name": "เมธานี เจริญศรีเมือง",
+"nickname": "จิ๋ว",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69017",
+"title": "นางสาว",
+"name": "พลอยชมพู ยังเจริญ",
+"nickname": "พ๊ะพลอย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69020",
+"title": "นางสาว",
+"name": "กษมา คชวงศ์",
+"nickname": "น้ำฝน",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69022",
+"title": "นางสาว",
+"name": "กรณิกา เทพสุขดี",
+"nickname": "กร",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69023",
+"title": "นางสาว",
+"name": "ภัทรวดี วงศ์พนัส",
+"nickname": "ชมพู่",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69024",
+"title": "นาง",
+"name": "เกวลิน เกษรักษา",
+"nickname": "เกล",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69025",
+"title": "นางสาว",
+"name": "ธิดารัตน์ ตาทะนัน",
+"nickname": "ตั๊ก",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69027",
+"title": "นางสาว",
+"name": "นิสาชล เนตรหาญ",
+"nickname": "น้ำหวาน",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69028",
+"title": "นางสาว",
+"name": "นริสา เชียงแขก",
+"nickname": "หงส์หยก",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69029",
+"title": "นางสาว",
+"name": "กัญณัฏฐ์ เปี่ยมกระแสธรรม",
+"nickname": "กาย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69030",
+"title": "นางสาว",
+"name": "พลอยพิสุทธิ์ แสงแจ่ม",
+"nickname": "แอร์",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69031",
+"title": "นางสาว",
+"name": "วรางคณา ชนบท",
+"nickname": "แฟร์",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69032",
+"title": "นางสาว",
+"name": "ปภาอร จินดาพลอย",
+"nickname": "ป๊อป",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69033",
+"title": "นางสาว",
+"name": "พลภรณ์ พุดพิมาย",
+"nickname": "แตม",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69034",
+"title": "นางสาว",
+"name": "อภิชญา มีชัย",
+"nickname": "แพรว",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69036",
+"title": "นางสาว",
+"name": "อารันตี ดาโอ๊ะ",
+"nickname": "อรัญ",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69037",
+"title": "นางสาว",
+"name": "ศศิวิมล สะอาด",
+"nickname": "ออย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69038",
+"title": "นางสาว",
+"name": "พัชราภา นนทะคำจันทร์",
+"nickname": "โฟกัส",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69039",
+"title": "นางสาว",
+"name": "นฤมล ชำรัมย์",
+"nickname": "เกด",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69040",
+"title": "นางสาว",
+"name": "วริศรา เทียมสา",
+"nickname": "เตย",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69041",
+"title": "นางสาว",
+"name": "สุทธิตา บุญเรืองวัตร",
+"nickname": "ตาล",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69042",
+"title": "นางสาว",
+"name": "ชุติมา นิยมลักษณ์",
+"nickname": "มิ้ว",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69044",
+"title": "นางสาว",
+"name": "สาวิตรี เนียมแทน",
+"nickname": "ริสา",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69045",
+"title": "นางสาว",
+"name": "วิภาดา ทองมี",
+"nickname": "บิว",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69046",
+"title": "นางสาว",
+"name": "สุกานดา นาคบุญมี",
+"nickname": "เฟรม",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "MS69047",
+"title": "นางสาว",
+"name": "นภาพร โคประโคน",
+"nickname": "เอ๊ะ",
+"department": null,
+"position": null,
+"level": null,
+"company": "montipa"
+},
+{
+"code": "P69005",
+"title": "นางสาว",
+"name": "นริสรา อุทานิตย์",
+"nickname": "โดนัท",
+"department": null,
+"position": null,
+"level": null,
+"company": null
+},
+{
+"code": "PS69003",
+"title": "นางสาว",
+"name": "จุฑามาศ สุวรรณเทศ",
+"nickname": "วุ้นเส้น",
+"department": null,
+"position": null,
+"level": null,
+"company": null
+}
+]
