@@ -203,9 +203,10 @@ async def test_เบิกของด้วยประโยคเดีย�
     r = await handle(postback({"a": "skip_asset"}), s, backend, knowledge=kc)
     assert "ผู้เบิกคือใคร" in r[0].text
 
-    await handle(text("สมชาย ใจดี - แผนกบัญชี"), s, backend, knowledge=kc)
-    r = await handle(text("-"), s, backend, knowledge=kc)
+    # การเบิกจบที่ขั้นผู้เบิก — พิมพ์ชื่อแล้วได้ ticket เลย ไม่มีขั้น "มีรายละเอียดเพิ่มเติมไหม" ต่อท้าย
+    r = await handle(text("สมชาย ใจดี - แผนกบัญชี"), s, backend, knowledge=kc)
 
+    assert len(backend.created) == 1
     payload = backend.created[0]
     assert payload["type"] == "withdraw"
     assert payload["location"] == "สำนักงานใหญ่"

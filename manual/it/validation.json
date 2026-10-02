@@ -1,0 +1,134 @@
+{
+  "html_pages": 18,
+  "pdf_pages": 18,
+  "overflow": [],
+  "docx_xml_valid": true,
+  "layout": [
+    {
+      "page": 1,
+      "title": "คู่มือเจ้าหน้าที่ IT\nระบบ IT Support",
+      "contentBottom": 808.265625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 2,
+      "title": "สารบัญและวิธีใช้คู่มือ",
+      "contentBottom": 1010.15625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 3,
+      "title": "01 ภาพรวมกระบวนการทำงานของทีม IT",
+      "contentBottom": 754.40625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 4,
+      "title": "02 เข้าเว็บ IT Admin และรู้จักเมนู",
+      "contentBottom": 713.140625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 5,
+      "title": "03 ภาพรวมและปฏิทินงาน",
+      "contentBottom": 902.296875,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 6,
+      "title": "04 ค้นหาและตรวจรับ Tickets",
+      "contentBottom": 602.109375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 7,
+      "title": "05 อัปเดตสถานะและแจ้งกลับ LINE",
+      "contentBottom": 931.828125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 8,
+      "title": "06 ความหมายของสถานะงาน",
+      "contentBottom": 757.4375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 9,
+      "title": "07 งานที่แก้ไขแล้วและประวัติซ่อม",
+      "contentBottom": 627.125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 10,
+      "title": "08 จัดการทะเบียนทรัพย์สิน",
+      "contentBottom": 733.25,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 11,
+      "title": "09 นำเข้าทรัพย์สินจาก Excel",
+      "contentBottom": 841.78125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 12,
+      "title": "10 ผู้ครอบครองและทะเบียนพนักงาน",
+      "contentBottom": 625.96875,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 13,
+      "title": "11 จัดการบริษัทและสาขา",
+      "contentBottom": 660.703125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 14,
+      "title": "12 จัดการรายการสต็อก",
+      "contentBottom": 688.84375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 15,
+      "title": "13 รับเข้า ปรับยอด และตรวจประวัติ",
+      "contentBottom": 728.546875,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 16,
+      "title": "14 ดูแลคำถามที่พบบ่อย (FAQ Bot)",
+      "contentBottom": 737.015625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 17,
+      "title": "15 แก้ปัญหาระหว่างปฏิบัติงาน",
+      "contentBottom": 752.78125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 18,
+      "title": "16 รายการตรวจสอบและข้อมูลเอกสาร",
+      "contentBottom": 765.390625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    }
+  ]
+}

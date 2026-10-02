@@ -79,7 +79,7 @@ Playwright วัด `scrollWidth` vs `clientWidth` + ถ่ายภาพท�
 
 `tests/` (68 เคส): `line-intake` · `employees` · `employees-board` · `client-bundle` ·
 `date-th` · `status-editor` · `ticket-confirm`
-`line-bot-python/tests/` (229 เคส): `test_flow` · `test_ai` · `test_requester` · `test_intake` ·
+`line-bot-python/tests/` (261 เคส): `test_flow` · `test_ai` · `test_requester` · `test_intake` ·
 `test_richmenu` · `test_flex` · `test_main` · `test_thai_text` · `e2e/`
 
 ## เอกสาร

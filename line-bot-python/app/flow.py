@@ -10,11 +10,15 @@
   ASK_TYPE ──(กดประเภท)──▶ ASK_ASSET
   ASK_ASSET ──(พิมพ์รหัส / กดข้าม)──┬─ ถ้าเป็น "เบิก" ─▶ ASK_ITEM ─▶ ASK_QTY ─▶ ASK_MORE_ITEMS ─┐
                                      └─ ถ้าเป็น "ซ่อม/คืน" ─────────────────────────────────────┴─▶ ASK_REQUESTER
-  ASK_REQUESTER ──(ค้นทะเบียนพนักงาน / เลือกจากเมนูฝ่าย)──▶ ASK_DESC
+  ASK_REQUESTER ──(ค้นทะเบียนพนักงาน / เลือกจากเมนูฝ่าย)──┬─ ถ้าเป็น "เบิก" ─▶ สร้าง ticket ──▶ IDLE
+                                                            └─ ประเภทอื่น ─▶ ASK_DESC
   ASK_DESC ──(พิมพ์รายละเอียด)──▶ สร้าง ticket ──▶ IDLE
 
 ASK_REQUESTER จะถูก "ข้าม" ทั้งขั้นถ้าบัญชี LINE นี้เคยระบุตัวไปแล้ว (ผูกไว้ที่ users ฝั่งแอดมิน)
 ถามครั้งเดียวตลอดอายุการใช้งาน เปลี่ยนคนได้ด้วยปุ่ม "เปลี่ยนคนแจ้ง" ที่ติดอยู่กับขั้น ASK_DESC
+
+ยกเว้น "เบิก" ที่จบตรงขั้นนี้ (ดู _ends_at_requester) — บัญชีที่ผูกแล้วจะเห็นการ์ด "ผู้เบิกคือคนนี้
+ใช่ไหม" ให้กดยืนยันครั้งเดียวแล้วส่งเลย ปุ่ม "ไม่ใช่ เปลี่ยนคน" ย้ายมาอยู่บนการ์ดนั้นแทน
 
 ทุกสถานะรับคำว่า "ยกเลิก" เพื่อล้างทิ้งได้เสมอ และ session หมดอายุเองตาม TTL
 """
@@ -210,15 +214,62 @@ def _apply_requester(session: Session, emp: dict) -> None:
 
 
 def _requester_badge(session: Session) -> dict | None:
-    """ข้อมูลย่อของผู้แจ้งไว้แปะท้ายคำถามถัดไป — เฉพาะตอนที่บอท "เติมให้เอง"
+    """ข้อมูลย่อของผู้แจ้งไว้แสดงบนการ์ดขั้นถัดไป — ทุกครั้งที่รู้ว่าแจ้งในชื่อใคร
 
-    ถ้าผู้ใช้เพิ่งเลือกเองในบทสนทนานี้ก็ไม่ต้องบอกซ้ำ แต่แยกสองกรณีนี้ออกจากกันไม่ได้
-    จาก session เพียงอย่างเดียว จึงแสดงทุกครั้งที่ผูกกับทะเบียนแล้ว — ต้นทุนคือ 1 บรรทัด
-    แต่ได้ปุ่ม "เปลี่ยนคนแจ้ง" ติดมาด้วยตลอดทาง ซึ่งเป็นทางออกเดียวถ้าบอทเติมผิดคน
+    เดิมแสดงเฉพาะตอนที่ผูกกับทะเบียนแล้ว (`requester_user_id`) ด้วยเหตุผลว่า "ถ้าเพิ่งเลือกเอง
+    ก็ไม่ต้องบอกซ้ำ" — แต่ผลจริงคือคนที่พิมพ์ชื่อเองไม่เห็นชื่อตัวเองเลยทั้งบทสนทนา
+    และไม่ได้ปุ่ม "เปลี่ยนคนแจ้ง" ด้วย พิมพ์ผิดแล้วแก้ไม่ได้นอกจากยกเลิกแล้วเริ่มใหม่ทั้งเรื่อง
+    (ผู้ใช้แจ้งมาเอง 1 ต.ค. 2026 ว่า "ไม่โชว์ชื่อคนแจ้งเลย")
+
+    ต้นทุนคือกล่องเล็กๆ 1 กล่องบนการ์ด แลกกับการที่ชื่อผิดถูกจับได้ก่อนสร้าง ticket เสมอ
     """
-    if not session.requester_user_id or not session.requester_name:
+    if not session.requester_name:
         return None
     return {"name": session.requester_name, "department": session.requester_department or "-"}
+
+
+def _ends_at_requester(session: Session) -> bool:
+    """ประเภทเรื่องที่ "จบที่ขั้นระบุผู้แจ้ง" — ยืนยันตัวแล้วส่งเรื่องทันที ไม่ถามรายละเอียดต่อ
+
+    ตอนนี้มีแค่ "เบิก": ทุกอย่างที่ทีม IT ใช้จ่ายของจริง (ของอะไร · กี่ชิ้น · ให้ใคร) ครบตั้งแต่
+    เลือกของกับระบุผู้เบิกแล้ว ขั้น "มีรายละเอียดเพิ่มเติมไหม" จึงเป็นการกดเปล่าที่ไม่ได้ข้อมูลอะไรเพิ่ม
+    ผู้ทดสอบกดผ่านขั้นนี้ทุกครั้งแล้วขอให้ตัดออก (ผลทดสอบจริง 28 ก.ย. 2026)
+    ticket ไม่ว่างเปล่า เพราะหลังบ้านประกอบคำอธิบายจากรายการเบิกให้เองเมื่อไม่มีรายละเอียด
+
+    "คืน" ไม่ได้อยู่ในนี้โดยตั้งใจ — การคืนไม่มีรายการของ และกด "ไม่มี/ไม่ทราบ" ข้ามรหัสทรัพย์สินได้
+    ถ้าตัดขั้นรายละเอียดด้วย ticket คืนของบางใบจะไม่มีข้อมูลเลยว่าคืนอะไร
+    """
+    return session.ticket_type == "withdraw"
+
+
+def _description_settled(session: Session) -> bool:
+    """ขั้นรายละเอียด "ไม่ต้องถามแล้ว" หรือยัง
+
+    รวมไว้ที่เดียวเพราะมี 3 ทางที่ระบุผู้แจ้งเสร็จ (กดยืนยัน / เลือกจากผลค้นหา / ใช้ชื่อที่พิมพ์)
+    เดิมแต่ละทางเขียนเงื่อนไขซ้ำกันเอง วันที่เพิ่มเงื่อนไขใหม่จะมีทางที่ถูกลืม แล้วได้บั๊กแบบ
+    "ยืนยันผู้เบิกแล้วส่งเลย แต่เลือกจากรายชื่อแล้วยังถามรายละเอียด" ซึ่งดูเหมือนเรื่องเดียวกันจนไล่ยาก
+    """
+    if _ends_at_requester(session) or session.description_collected:
+        return True
+    return session.ticket_type == "it_service" and bool(session.description)
+
+
+def _submits_after_requester(session: Session) -> bool:
+    """ถ้าระบุผู้แจ้งเสร็จตอนนี้ บอทจะส่งเรื่องทันทีเลยไหม (ใช้ตัดสินว่าจะบอกผู้ใช้ล่วงหน้าหรือเปล่า)
+
+    **ต้องตรงกับ _ready_to_submit เป๊ะ** — ข้อความ "กดแล้วส่งเรื่องทันที" ที่ไม่จริง แย่กว่าไม่บอกเลย
+    ผู้ใช้จะรอข้อความยืนยันที่ไม่มาถึง หรือส่งไปก่อนทั้งที่ยังอยากแนบอะไรเพิ่ม
+    """
+    if not session.branch:
+        return False
+    if session.ticket_type == "withdraw" and not session.items:
+        return False
+    return _description_settled(session)
+
+
+def _ready_to_submit(session: Session) -> bool:
+    """ข้อมูลครบพอจะสร้าง ticket หลังระบุผู้แจ้งแล้วหรือยัง"""
+    return bool(session.requester_name) and _submits_after_requester(session)
 
 
 def _can_skip_description(session: Session) -> bool:
@@ -333,6 +384,8 @@ async def _requester_search(
         # ห้ามตอบว่า "ไม่พบในทะเบียน" เพราะไม่มีทะเบียนให้ค้นตั้งแต่แรก ผู้ใช้จะงงและติดตาย
         return []
     matches = kb.find_employees(text)
+    # กดยืนยัน/เลือกชื่อแล้วบอทจะส่งเรื่องเลยไหม (การเบิกจบที่ขั้นนี้) — บอกไว้บนการ์ด
+    final = _submits_after_requester(session)
     if not matches:
         # เก็บคำที่พิมพ์ไว้ เพราะปุ่ม "ใช้ชื่อที่พิมพ์" ส่งกลับมาได้แค่ชื่อ action
         # (postback ไม่ควรแบกข้อความผู้ใช้กลับไปกลับมา — ยาวเกิน 300 ไบต์ได้ง่ายมาก)
@@ -341,21 +394,24 @@ async def _requester_search(
         return [M.requester_not_found(text, ticket_type)]
     if len(matches) == 1:
         session.rq_pending = matches[0]
-        return [M.requester_confirm(matches[0], ticket_type)]
+        return [M.requester_confirm(matches[0], ticket_type, final=final)]
     session.rq_level = "search"
     session.rq_values = [str(e.get("id") or "") for e in matches]
     session.rq_labels = [str(e.get("name") or "") for e in matches]
     session.rq_pending = None
-    return [M.requester_choices(matches, ticket_type)]
+    return [M.requester_choices(matches, ticket_type, final=final)]
 
 
 async def _confirm_requester(
     session: Session, emp: dict, user_id: str, backend: BackendClient, store: ConversationStore
 ) -> list[M.Reply]:
-    """ยืนยันตัวผู้แจ้งแล้ว -> ผูกกับบัญชี LINE แล้วเดินบทสนทนาต่อ
+    """ยืนยันตัวผู้แจ้งแล้ว -> ผูกกับบัญชี LINE แล้วเดินบทสนทนาต่อ (การเบิกจบที่นี่ — ส่งเรื่องเลย)
 
     ผูกไม่สำเร็จก็ไปต่อได้ (แค่ครั้งหน้าจะถามใหม่) — การผูกเป็นความสะดวก ไม่ใช่เงื่อนไข
     ของการแจ้งเรื่อง จึงไม่ควรมีทางที่มันทำให้แจ้งเรื่องไม่ได้
+
+    ผูกซ้ำแม้คนนั้นจะผูกอยู่แล้ว (มาจากการ์ดยืนยันคนที่ผูกไว้) — หลังบ้านไม่เขียนอะไรถ้าไม่มีอะไรเปลี่ยน
+    และถ้าระหว่างนั้นแอดมินเพิ่งแก้การผูกจากหน้าเว็บ การกด "ใช่ ฉันเอง" ของเจ้าตัวคือคำตอบล่าสุดที่ควรชนะ
     """
     _apply_requester(session, emp)
     try:
@@ -363,11 +419,8 @@ async def _confirm_requester(
     except BackendError:
         logger.warning("ผูกผู้แจ้งไม่สำเร็จ — ใช้ชื่อนี้กับเรื่องนี้ไปก่อน")
 
-    if session.description_collected or (
-        session.ticket_type == "it_service" and session.description
-    ):
-        if session.branch:
-            return await _submit_or_retry(session, user_id, backend, store)
+    if _ready_to_submit(session):
+        return await _submit_or_retry(session, user_id, backend, store)
     replies = await _advance(session, backend, user_id=user_id)
     await store.set(user_id, session)
     return replies
@@ -570,6 +623,23 @@ async def _after_asset_step(
     return await _advance(session, backend, user_id=user_id)
 
 
+async def _items_done(
+    session: Session, user_id: str, backend: BackendClient, store: ConversationStore,
+) -> list[M.Reply]:
+    """เลือกของที่จะเบิกครบแล้ว — ไปขั้นผู้เบิก ซึ่งเป็นขั้นสุดท้ายของการเบิก
+
+    เดิมทั้งปุ่ม "พอแล้ว" และทางเบิกชิ้นเดียวกระโดดไปถาม "ผู้เบิกคือใคร" ตรงๆ ไม่ผ่าน _advance
+    บัญชีที่เคยระบุตัวแล้วจึงถูกถามชื่อซ้ำทุกครั้งที่เบิก ทั้งที่ข้อความของขั้นนั้นเองสัญญาว่า
+    "ถามครั้งเดียว ครั้งต่อไปไม่ต้องพิมพ์อีก" — ให้ _advance ตัดสินที่เดียวเหมือนประเภทอื่น
+    """
+    if _ready_to_submit(session):
+        # ระบุผู้เบิกไว้แล้วตั้งแต่ก่อนเลือกของ (เช่นกดการ์ดเก่า) — ไม่มีอะไรต้องถามอีกแล้ว
+        return await _submit_or_retry(session, user_id, backend, store)
+    replies = await _advance(session, backend, user_id=user_id)
+    await store.set(user_id, session)
+    return replies
+
+
 async def _advance(
     session: Session, backend: BackendClient, *, user_id: str | None = None
 ) -> list[M.Reply]:
@@ -611,12 +681,27 @@ async def _advance(
         # เคยบอกไปแล้วว่าเป็นใครในครั้งก่อนๆ -> ไม่ถามซ้ำ นี่คือขั้นตอนที่เสียเวลาผู้ใช้มากที่สุด
         # เพราะต้องพิมพ์ชื่อ-นามสกุล-แผนกใหม่ทุกครั้งที่แจ้ง ทั้งที่เป็นข้อมูลที่ไม่เคยเปลี่ยน
         bound = await _bound_requester(session, user_id, backend)
+        if bound and _ends_at_requester(session):
+            # เบิกจบที่ขั้นนี้ จึง "เติมให้เงียบๆ แล้วส่ง" ไม่ได้ — ประเภทอื่นเห็นชื่อพร้อมปุ่ม
+            # "เปลี่ยนคนแจ้ง" ที่ขั้นรายละเอียด แต่การเบิกไม่มีขั้นนั้นแล้ว ถ้าส่งเลย บัญชีที่ถูกผูกผิดคน
+            # จะเบิกของในชื่อคนอื่นไปเรื่อยๆ โดยไม่มีใครเห็นและไม่มีทางแก้เองในแชท
+            # การ์ดนี้ใช้ 1 การกด เท่ากับที่เคยต้องกด "ไม่มี ส่งเลย" ที่ขั้นรายละเอียด
+            _clear_requester_picker(session)
+            session.rq_pending = bound
+            session.step = ASK_REQUESTER
+            return [M.requester_confirm(
+                bound, session.ticket_type, bound=True, final=_submits_after_requester(session),
+            )]
         if bound:
             _apply_requester(session, bound)
         else:
             session.step = ASK_REQUESTER
             return [M.ask_requester(session.ticket_type or "repair")]
 
+    # การเบิกที่มาถึงบรรทัดนี้คือข้อมูลครบแล้วรวมถึงผู้เบิก — ทุกจุดที่ระบุผู้เบิกหรือเลือกของเสร็จ
+    # เช็ค _ready_to_submit แล้วส่งเองก่อนจะถึง _advance (ฟังก์ชันนี้ส่งเรื่องเองไม่ได้เพราะไม่ได้ถือ store)
+    # จึงเกิดได้แค่จากการ์ดเก่าหรือลำดับการกดที่ผิดปกติ — ปล่อยให้ตกไปขั้นรายละเอียดเหมือนเดิม
+    # ซึ่งจบได้ด้วย "ไม่มี ส่งเลย" 1 การกด ดีกว่าวางทางออกใหม่ที่ไม่เคยเจอของจริง
     session.step = ASK_DESC
     return [_ask_description(session)]
 
@@ -660,6 +745,10 @@ async def _prompt_for_step(session: Session, backend: BackendClient) -> M.Reply 
         return M.ask_more_items(session.items)
     if step == ASK_REQUESTER:
         return M.ask_requester(session.ticket_type or "repair")
+    if step == RETRY_SUBMIT and _ends_at_requester(session):
+        # การเบิกไม่มีขั้นรายละเอียดแล้ว — ส่งไม่สำเร็จแล้วส่งรูปมา ต้องชวนกดส่งใหม่
+        # ไม่ใช่เด้งคำถาม "มีรายละเอียดเพิ่มเติมไหม" ที่ผู้ใช้ไม่เคยเห็นในเส้นทางนี้ขึ้นมาเฉยๆ
+        return _retry_prompt()
     if step in (ASK_DESC, RETRY_SUBMIT):
         return _ask_description(session)
     return None
@@ -747,6 +836,13 @@ async def _submit(session: Session, user_id: str, backend: BackendClient) -> lis
     ]
 
 
+def _retry_prompt() -> M.Reply:
+    """ข้อความ "ส่งไม่สำเร็จ" พร้อมปุ่มลองส่งใหม่ — ใช้ทั้งตอนเพิ่งล้มและตอนต้องถามซ้ำ"""
+    error = M.backend_error()
+    error.quick = [("🔁 ลองส่งใหม่", "a=retry_submit"), ("❌ ยกเลิก", "a=cancel")]
+    return error
+
+
 async def _submit_or_retry(
     session: Session, user_id: str, backend: BackendClient, store: ConversationStore,
 ) -> list[M.Reply]:
@@ -755,9 +851,7 @@ async def _submit_or_retry(
     except BackendError:
         session.step = RETRY_SUBMIT
         await store.set(user_id, session)
-        error = M.backend_error()
-        error.quick = [("🔁 ลองส่งใหม่", "a=retry_submit"), ("❌ ยกเลิก", "a=cancel")]
-        return [error]
+        return [_retry_prompt()]
     await store.clear(user_id)
     return replies
 
@@ -1226,10 +1320,7 @@ async def handle(
                 session.requester_name = name
                 session.requester_department = department
                 _clear_requester_picker(session)
-                if (
-                    session.description_collected
-                    or (session.ticket_type == "it_service" and session.description)
-                ) and session.branch:
+                if _ready_to_submit(session):
                     return await _submit_or_retry(session, user_id, backend, store)
                 replies = await _advance(session, backend, user_id=user_id)
                 await store.set(user_id, session)
@@ -1431,9 +1522,7 @@ async def handle(
             return [M.ask_item(stock_items)]
 
         if action == "done_items":
-            session.step = ASK_REQUESTER
-            await store.set(user_id, session)
-            return [M.ask_requester(session.ticket_type or "withdraw")]
+            return await _items_done(session, user_id, backend, store)
 
         if action == "retry_submit":
             if session.step != RETRY_SUBMIT:
@@ -1580,9 +1669,7 @@ async def handle(
             await store.set(user_id, session)
             return [M.ask_more_items(session.items)]
 
-        session.step = ASK_REQUESTER
-        await store.set(user_id, session)
-        return [M.ask_requester(session.ticket_type or "withdraw")]
+        return await _items_done(session, user_id, backend, store)
 
     if step == ASK_MORE_ITEMS:
         # อยู่ระหว่างรอให้กดปุ่ม แต่ผู้ใช้พิมพ์มา — ตีความว่าเป็นของชิ้นใหม่ที่อยากเพิ่ม
@@ -1605,10 +1692,16 @@ async def handle(
         session.requester_user_id = None
         session.requester_name = name
         session.requester_department = department
-        if (session.description_collected or (session.ticket_type == "it_service" and session.description)) and session.branch:
-            if not name:
-                return [M.ask_requester(session.ticket_type)]
+        if not name and _submits_after_requester(session):
+            return [M.ask_requester(session.ticket_type)]
+        if _ready_to_submit(session):
             return await _submit_or_retry(session, user_id, backend, store)
+        if _ends_at_requester(session):
+            # เบิกที่ยังขาดข้อมูลอื่น (เช่นรายการของ) — ให้ _advance ถามช่องที่ยังว่าง
+            # ห้ามตกลงไปขั้นรายละเอียดข้างล่าง ซึ่งการเบิกไม่มีแล้ว
+            replies = await _advance(session, backend, user_id=user_id)
+            await store.set(user_id, session)
+            return replies
         session.step = ASK_DESC
         await store.set(user_id, session)
         return [_ask_description(session)]

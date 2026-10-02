@@ -285,12 +285,17 @@ async def test_description_keyboard_then_text_saved_in_ticket_and_summary(ticket
     await handle(postback({"a": "start"}), s, backend)
     await handle(text("สำนักงานใหญ่"), s, backend)
     replies = await handle(postback({"a": "type", "v": ticket_type}), s, backend)
+    badge = None
     if ticket_type == "repair":
         await handle(postback({"a": "skip_asset"}), s, backend)
         replies = await handle(text("สมชาย, IT"), s, backend)
-    assert replies[0] == M.ask_description(ticket_type)
+        # ระบุผู้แจ้งไปแล้ว -> การ์ดขั้นถัดไปต้องบอกว่ากำลังแจ้งในชื่อใคร
+        # (parse_requester แยกแผนกจากขีดกลาง " - " เท่านั้น เครื่องหมายจุลภาคจึงติดไปกับชื่อ
+        #  — พฤติกรรมเดิม ไม่ได้แก้ในรอบนี้ แต่บันทึกไว้ให้เห็นว่าเป็นอย่างนี้จริง)
+        badge = {"name": "สมชาย, IT", "department": "-"}
+    assert replies[0] == M.ask_description(ticket_type, badge)
     replies = await handle(postback({"a": "write_description"}), s, backend)
-    assert replies[0] == M.ask_description(ticket_type)
+    assert replies[0] == M.ask_description(ticket_type, badge)
     assert not backend.created
     assert (await s.get(USER)).step == "ASK_DESC"
     detail = "คอมเปิดไม่ติดตั้งแต่เช้า ช่วยตรวจสอบให้ด้วยครับ"
@@ -313,7 +318,7 @@ async def test_required_description_cannot_be_skipped(ticket_type, detail):
     await s.set(USER, Session(step="ASK_DESC", ticket_type=ticket_type,
                               branch="สำนักงานใหญ่", requester_name="สมชาย"))
     replies = await handle(text(detail), s, backend)
-    assert replies[0] == M.ask_description(ticket_type)
+    assert replies[0] == M.ask_description(ticket_type, {"name": "สมชาย", "department": "-"})
     assert not backend.created
     assert (await s.get(USER)).step == "ASK_DESC"
 
@@ -470,12 +475,11 @@ async def test_flow_เบิกอุปกรณ์ครบทั้งเส
     r = await handle(postback({"a": "done_items"}), s, backend)
     assert "ผู้เบิกคือใคร" in r[0].text
 
-    # 8. พิมพ์ชื่อ -> ถามรายละเอียดเพิ่มเติม
+    # 8. พิมพ์ชื่อ -> สร้าง ticket และสรุปผลทันที
+    #    เดิมต้นแบบถาม "มีรายละเอียดเพิ่มเติมไหม" อีกขั้นแล้วให้พิมพ์ '-' — ผู้ทดสอบกดผ่านทุกครั้ง
+    #    จึงตัดออก (30 ก.ย. 2026) การเบิกจบตรงที่ระบุผู้เบิกเสร็จ
     r = await handle(text("สมัย"), s, backend)
-    assert "มีรายละเอียดเพิ่มเติมไหมครับ?" in r[0].text
-
-    # 9. พิมพ์ '-' -> สร้าง ticket และสรุปผล
-    r = await handle(text("-"), s, backend)
+    assert all("มีรายละเอียดเพิ่มเติม" not in reply.text for reply in r)
     summary = r[0].text
     assert "✅ รับเรื่องแล้วครับ!" in summary
     assert "🎫 ITRQ2026090158" in summary
@@ -512,9 +516,9 @@ async def test_เบิกหลายรายการได้():
     await handle(postback({"a": "item", "v": "st-2"}), s, backend)
     await handle(text("3"), s, backend)
     await handle(postback({"a": "done_items"}), s, backend)
-    await handle(text("สมชาย ใจดี - แผนกบัญชี"), s, backend)
-    r = await handle(text("-"), s, backend)
+    r = await handle(text("สมชาย ใจดี - แผนกบัญชี"), s, backend)
 
+    assert len(backend.created) == 1
     assert backend.created[0]["items"] == [
         {"name": "คีย์บอร์ด", "qty": 2},
         {"name": "เมาส์", "qty": 3},
@@ -777,9 +781,10 @@ async def test_every_ticket_type_accepts_free_text_without_an_asset(ticket_type)
 
 # ------------------------------------------------ ปุ่ม "ไม่มี ส่งเลย" ของขั้นรายละเอียด
 #
-# ผู้ทดสอบเสนอให้ "ตัดขั้นรายละเอียดของการเบิกทิ้งไปเลย" ซึ่งตัดไม่ได้ เพราะปุ่ม
-# "เปลี่ยนคนแจ้ง" ติดอยู่กับข้อความของขั้นนี้ที่เดียวในทั้งระบบ — ถ้าตัด คนที่บัญชี LINE
-# ถูกผูกไว้ผิดคนจะแก้เองไม่ได้อีกเลย ทางออกคือคงขั้นตอนไว้แต่ให้จบได้ด้วยการกด 1 ครั้ง
+# ปุ่มนี้ทำให้ขั้นรายละเอียดจบได้ด้วยการกด 1 ครั้ง (คืน · ซ่อม · ขอใช้บริการ)
+# การเบิกไม่เดินมาถึงขั้นนี้แล้ว (จบที่ขั้นผู้เบิก — ดู test_requester.py หมวด "เบิกจบที่ขั้นผู้เบิก")
+# แต่ยังต้องกดได้ถูกต้องกับ session เบิกที่ค้างอยู่ขั้นนี้ตั้งแต่ก่อนอัปเดต เพราะ session อยู่ใน Redis
+# ได้ถึง 30 นาที และการ์ดที่ส่งไปแล้วลบออกจากห้องแชทไม่ได้ — เทสต์เบิกข้างล่างจึงยังอยู่ครบ
 
 
 def _skip_button(reply) -> bool:
@@ -788,7 +793,7 @@ def _skip_button(reply) -> bool:
 
 @pytest.mark.asyncio
 async def test_กดปุ่มไม่มีส่งเลยตอนเบิกได้ticketทันทีไม่ต้องพิมพ์อะไรอีก():
-    """เคสที่ผู้ทดสอบบ่นมาจริง: เลือกของครบ ยืนยันผู้เบิกแล้ว ยังต้องพิมพ์ "-" อีกตัวถึงจะจบ"""
+    """session เบิกที่ค้างอยู่ขั้นรายละเอียดจากก่อนอัปเดต ต้องจบได้ด้วยการกดครั้งเดียว"""
     s, backend = store(), FakeBackend()
     await s.set(USER, Session(
         step="ASK_DESC", ticket_type="withdraw", branch="สำนักงานใหญ่",
@@ -882,11 +887,61 @@ async def test_กดปุ่มข้ามจากขั้นอื่น�
 
 @pytest.mark.asyncio
 async def test_ปุ่มเปลี่ยนคนแจ้งยังอยู่คู่กับปุ่มข้าม():
-    """เหตุผลทั้งหมดที่ไม่ตัดขั้นตอนนี้ทิ้ง — ถ้าปุ่มนี้หายไปเมื่อไหร่ ผูกผิดคนแล้วแก้เองไม่ได้"""
-    reply = M.ask_description("withdraw", {"name": "สมชาย", "department": "IT"})
+    """ประเภทที่ยังมีขั้นรายละเอียด ปุ่มเปลี่ยนคนแจ้งอยู่ตรงนี้ที่เดียว — หายเมื่อไหร่ ผูกผิดคนแล้วแก้เองไม่ได้
+    (การเบิกย้ายปุ่มนี้ไปอยู่บนการ์ดยืนยันผู้เบิกแล้ว ดู test_requester.py)"""
+    reply = M.ask_description("return", {"name": "สมชาย", "department": "IT"})
     actions = [data for _, data in reply.quick]
     assert "a=rq_change" in actions
     assert M.SKIP_DESC_ACTION in actions
+
+
+# ------------------------------------------------ ชื่อผู้แจ้งต้องอยู่ "บนการ์ด" จริงๆ
+
+
+def _card_texts(card) -> list[str]:
+    """ข้อความทุกชิ้นที่ถูกวาดบนการ์ด — ใช้ตรวจว่าผู้ใช้ "เห็น" อะไรจริงๆ"""
+    out: list[str] = []
+    if isinstance(card, dict):
+        if card.get("type") == "text":
+            out.append(card.get("text", ""))
+        for value in card.values():
+            out += _card_texts(value)
+    elif isinstance(card, list):
+        for value in card:
+            out += _card_texts(value)
+    return out
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ticket_type", ["repair", "return", "it_service"])
+async def test_ชื่อผู้แจ้งต้องอยู่บนการ์ดไม่ใช่แค่ใน_altText(ticket_type):
+    """บั๊กจริง 1 ต.ค. 2026 — ผู้ใช้แจ้งว่า "ไม่โชว์ชื่อคนแจ้งเลย"
+
+    `to_line_messages()` ส่ง Reply ที่มี flex เป็น "การ์ด" โดยใช้ `text` เป็น altText เท่านั้น
+    ข้อมูลที่ใส่ไว้แค่ใน `text` จึงโผล่แค่ในหน้าจอแจ้งเตือน คนที่เปิดแชทอยู่ไม่เห็นเลยสักครั้ง
+    เทสต์นี้ตรวจ "สิ่งที่ถูกวาดบนการ์ด" ไม่ใช่ `reply.text` เพราะ text หลอกตาได้
+    """
+    reply = M.ask_description(ticket_type, {"name": "ธีรภัทร อินทร์ทอง", "department": "IT"})
+    on_card = " | ".join(_card_texts(reply.flex))
+    assert "ธีรภัทร อินทร์ทอง" in on_card, f"ชื่อไม่อยู่บนการ์ด: {on_card}"
+    assert "IT" in on_card, f"แผนกไม่อยู่บนการ์ด: {on_card}"
+    assert "เปลี่ยนคนแจ้ง" in on_card or any(
+        data == "a=rq_change" for _, data in reply.quick
+    ), "ต้องมีทางแก้ชื่อผิดเสมอ"
+
+
+@pytest.mark.asyncio
+async def test_พิมพ์ชื่อเองก็ต้องเห็นชื่อตัวเองและเปลี่ยนได้():
+    """เดิมโชว์เฉพาะคนที่ผูกกับทะเบียนแล้ว คนที่พิมพ์ชื่อเองจึงไม่เห็นชื่อตัวเองทั้งบทสนทนา
+    และไม่มีปุ่มแก้ พิมพ์ผิดแล้วต้องยกเลิกเริ่มใหม่ทั้งเรื่อง"""
+    s, backend = store(), FakeBackend()
+    await s.set(USER, Session(step="ASK_REQUESTER", ticket_type="repair", branch="สำนักงานใหญ่"))
+    replies = await handle(text("สมชาย - บัญชี"), s, backend)
+
+    on_card = " | ".join(_card_texts(replies[0].flex))
+    assert "สมชาย" in on_card, f"ชื่อที่พิมพ์เองต้องขึ้นบนการ์ดด้วย: {on_card}"
+    assert "บัญชี" in on_card
+    assert any(data == "a=rq_change" for _, data in replies[0].quick)
 
 
 @pytest.mark.asyncio

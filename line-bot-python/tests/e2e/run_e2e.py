@@ -182,12 +182,13 @@ def main() -> int:
     messages = send(postback_event("a=done_items"))
     check("ระบุชื่อผู้เบิก" in messages[0]["text"], "ถามชื่อผู้เบิก")
 
-    print("\n=== 9. พิมพ์ชื่อผู้เบิก ===")
+    print("\n=== 9-10. พิมพ์ชื่อผู้เบิก -> สร้าง ticket จริงทันที ===")
+    # การเบิกจบที่ขั้นผู้เบิก (30 ก.ย. 2026) — ไม่มีขั้น "มีรายละเอียดเพิ่มเติมไหม" ให้พิมพ์ '-' แล้ว
     messages = send(text_event("สมัย"))
-    check("มีรายละเอียดเพิ่มเติมไหมครับ?" in messages[0]["text"], "ถามรายละเอียดเพิ่มเติม")
-
-    print("\n=== 10. พิมพ์ '-' -> สร้าง ticket จริง ===")
-    messages = send(text_event("-"))
+    check(
+        all("มีรายละเอียดเพิ่มเติม" not in m.get("text", "") for m in messages),
+        "ไม่ถามรายละเอียดเพิ่มเติมหลังระบุผู้เบิก",
+    )
     summary = messages[0]["text"]
     print("     ---- ข้อความสรุปที่ผู้ใช้จะเห็นใน LINE ----")
     for line in summary.splitlines():

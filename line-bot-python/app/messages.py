@@ -685,25 +685,41 @@ def _employee_line(emp: dict) -> str:
     return f"{head}\n🏷 {dept}"
 
 
-def requester_confirm(emp: dict, ticket_type: str) -> Reply:
+# บอกไว้บนการ์ดเมื่อการกดยืนยันคือการ "ส่งเรื่อง" (การเบิกจบที่ขั้นผู้เบิก — ดู flow._ends_at_requester)
+# ถ้าไม่บอก คนจะรอคำถามถัดไปที่ไม่มีแล้ว หรือกดไปก่อนทั้งที่ยังอยากส่งรูปแนบ
+SENDS_ON_CONFIRM = "กด 'ใช่ ฉันเอง' เพื่อส่งเรื่องให้ทีม IT ได้ทันทีครับ"
+SENDS_ON_PICK = "เลือกแล้วส่งเรื่องให้ทีม IT ทันทีครับ"
+
+
+def requester_confirm(
+    emp: dict, ticket_type: str, *, bound: bool = False, final: bool = False,
+) -> Reply:
     """เจอคนเดียว -> ให้กดยืนยันก่อนผูก
 
     ต้องยืนยันเพราะการผูกนี้ "ติดถาวร" — ครั้งต่อๆ ไปบอทจะไม่ถามอีกเลย
     ถ้าผูกผิดคนตั้งแต่แรกโดยไม่ถาม ticket ทุกใบหลังจากนั้นจะขึ้นชื่อคนอื่นโดยที่เจ้าตัวไม่รู้
+
+    bound : คนนี้มาจากการผูกบัญชีไว้เดิม ไม่ใช่ผลค้นที่เพิ่งพิมพ์ — ปุ่ม "ไม่ใช่" ต้องถอดการผูกด้วย
+            (a=rq_change) ถ้าใช้ "ค้นใหม่" เฉยๆ ครั้งหน้าบอทจะเสนอคนผิดคนเดิมกลับมาอีก
+    final : กดยืนยันแล้วบอทจะส่งเรื่องทันที — ใส่บรรทัดบอกไว้ (ดู SENDS_ON_CONFIRM)
     """
     who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
+    text = f"{who}คือคนนี้ใช่ไหมครับ?\n\n{_employee_line(emp)}"
+    if final:
+        text += f"\n\n{SENDS_ON_CONFIRM}"
+    not_me = ("👤 ไม่ใช่ เปลี่ยนคน", "a=rq_change") if bound else ("🔁 ไม่ใช่ ค้นใหม่", "a=rq_again")
     return Reply(
-        text=f"{who}คือคนนี้ใช่ไหมครับ?\n\n{_employee_line(emp)}",
+        text=text,
         quick=[
             ("✅ ใช่ ฉันเอง", "a=rq_yes"),
-            ("🔁 ไม่ใช่ ค้นใหม่", "a=rq_again"),
+            not_me,
             *_picker_button(),
             ("❌ ยกเลิก", "a=cancel"),
         ],
     )
 
 
-def requester_choices(matches: list[dict], ticket_type: str) -> Reply:
+def requester_choices(matches: list[dict], ticket_type: str, *, final: bool = False) -> Reply:
     """เจอหลายคน -> ให้เลือก (ส่งกลับมาเป็น "ลำดับที่" เพราะ postback จำกัด 300 ไบต์)"""
     who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
     lines = [f"เจอ {len(matches)} คนที่ใกล้เคียงครับ เลือก{who}ด้วยนะครับ", ""]
@@ -713,6 +729,8 @@ def requester_choices(matches: list[dict], ticket_type: str) -> Reply:
         name = emp.get("name") or "-"
         lines.append(f"{index + 1}. {name}{f' ({nick})' if nick else ''} · {emp.get('department') or '-'}")
         quick.append((truncate_label(f"{index + 1}. {nick or name}"), f"a=rq_pick&i={index}"))
+    if final:
+        lines += ["", SENDS_ON_PICK]
     quick.append(("🔁 ค้นใหม่", "a=rq_again"))
     quick.append(("❌ ยกเลิก", "a=cancel"))
     return Reply(text="\n".join(lines), quick=quick)
@@ -779,10 +797,12 @@ def ask_requester_person(options: list[dict], department: str, page: int = 0) ->
 # ปุ่ม "ข้ามรายละเอียด" — เพิ่ม 2026-09-30
 #
 # เดิมคนที่ไม่มีรายละเอียดจะเพิ่มต้องพิมพ์ "-" เอง ซึ่งเป็นการเปิดคีย์บอร์ดเพื่อพิมพ์ตัวเดียว
-# ผู้ทดสอบจึงเสนอให้ "ตัดขั้นตอนนี้ทิ้งไปเลย" — แต่ตัดไม่ได้ เพราะปุ่ม "เปลี่ยนคนแจ้ง"
-# (a=rq_change) ติดอยู่กับข้อความของขั้นนี้ "ที่เดียวในทั้งระบบ" ถ้าตัดขั้นตอน คนที่บัญชี LINE
-# ถูกผูกไว้ผิดคนจะไม่มีทางแก้เองในแชทอีกเลย ต้องให้แอดมินแก้ให้ทุกครั้ง
-# ทางออกคือคงขั้นตอนไว้แต่ให้จบได้ด้วยการกด 1 ครั้ง
+# ปุ่มนี้ทำให้จบได้ด้วยการกด 1 ครั้ง และคงขั้นตอนไว้ เพราะปุ่ม "เปลี่ยนคนแจ้ง" (a=rq_change)
+# ของคนที่บอทเติมชื่อให้จากการผูกบัญชีติดอยู่กับข้อความของขั้นนี้
+#
+# การเบิก "ไม่มีขั้นนี้แล้ว" (30 ก.ย. 2026 ตามที่ผู้ทดสอบขอ — ดู flow._ends_at_requester)
+# ทางแก้ผู้เบิกที่ผูกผิดย้ายไปอยู่บนการ์ดยืนยันผู้เบิก (requester_confirm(bound=True)) แทน
+# ปุ่มนี้จึงเหลือไว้ให้ คืน · ซ่อม · ขอใช้บริการ และ session เบิกที่ค้างขั้นนี้มาจากก่อนอัปเดต
 #
 # ปุ่มนี้ต้องโผล่ "เฉพาะตอนที่ข้ามได้จริง" เท่านั้น (ดู flow._can_skip_description)
 SKIP_DESC_LABEL = F.SKIP_DESC_LABEL
@@ -827,8 +847,8 @@ _DESC_SERVICE = (
     "กดปุ่ม 'พิมพ์สิ่งที่ให้ช่วย' แล้วระบุสิ่งที่ต้องการพร้อมรายละเอียดในช่องแชท จากนั้นกดส่ง"
 )
 
-# เบิก/คืน: ข้อมูลที่ทีม IT ต้องใช้ (รายการ+จำนวน หรือรหัสทรัพย์สิน) ครบไปแล้วก่อนถึงขั้นนี้
-# รายละเอียดจึงเป็นของแถมเสมอ ไม่มีเคสที่ต้องบังคับ
+# คืน (และการเบิกที่ค้างขั้นนี้มาจากก่อนอัปเดต): ส่วนใหญ่รู้แล้วว่าคืนเครื่องไหนจากรหัสทรัพย์สิน
+# รายละเอียดจึงไม่บังคับ — แต่ยังคงขั้นนี้ไว้ให้เล่าได้ เผื่อคนที่กดข้ามรหัสมา (ดู flow._ends_at_requester)
 ASK_DESCRIPTION = _description_prompt(_DESC_GENERIC, "พิมพ์รายละเอียด", can_skip=True)
 
 ASK_DESCRIPTION_REPAIR = _description_prompt(
@@ -848,17 +868,26 @@ _ASK_DESCRIPTION_SERVICE_SKIP = _description_prompt(
 )
 
 
+# ป้ายปุ่มเปิดคีย์บอร์ดต่อประเภทเรื่อง — ต้องตรงกับที่ส่งให้ _description_prompt ด้านบน
+_DESC_BUTTON_LABEL = {"repair": "พิมพ์อาการ/สาเหตุ", "it_service": "พิมพ์สิ่งที่ให้ช่วย"}
+
+
 def ask_description(
     ticket_type: str | None,
     requester: dict | None = None,
     *,
     can_skip: bool | None = None,
 ) -> Reply:
-    """ถามรายละเอียด — ถ้าบอทเติมชื่อผู้แจ้งให้อัตโนมัติ จะบอกไว้ตรงนี้พร้อมปุ่มเปลี่ยนคน
+    """ถามรายละเอียด — ถ้ารู้ว่าแจ้งในชื่อใคร ต้องโชว์ชื่อนั้นบนการ์ดด้วย
 
     ทำไมมาแปะกับคำถามนี้แทนที่จะส่งเป็นอีกบับเบิล: ขั้น "รายละเอียด" คือขั้นถัดจากผู้แจ้งเสมอ
     การรวมไว้ที่เดียวทำให้ผู้ใช้เห็นว่ากำลังแจ้งในชื่อใครโดยไม่ต้องเสียบับเบิลเพิ่มทุกครั้ง
     — ซึ่งถ้าเพิ่มจริงจะกลายเป็นข้อความรกที่คนเลิกอ่านภายในไม่กี่ครั้ง
+
+    **บั๊กที่แก้ 2026-10-01:** เวอร์ชันก่อนเอาบรรทัดชื่อไปต่อหน้า `text` แต่ส่ง `flex=base.flex`
+    ซึ่งเป็นการ์ดใบเดิมที่ไม่มีชื่อ — และ `line_api.to_line_messages()` ส่ง Reply ที่มี flex
+    เป็น "การ์ด" โดยใช้ `text` เป็น altText เท่านั้น ชื่อจึงไปโผล่แค่ในหน้าจอแจ้งเตือน
+    คนที่เปิดแชทอยู่ไม่เคยเห็นชื่อเลยสักครั้ง ทั้งที่ docstring เดิมเขียนว่าแสดงให้แล้ว
     """
     if can_skip is None:
         # ค่าเริ่มต้นต้องตรงกับ flow._can_skip_description สำหรับเคสที่ไม่มี initial_message
@@ -876,7 +905,13 @@ def ask_description(
     return Reply(
         text=f"👤 แจ้งในชื่อ: {name} · {dept}\n\n{base.text}",
         quick=[("👤 เปลี่ยนคนแจ้ง", "a=rq_change")] + list(base.quick),
-        flex=base.flex,
+        # ต้องประกอบการ์ดใหม่พร้อมชื่อ ห้ามใช้ base.flex ซ้ำ (ดูเหตุผลใน docstring)
+        flex=F.description_prompt(
+            base.text,
+            _DESC_BUTTON_LABEL.get(ticket_type, "พิมพ์รายละเอียด"),
+            can_skip=can_skip,
+            requester=requester,
+        ),
     )
 
 

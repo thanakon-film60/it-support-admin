@@ -12,7 +12,7 @@ import pytest
 from app import messages as M
 from app.flow import handle
 from app.store import Session
-from test_flow import DEPARTMENTS, EMPLOYEES, FakeBackend, USER, postback, store, text
+from test_flow import DEPARTMENTS, EMPLOYEES, FakeBackend, USER, image, postback, store, text
 from test_ai import build_knowledge
 
 
@@ -332,3 +332,202 @@ async def test_ปิดเมนูแล้วการพิมพ์ชื�
 
     await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
     assert backend.bind_calls == [(USER, "u-film")]
+
+
+# ------------------------------------------------------------------ เบิกจบที่ขั้นผู้เบิก
+#
+# ผลทดสอบจริง 28 ก.ย. 2026: เลือกของครบ ยืนยันผู้เบิกแล้ว บอทยังถาม "มีรายละเอียดเพิ่มเติมไหม"
+# อีกขั้น ผู้ทดสอบขอให้จบทันทีหลังระบุผู้เบิก — ทุกทางที่ระบุผู้เบิกได้ (กดยืนยัน / เลือกจากชื่อซ้ำ /
+# ใช้ชื่อที่พิมพ์ / บัญชีที่ผูกไว้แล้ว) ต้องจบเหมือนกันหมด ไม่งั้นจะเหลือบางทางที่ยังถามอยู่เงียบๆ
+#
+# ขั้นที่ตัดออกเคยเป็นที่เดียวที่มีปุ่ม "เปลี่ยนคนแจ้ง" ของบัญชีที่บอทเติมชื่อให้เอง
+# บัญชีที่ผูกไว้จึงต้องเห็นการ์ด "ผู้เบิกคือคนนี้ใช่ไหม" พร้อมปุ่ม "ไม่ใช่ เปลี่ยนคน" แทน — ห้ามส่งเงียบๆ
+
+
+async def _to_withdraw_requester_step(s, backend, kb):
+    """เดินการเบิกจนถึงขั้นผู้เบิก (คีย์บอร์ด 2 ชิ้น ไม่ระบุทรัพย์สิน)"""
+    await handle(postback({"a": "start"}), s, backend, knowledge=kb)
+    await handle(text("สำนักงานใหญ่"), s, backend, knowledge=kb)
+    await handle(postback({"a": "type", "v": "withdraw"}), s, backend, knowledge=kb)
+    await handle(postback({"a": "skip_asset"}), s, backend, knowledge=kb)
+    await handle(postback({"a": "item", "v": "st-1"}), s, backend, knowledge=kb)
+    await handle(text("2"), s, backend, knowledge=kb)
+    return await handle(postback({"a": "done_items"}), s, backend, knowledge=kb)
+
+
+def _no_description_step(replies) -> bool:
+    return all("มีรายละเอียดเพิ่มเติม" not in reply.text for reply in replies)
+
+
+@pytest.mark.asyncio
+async def test_เบิก_กดใช่ฉันเองแล้วได้ticketทันที_ไม่ถามรายละเอียดต่อ():
+    """เคสตามภาพหน้าจอของผู้ทดสอบ: พิมพ์ชื่อ -> "ผู้เบิกคือคนนี้ใช่ไหม" -> กด "ใช่ ฉันเอง" แล้วต้องจบ"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    r = await _to_withdraw_requester_step(s, backend, kb)
+    assert "ผู้เบิกคือใคร" in r[0].text
+
+    r = await handle(text("ฟิล์ม"), s, backend, knowledge=kb)
+    assert "ผู้เบิกคือคนนี้ใช่ไหม" in r[0].text
+    assert M.SENDS_ON_CONFIRM in r[0].text, "กดแล้วส่งเลย ต้องบอกไว้ก่อนกด"
+    assert not backend.created
+
+    r = await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+
+    assert len(backend.created) == 1
+    assert _no_description_step(r)
+    assert "✅ รับเรื่องแล้วครับ!" in r[0].text
+    payload = backend.created[0]
+    assert payload["requester_user_id"] == "u-film"
+    assert payload["items"] == [{"name": "คีย์บอร์ด", "qty": 2}]
+    assert not payload["description"], "ไม่ได้พิมพ์อะไรเพิ่ม = ส่งค่าว่าง ให้หลังบ้านประกอบจากรายการเบิกเอง"
+    assert backend.bind_calls == [(USER, "u-film")]
+    assert await s.get(USER) is None, "จบแล้วต้องไม่ค้าง session"
+
+
+@pytest.mark.asyncio
+async def test_เบิก_ชื่อซ้ำกัน_เลือกคนแล้วได้ticketทันที():
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    await _to_withdraw_requester_step(s, backend, kb)
+
+    r = await handle(text("สมชาย"), s, backend, knowledge=kb)
+    assert "เจอ 2 คน" in r[0].text
+    assert M.SENDS_ON_PICK in r[0].text
+
+    r = await handle(postback({"a": "rq_pick", "i": "1"}), s, backend, knowledge=kb)
+    assert len(backend.created) == 1
+    assert backend.created[0]["requester_name"] == "สมชาย ทองดี"
+    assert _no_description_step(r)
+
+
+@pytest.mark.asyncio
+async def test_เบิก_ไม่พบในทะเบียน_ใช้ชื่อที่พิมพ์แล้วได้ticketทันที():
+    """พนักงานใหม่ที่ยังไม่อยู่ในทะเบียนก็ต้องเบิกจบได้ในจำนวนการกดเท่ากับคนอื่น"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    await _to_withdraw_requester_step(s, backend, kb)
+    await handle(text("สมหญิง มาใหม่ - ฝ่ายขาย"), s, backend, knowledge=kb)
+
+    r = await handle(postback({"a": "rq_manual"}), s, backend, knowledge=kb)
+
+    assert len(backend.created) == 1
+    payload = backend.created[0]
+    assert payload["requester_name"] == "สมหญิง มาใหม่"
+    assert payload["requester_user_id"] is None
+    assert _no_description_step(r)
+
+
+@pytest.mark.asyncio
+async def test_เบิก_บัญชีที่ผูกไว้เห็นชื่อตัวเองแล้วกดยืนยันครั้งเดียว_ไม่ต้องพิมพ์ชื่ออีก():
+    """เดิมกด "พอแล้ว" ทีไรถูกถามชื่อใหม่ทุกครั้ง ทั้งที่ข้อความของขั้นนั้นสัญญาว่า "ถามครั้งเดียว"
+    และต้องไม่ส่งเงียบๆ ด้วย — เจ้าของบัญชีต้องได้เห็นว่ากำลังเบิกในชื่อใคร"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    backend.bound_requester = _emp("A69048") | {"id": "u-film"}
+
+    r = await _to_withdraw_requester_step(s, backend, kb)
+
+    assert "ผู้เบิกคือใคร" not in r[0].text, "ผูกแล้วต้องไม่ให้พิมพ์ชื่อซ้ำ"
+    assert "ผู้เบิกคือคนนี้ใช่ไหม" in r[0].text
+    assert "ธนากร โฮงทอง" in r[0].text
+    assert M.SENDS_ON_CONFIRM in r[0].text
+    assert not backend.created, "ต้องให้เห็นชื่อและกดยืนยันก่อน ห้ามส่งเงียบๆ"
+
+    r = await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+    assert len(backend.created) == 1
+    assert backend.created[0]["requester_user_id"] == "u-film"
+    assert _no_description_step(r)
+
+
+@pytest.mark.asyncio
+async def test_เบิก_บัญชีที่ผูกผิดคน_กดไม่ใช่แล้วถอดการผูกและเลือกคนใหม่ได้():
+    """ปุ่มนี้คือทางแก้เดียวในแชทของบัญชีที่ผูกผิดคน หลังจากการเบิกไม่มีขั้นรายละเอียดแล้ว"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    backend.bound_requester = _emp("A69048") | {"id": "u-film"}
+    r = await _to_withdraw_requester_step(s, backend, kb)
+
+    assert ("👤 ไม่ใช่ เปลี่ยนคน", "a=rq_change") in r[0].quick
+    assert all(data != "a=rq_again" for _, data in r[0].quick), (
+        "คนที่มาจากการผูกต้องถอดการผูกได้ ถ้าแค่ค้นใหม่ ครั้งหน้าบอทจะเสนอคนผิดคนเดิมอีก"
+    )
+
+    r = await handle(postback({"a": "rq_change"}), s, backend, knowledge=kb)
+    assert backend.bound_requester is None
+    assert "ผู้เบิกคือใคร" in r[0].text
+    assert not backend.created
+
+    await handle(text("มุก"), s, backend, knowledge=kb)
+    await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+    assert len(backend.created) == 1
+    assert backend.created[0]["requester_user_id"] == "u-noi"
+    assert backend.bind_calls[-1] == (USER, "u-noi")
+
+
+@pytest.mark.asyncio
+async def test_เบิก_กดใช่ฉันเองซ้ำจากการ์ดเดิมต้องไม่ได้ticketใบที่สอง():
+    """ปุ่ม "ใช่ ฉันเอง" ตอนนี้คือปุ่มส่งเรื่อง — กดรัวหรือกดการ์ดเดิมซ้ำต้องไม่ได้ของ 2 รอบ"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    await _to_withdraw_requester_step(s, backend, kb)
+    await handle(text("ฟิล์ม"), s, backend, knowledge=kb)
+    await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+
+    await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+
+    assert len(backend.created) == 1
+
+
+@pytest.mark.asyncio
+async def test_เบิก_ส่งไม่สำเร็จแล้วส่งรูปตามมา_ต้องชวนลองส่งใหม่_ไม่ใช่ถามรายละเอียด():
+    s, backend, kb = store(), FakeBackend(fail_create=True), Knowledge()
+    await _to_withdraw_requester_step(s, backend, kb)
+    await handle(text("ฟิล์ม"), s, backend, knowledge=kb)
+    r = await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+    assert ("🔁 ลองส่งใหม่", "a=retry_submit") in r[0].quick
+
+    r = await handle(image(), s, backend, knowledge=kb)
+    assert any(("🔁 ลองส่งใหม่", "a=retry_submit") in reply.quick for reply in r)
+    assert _no_description_step(r)
+
+    backend.fail_create = False
+    await handle(postback({"a": "retry_submit"}), s, backend, knowledge=kb)
+    assert len(backend.created) == 1
+    assert backend.created[0]["image_urls"] == ["/uploads/tickets/a.jpg"]
+
+
+@pytest.mark.asyncio
+async def test_คืนอุปกรณ์ยังถามรายละเอียดหลังระบุผู้คืนเหมือนเดิม():
+    """ตัดเฉพาะการเบิก — การคืนที่กดข้ามรหัสทรัพย์สินมา ขั้นรายละเอียดคือที่เดียวที่บอกว่าคืนอะไร"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    await handle(postback({"a": "start"}), s, backend, knowledge=kb)
+    await handle(text("สำนักงานใหญ่"), s, backend, knowledge=kb)
+    await handle(postback({"a": "type", "v": "return"}), s, backend, knowledge=kb)
+    await handle(postback({"a": "skip_asset"}), s, backend, knowledge=kb)
+
+    r = await handle(text("ฟิล์ม"), s, backend, knowledge=kb)
+    assert "ผู้คืนคือคนนี้ใช่ไหม" in r[0].text
+    assert M.SENDS_ON_CONFIRM not in r[0].text
+
+    r = await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+    assert not backend.created
+    assert "มีรายละเอียดเพิ่มเติมไหมครับ?" in r[0].text
+    assert (await s.get(USER)).step == "ASK_DESC"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ticket_type", ["repair", "withdraw", "return", "it_service"])
+@pytest.mark.parametrize("told_already", [False, True])
+async def test_ข้อความกดแล้วส่งทันทีโผล่เฉพาะตอนที่กดแล้วส่งจริง(ticket_type, told_already):
+    """คำบอกบนการ์ดกับสิ่งที่บอททำจริงต้องไปด้วยกันเสมอ — บอกว่าส่งเลยแต่ถามต่อ
+    หรือไม่บอกแต่ส่งไปเลย ผิดทั้งคู่ (4 ประเภท x เล่ามาแล้ว/ยังไม่เล่า = 8 เคส)"""
+    s, backend, kb = store(), FakeBackend(), Knowledge()
+    await s.set(USER, Session(
+        step="ASK_REQUESTER", ticket_type=ticket_type, branch="สำนักงานใหญ่", asset_asked=True,
+        items=[{"name": "คีย์บอร์ด", "qty": 1}] if ticket_type == "withdraw" else [],
+        description="ขอลงโปรแกรมบัญชีให้เครื่องใหม่" if told_already else None,
+        description_collected=told_already,
+    ))
+
+    r = await handle(text("ฟิล์ม"), s, backend, knowledge=kb)
+    warned = M.SENDS_ON_CONFIRM in r[0].text
+    await handle(postback({"a": "rq_yes"}), s, backend, knowledge=kb)
+    sent = bool(backend.created)
+
+    assert warned == sent, f"{ticket_type} / เล่ามาแล้ว={told_already}: บอกว่าส่งเลย={warned} แต่ส่งจริง={sent}"
+    assert sent == (ticket_type == "withdraw" or told_already)

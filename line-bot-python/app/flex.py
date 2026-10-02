@@ -192,7 +192,13 @@ def _bubble(*, header: dict | None, body: list[dict], footer: list[dict] | None 
 SKIP_DESC_LABEL = "✅ ไม่มี ส่งเลย"
 
 
-def description_prompt(text: str, button_label: str, *, can_skip: bool = False) -> dict:
+def description_prompt(
+    text: str,
+    button_label: str,
+    *,
+    can_skip: bool = False,
+    requester: dict | None = None,
+) -> dict:
     """การ์ดถามรายละเอียด
 
     can_skip=True เพิ่มปุ่ม "ไม่มี ส่งเลย" ให้จบด้วยการกด 1 ครั้ง แทนที่จะต้องพิมพ์ "-"
@@ -203,6 +209,29 @@ def description_prompt(text: str, button_label: str, *, can_skip: bool = False) 
     button["action"]["inputOption"] = "openKeyboard"
     paragraphs = text.split("\n\n")
     body = [_text(paragraphs[0], weight="bold", size="md")]
+    if requester:
+        # ชื่อผู้แจ้งต้องอยู่ "บนการ์ด" ไม่ใช่แค่ในฟิลด์ text
+        #
+        # บั๊กที่แก้ 2026-10-01: ask_description() เอาบรรทัด "👤 แจ้งในชื่อ: ..." ไปต่อหน้า
+        # Reply.text แต่ใช้ flex ใบเดิมที่ไม่มีชื่อ — และ to_line_messages() ส่ง Reply ที่มี flex
+        # เป็น "การ์ด" โดยใช้ text เป็น altText เท่านั้น ชื่อจึงไปโผล���แค่ในหน้าจอแจ้งเตือน
+        # ผู้ใช้ที่เปิดแชทอยู่ไม่เคยเห็นชื่อเลยสักครั้ง ทั้งที่ docstring เขียนว่าแสดงให้แล้ว
+        #
+        # ทำไมสำคัญ: ผู้แจ้งถูกผูกกับบัญชี LINE ครั้งเดียวใช้ตลอด ถ้าผูกผิดคนแล้วไม่มีใครเห็น
+        # ความผิดนั้นจะติดไปกับ ticket ทุกใบของคนนั้นไปเรื่อยๆ จนกว่าจะมีคนสังเกต
+        # การ์ดนี้คือจุดสุดท้ายก่อนสร้าง ticket จึงเป็นโอกาสสุดท้ายที่จะจับผิดได้
+        body.insert(0, {
+            "type": "box", "layout": "vertical", "spacing": "xs",
+            "backgroundColor": BRAND_TINT, "cornerRadius": "12px", "paddingAll": "14px",
+            "contents": [
+                _text("แจ้งในชื่อ", size="xxs", color=BRAND_BLUE, weight="bold"),
+                _text(f"👤 {requester.get('name') or '-'}", size="md", weight="bold"),
+                _text(requester.get("department") or "-", size="xs", color=MUTED),
+                _text("ไม่ใช่คนนี้? กดปุ่ม 'เปลี่ยนคนแจ้ง' ด้านล่าง",
+                      size="xxs", color=MUTED, margin="sm"),
+            ],
+        })
+        body[1]["margin"] = "lg"
     for paragraph in paragraphs[1:]:
         if paragraph.startswith("เช่น:"):
             body.append({

@@ -1,0 +1,120 @@
+{
+  "html_pages": 16,
+  "pdf_pages": 16,
+  "overflow": [],
+  "docx_xml_valid": true,
+  "layout": [
+    {
+      "page": 1,
+      "title": "คู่มือแจ้งปัญหา\nระบบ IT Support",
+      "contentBottom": 808.265625,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 2,
+      "title": "สารบัญและวิธีใช้คู่มือ",
+      "contentBottom": 912.53125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 3,
+      "title": "01 ก่อนเริ่มแจ้งเรื่อง",
+      "contentBottom": 749.734375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 4,
+      "title": "02 เพิ่มเพื่อนและเปิดเมนู IT",
+      "contentBottom": 893.125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 5,
+      "title": "03 เลือกบริษัทและสาขา",
+      "contentBottom": 893.125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 6,
+      "title": "04 แจ้งซ่อมและเลือกทรัพย์สิน",
+      "contentBottom": 915.109375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 7,
+      "title": "05 ระบุชื่อผู้แจ้ง",
+      "contentBottom": 915.109375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 8,
+      "title": "06 อธิบายอาการและแนบรูป",
+      "contentBottom": 915.109375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 9,
+      "title": "07 รับเลขที่งานและติดตามสถานะ",
+      "contentBottom": 893.125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 10,
+      "title": "08 ทดสอบและยืนยันผลแก้ไข",
+      "contentBottom": 916.59375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 11,
+      "title": "09 เบิกอุปกรณ์",
+      "contentBottom": 608.09375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 12,
+      "title": "10 คืนอุปกรณ์และขอใช้บริการ IT",
+      "contentBottom": 767.84375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 13,
+      "title": "11 เช็กข้อมูลและคำถามที่พบบ่อย",
+      "contentBottom": 1037.53125,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 14,
+      "title": "12 อ่านสถานะงานของฉัน",
+      "contentBottom": 650.6875,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 15,
+      "title": "13 แก้ปัญหาระหว่างแจ้งเรื่อง",
+      "contentBottom": 735.9375,
+      "footerTop": 1066.671875,
+      "overflow": false
+    },
+    {
+      "page": 16,
+      "title": "14 ตรวจสอบก่อนส่งและยืนยันผล",
+      "contentBottom": 741.921875,
+      "footerTop": 1066.671875,
+      "overflow": false
+    }
+  ]
+}

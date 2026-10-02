@@ -61,7 +61,7 @@ data/*.json             ที่เก็บข้อมูลจริงต�
 npx tsc --noEmit                      # เร็วกว่า next build มาก ใช้ตรวจ type ระหว่างแก้
 npx eslint src
 node --test tests/*.test.cjs          # 68 เคส
-cd line-bot-python && python -m pytest -q   # 229 เคส
+cd line-bot-python && python -m pytest -q   # 261 เคส
 ```
 
 สถานะที่ควรเป็น: **เขียวทั้งหมด** ถ้าเจอแดงตั้งแต่ก่อนแก้ ให้บอกผู้ใช้ก่อนว่าแดงอยู่แล้ว
