@@ -147,7 +147,7 @@ services:
       # กันคนกดรัว/สคริปต์ยิงถล่ม — ทุก event กลายเป็นการเรียก /api/internal/* ฝั่ง app
       # ตั้ง 0 เพื่อปิดการจำกัด
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-20}
-      # ติดตั้ง rich menu 4 ปุ่มให้เองตอนสตาร์ท (idempotent — ตรงกับโค้ดอยู่แล้วจะข้าม)
+      # ติดตั้ง rich menu ให้เองตอนสตาร์ท (idempotent — ตรงกับโค้ดอยู่แล้วจะข้าม)
       # เดิมต้องรัน line-oa/setup_richmenu.py ด้วยมือ ซึ่งลืมได้ และอาการเวลาลืมคือ
       # พนักงานแอด OA เข้ามาแล้วเจอห้องแชทเปล่าๆ ไม่มีปุ่มอะไรเลย
       RICHMENU_AUTO_INSTALL: ${RICHMENU_AUTO_INSTALL:-true}

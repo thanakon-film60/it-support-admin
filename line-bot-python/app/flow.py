@@ -55,6 +55,7 @@ from . import thai_text
 from .backend import BackendClient, BackendError
 from .flex import PICK_PAGE_SIZE
 from .richmenu import MAIN_BUTTONS as RICH_MENU_BUTTONS
+from .richmenu import RETIRED_BUTTON_TEXTS
 from .store import ConversationStore, Session
 
 # คะแนน TF-IDF ขั้นต่ำที่ถือว่า FAQ "ตรงมากพอ" จนควรเสนอวิธีแก้ก่อนเปิด ticket
@@ -665,9 +666,11 @@ async def _remember_user(store: ConversationStore, incoming: Incoming) -> None:
 # ถ้าลูกค้าหายไปเฉยๆ บอทจะกลับมาทำงานเองเมื่อครบเวลา ไม่ค้างเงียบถาวร
 
 # ข้อความจากปุ่ม rich menu (เป็นปุ่มแบบ message) — กดแล้วแปลว่าอยากใช้บอท จึงจบการส่งต่อทันที
+# รวมป้ายของปุ่มที่ถอดออกจากเมนูแล้วด้วย เพราะมือถือที่ยังแคชเมนูเก่าส่งคำเหล่านี้มาเหมือนกดปุ่ม
+# (เหตุผลเต็มอยู่ที่ richmenu.RETIRED_BUTTON_TEXTS)
 RICH_MENU_TEXTS = frozenset(
     str(b.get("text") or "").strip() for b in RICH_MENU_BUTTONS if b.get("type") == "message"
-)
+) | frozenset(RETIRED_BUTTON_TEXTS)
 
 # คำที่แปลว่า "พอแล้ว กลับไปใช้บอท" — รวมคำยกเลิกด้วย เพราะบอทสอนผู้ใช้มาตลอดว่า "ยกเลิก" = ออก
 RESUME_WORDS = frozenset(

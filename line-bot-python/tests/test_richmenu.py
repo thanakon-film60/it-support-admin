@@ -1,4 +1,4 @@
-"""ตรวจการติดตั้ง rich menu (เมนูเดียว 4 ปุ่ม) ด้วยเซิร์ฟเวอร์จำลอง LINE API
+"""ตรวจการติดตั้ง rich menu (เมนูเดียว 2 ปุ่ม แถวเดียว) ด้วยเซิร์ฟเวอร์จำลอง LINE API
 
 ทำไมต้องจำลองทั้ง API ไม่ mock เป็นฟังก์ชัน: ลำดับการเรียกสำคัญมาก —
 alias ต้องตั้งหลังเมนูถูกสร้างจริง, รูปต้องอัปโหลดก่อนตั้งเป็น default,
@@ -7,14 +7,16 @@ alias ต้องตั้งหลังเมนูถูกสร้าง�
 สองเรื่องที่ห่วงที่สุด:
   1. สร้างเมนูซ้ำทุก restart — LINE ให้ 1 แชนแนลมีเมนูได้ 1,000 อัน ถ้าเผลอสร้างใหม่ทุกครั้ง
      จะเต็มในไม่กี่เดือนโดยไม่มีใครสังเกต จนวันหนึ่งติดตั้งไม่ได้อีกเลย
-  2. อัปเกรดจากเมนู 2 ชั้นรุ่นก่อนแล้วของเก่าไม่ถูกลบ — เมนูชั้น 2 กับ alias ของมัน
+  2. อัปเกรดจากเมนูรุ่นก่อนแล้วของเก่าไม่ถูกลบ — เมนูชั้น 2 กับ alias ของมัน
      ไม่หายไปเอง และ "เมนูหลักรุ่นเก่า" ก็ชื่อเดียวกัน เป็น default อยู่เหมือนกัน
      ถ้าเช็คแค่ชื่อจะข้ามการติดตั้งใหม่ แล้ว deploy ไปเมนูก็ยังเป็นของเก่า
 """
 
 from __future__ import annotations
 
+import ast
 import json
+import struct
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -32,6 +34,7 @@ from app.richmenu import (  # noqa: E402
     LEGACY_ALIAS_DATA,
     LEGACY_MENU_DATA_NAME,
     MAIN_BUTTONS,
+    MAX_IMAGE_BYTES,
     MENU_MAIN_NAME,
     W,
     H,
@@ -41,6 +44,12 @@ from app.richmenu import (  # noqa: E402
     _areas,
     ensure_rich_menu,
 )
+
+# รูปเมนูกับสคริปต์ทางสำรองอยู่นอกโฟลเดอร์บอท (line-oa/ ที่รากรีโป)
+LINE_OA = Path(__file__).resolve().parents[2] / "line-oa"
+
+# ผู้ใช้ขอ 22 ต.ค. 2026: เมนูเหลือแค่สองเรื่องนี้ เรียงซ้ายไปขวา
+EXPECTED_LABELS = ["แจ้งซ่อม", "ขอใช้บริการ IT"]
 
 
 class FakeLine:
@@ -80,6 +89,24 @@ class FakeLine:
         self.aliases[LEGACY_ALIAS_DATA] = data_id
         self.default_id = main_id
         return main_id, data_id
+
+    def seed_grid(self) -> str:
+        """จำลองแชนแนลที่ยังเป็นเมนู 4 ปุ่มแบบ 2x2 (2500x1686) ที่ใช้อยู่ 26 ก.ย. – 22 ต.ค. 2026"""
+        actions = [
+            {"type": "message", "text": t}
+            for t in ("แจ้งซ่อม", "เบิกอุปกรณ์", "คืนอุปกรณ์", "ขอใช้บริการ IT")
+        ]
+        areas = [
+            {"bounds": {"x": (i % 2) * 1250, "y": (i // 2) * 843, "width": 1250, "height": 843},
+             "action": a}
+            for i, a in enumerate(actions)
+        ]
+        menu_id = self.new_id()
+        self.menus[menu_id] = {"name": MENU_MAIN_NAME, "size": {"width": 2500, "height": 1686},
+                               "chatBarText": CHAT_BAR_TEXT, "areas": areas}
+        self.aliases[ALIAS_MAIN] = menu_id
+        self.default_id = menu_id
+        return menu_id
 
 
 def _handler(state: FakeLine):
@@ -206,14 +233,14 @@ def _only_menu(line) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_ติดตั้งเมนู_4_ปุ่มครบทุกขั้นตอน(line, image):
+async def test_ติดตั้งเมนู_2_ปุ่มครบทุกขั้นตอน(line, image):
     result = await _install(line, image)
 
     assert result.state == STATE_INSTALLED
     menu = _only_menu(line)
     assert menu["name"] == MENU_MAIN_NAME
-    assert menu["size"] == {"width": W, "height": H}
-    assert len(menu["areas"]) == 4
+    assert menu["size"] == {"width": 2500, "height": 843}, "2 ปุ่มแถวเดียวใช้รูปเตี้ย"
+    assert [a["action"]["text"] for a in menu["areas"]] == EXPECTED_LABELS
 
     menu_id = next(iter(line.menus))
     assert line.uploads == [menu_id], "ต้องอัปโหลดรูปให้เมนูที่เพิ่งสร้าง 1 ครั้ง"
@@ -283,12 +310,33 @@ async def test_อัปเกรดจากเมนูสองชั้น�
     assert result.state == STATE_INSTALLED, "ต้องติดตั้งใหม่เองโดยไม่ต้องตั้ง RICHMENU_FORCE_REINSTALL"
     menu = _only_menu(line)
     assert menu["size"] == {"width": W, "height": H}
-    assert len(menu["areas"]) == 4
+    assert len(menu["areas"]) == len(MAIN_BUTTONS)
     new_id = next(iter(line.menus))
     assert {old_main, old_data} <= set(line.deleted), "เมนูเก่าทั้งสองใบต้องถูกลบ"
     assert LEGACY_ALIAS_DATA not in line.aliases, "alias ของเมนูชั้น 2 ต้องถูกลบ ไม่งั้นค้างถาวร"
     assert line.aliases[ALIAS_MAIN] == new_id
     assert line.default_id == new_id
+
+
+@pytest.mark.asyncio
+async def test_อัปเกรดจากเมนู_4_ปุ่ม_2x2_เป็น_2_ปุ่มเอง(line, image):
+    """เคสจริงของ deploy 22 ต.ค. 2026: เมนูเดิมชื่อเดียวกัน เป็น default อยู่ และไม่มีของค้าง
+    จากเมนู 2 ชั้นให้จับได้เลย — สิ่งเดียวที่บอกว่าเป็นของเก่าคือลายเซ็นปุ่ม + ขนาดรูป
+    ถ้าตัวเทียบพลาดตรงนี้ deploy ไปแล้วพนักงานยังเห็น 4 ปุ่มเดิมโดยไม่มี error ที่ไหนเลย"""
+    old = line.seed_grid()
+
+    result = await _install(line, image)
+
+    assert result.state == STATE_INSTALLED, "ต้องติดตั้งใหม่เองโดยไม่ต้องตั้ง RICHMENU_FORCE_REINSTALL"
+    assert old in line.deleted, "เมนู 4 ปุ่มเดิมต้องถูกลบ ไม่งั้นค้างในแชนแนล"
+    menu = _only_menu(line)
+    assert menu["size"] == {"width": 2500, "height": 843}
+    assert [a["action"]["text"] for a in menu["areas"]] == EXPECTED_LABELS
+    new_id = next(iter(line.menus))
+    assert line.aliases[ALIAS_MAIN] == new_id
+    assert line.default_id == new_id
+
+    assert (await _install(line, image)).state == STATE_OK, "รอบถัดไปต้องมองว่าตรงแล้ว ไม่ติดตั้งซ้ำ"
 
 
 @pytest.mark.asyncio
@@ -353,3 +401,56 @@ def test_ขนาดรูปเป็นค่าที่_LINE_ยอมร�
     """
     assert (W, H) in ((2500, 1686), (2500, 843))
     assert H == 843 * ROWS, f"{ROWS} แถวต้องใช้รูปสูง {843 * ROWS} ไม่ใช่ {H}"
+
+
+# ------------------------------------------------------------------ รูปกับปุ่ม 3 ที่ต้องตรงกัน
+
+
+def _constant(path: Path, name: str):
+    """อ่านค่าคงที่ระดับโมดูลของสคริปต์ใน line-oa/ โดยไม่ import
+
+    ไม่ import ตรงๆ เพราะ make_assets.py ต้องใช้ Pillow (บอทไม่ได้ติดตั้ง) และทั้งสองไฟล์
+    ตั้งค่า sys.stdout ใหม่ตอน import ซึ่งไปกวนตัวดักผลลัพธ์ของ pytest
+    """
+    for node in ast.parse(path.read_text(encoding="utf-8")).body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id == name:
+                return ast.literal_eval(node.value)
+            if isinstance(target, ast.Tuple):  # W, H = 2500, 843
+                names = [e.id for e in target.elts if isinstance(e, ast.Name)]
+                if name in names:
+                    return ast.literal_eval(node.value)[names.index(name)]
+    raise AssertionError(f"ไม่พบ {name} ใน {path.name}")
+
+
+def test_รูปเมนูจริงขนาดตรงกับพื้นที่กด():
+    """รูปกับพื้นที่กดอยู่คนละไฟล์ — แก้จำนวนปุ่มหรือ W/H แล้วลืมรัน make_assets.py
+    ช่องที่วาดไว้บนรูปจะไม่ตรงกับช่องที่กดได้จริง (บอทอัปโหลดรูปที่ mount ไว้ตามที่เป็นอยู่)"""
+    png = LINE_OA / "assets" / "richmenu-main.png"
+    if not png.exists():
+        pytest.skip("ไม่มีโฟลเดอร์ line-oa/ ข้างบอท (รันเทสต์นอกรีโป)")
+    raw = png.read_bytes()
+    assert raw[:8] == b"\x89PNG\r\n\x1a\n" and raw[12:16] == b"IHDR", "ต้องเป็นไฟล์ PNG"
+    assert struct.unpack(">II", raw[16:24]) == (W, H), "รูปเก่าค้าง — รัน python line-oa/make_assets.py ใหม่"
+    assert len(raw) <= MAX_IMAGE_BYTES, "เกินลิมิต 1 MB ของ LINE"
+
+
+def test_ปุ่มทั้งสามที่ตรงกัน():
+    """ปุ่มอยู่ 3 ที่ (line-oa/README.md) ลืมแก้ที่ใดที่หนึ่งได้อาการ "กดปุ่มนี้แล้วได้อีกเรื่อง"
+    ซึ่งมองไม่เห็นจากโค้ดไฟล์ไหนเลย ต้องเห็นรูปบนมือถือถึงจะรู้
+
+    ป้ายบนรูปต้องตรงกับข้อความที่ปุ่มส่งด้วย — ตั้งใจให้ผู้ใช้เห็นคำเดียวกับที่ตัวเองกดเด้งขึ้นในแชท
+    จะได้รู้ว่าพิมพ์คำนั้นเองก็ได้
+    """
+    make, setup = LINE_OA / "make_assets.py", LINE_OA / "setup_richmenu.py"
+    if not (make.exists() and setup.exists()):
+        pytest.skip("ไม่มีโฟลเดอร์ line-oa/ ข้างบอท (รันเทสต์นอกรีโป)")
+
+    assert [b["text"] for b in MAIN_BUTTONS] == EXPECTED_LABELS
+    assert [t["th"] for t in _constant(make, "MENU_MAIN")] == EXPECTED_LABELS, "ป้ายบนรูป (make_assets.py)"
+    assert [b["action"] for b in _constant(setup, "BUTTONS")] == MAIN_BUTTONS, "ทางสำรอง (setup_richmenu.py)"
+    for path in (make, setup):
+        assert (_constant(path, "W"), _constant(path, "H")) == (W, H), path.name
+        assert (_constant(path, "COLS"), _constant(path, "ROWS")) == (COLS, ROWS), path.name

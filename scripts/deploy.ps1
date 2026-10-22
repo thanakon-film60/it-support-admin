@@ -511,7 +511,7 @@ if ($script:Failures.Count -eq 0) {
     Write-Host ""
     Write-Host "  ทดสอบด้วยตัวเองจากมือถือ:" -ForegroundColor White
     Write-Host "    1. เพิ่ม LINE OA เป็นเพื่อน (QR อยู่ที่ qr\line-oa-qr-logo.png)" -ForegroundColor Gray
-    Write-Host "    2. ต้องเห็นปุ่ม 4 ปุ่มเรียงแบบ 2x2 ด้านล่าง (ถ้าไม่เห็น ปิด/เปิดห้องแชทใหม่ 1 ครั้ง)" -ForegroundColor Gray
+    Write-Host "    2. ต้องเห็น 2 ปุ่มแถวเดียวด้านล่าง: แจ้งซ่อม · ขอใช้บริการ IT (ถ้ายังเป็น 4 ปุ่มเดิม ปิด/เปิดห้องแชทใหม่ 1 ครั้ง)" -ForegroundColor Gray
     Write-Host "    3. ส่งรูปหน้าจอเข้าไป -> บอทต้องตอบ 'ได้รับรูปแล้วครับ'" -ForegroundColor Gray
     Write-Host "    4. กด 'แจ้งซ่อม' บนเมนู -> ต้องขึ้นปุ่มบริษัท (Montipa / Motta / ส่วนกลาง) ก่อนถามสาขา" -ForegroundColor Gray
     Write-Host "    5. เลือก Motta -> ต้องขึ้นปุ่มทีม แล้วเลือกทีมจึงเห็นสาขาของทีมนั้น" -ForegroundColor Gray

@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from app import flow as F  # noqa: E402
 from app import messages as M  # noqa: E402
 from app.flow import Incoming, handle, wants_human  # noqa: E402
-from app.richmenu import MAIN_BUTTONS  # noqa: E402
+from app.richmenu import MAIN_BUTTONS, RETIRED_BUTTON_TEXTS  # noqa: E402
 from app.store import MemoryStore, RedisStore, Session  # noqa: E402
 from test_flow import USER, FakeBackend, postback, store, text  # noqa: E402
 
@@ -165,11 +165,12 @@ async def test_พิมพ์คำว่ายกเลิกหรือเ�
     assert await s.get(USER) is None
 
 
-@pytest.mark.parametrize("button", MAIN_BUTTONS)
-async def test_กด_rich_menu_ระหว่างคุย_บอทรับไปทำต่อเลย(button):
+# รวมป้ายของปุ่มที่ถอดออกแล้ว — มือถือที่ยังแคชเมนู 4 ปุ่มเดิมกดแล้วต้องได้ผลเหมือนกดเมนูปัจจุบัน
+@pytest.mark.parametrize("label", [b["text"] for b in MAIN_BUTTONS] + list(RETIRED_BUTTON_TEXTS))
+async def test_กด_rich_menu_ระหว่างคุย_บอทรับไปทำต่อเลย(label):
     s, backend = store(), FakeBackend()
     await start_handoff(s, backend)
-    r = await handle(text(button["text"]), s, backend)
+    r = await handle(text(label), s, backend)
     assert r, "กดเมนูแล้วต้องได้คำตอบจากบอททันที ไม่ใช่เงียบ"
     session = await s.get(USER)
     assert session is None or not session.in_handoff()
@@ -308,7 +309,8 @@ def test_ไม่จับประโยคที่แค่มีคำว�
 
 def test_ข้อความจาก_rich_menu_ตรงกับที่บอทใช้จบการคุยกับเจ้าหน้าที่():
     """เปลี่ยนป้ายปุ่ม rich menu แล้วลืมตรงนี้ = กดเมนูระหว่างคุยกับเจ้าหน้าที่แล้วบอทเงียบ"""
-    assert F.RICH_MENU_TEXTS == {b["text"] for b in MAIN_BUTTONS if b["type"] == "message"}
+    current = {b["text"] for b in MAIN_BUTTONS if b["type"] == "message"}
+    assert F.RICH_MENU_TEXTS == current | set(RETIRED_BUTTON_TEXTS)
     assert all(not wants_human(t) for t in F.RICH_MENU_TEXTS)
 
 
