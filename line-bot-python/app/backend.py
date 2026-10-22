@@ -123,7 +123,7 @@ class BackendClient:
         """ตัวเลือกสำหรับเมนูเลือกสาขาทีละชั้น: บริษัท → กลุ่ม → สาขา
 
         level="company"                -> Montipa / Motta / ส่วนกลาง
-        level="group" + company        -> ภูมิภาค (Montipa) หรือทีม Area Manager (Motta)
+        level="group" + company        -> เขตของ Area Manager (Montipa / Motta) หรือหน่วยงาน (ส่วนกลาง)
         level="branch" + company+group -> สาขาในกลุ่มนั้น
         """
         params = {"kind": "branch_options", "level": level}
@@ -244,10 +244,11 @@ class BackendClient:
     async def confirm_ticket(
         self, *, ticket_code: str, line_user_id: str, action: str, viewer_name: str = ""
     ) -> dict[str, Any]:
-        """ผู้แจ้งกดยืนยันผลการแก้ไขจากแชท
+        """ผู้แจ้งกดปุ่มผลการแก้ไขจากแชท
 
-        action="confirm" -> ปิดเรื่องเป็น "ดำเนินการเสร็จสิ้น"
-        action="reject"  -> ดึงกลับเป็น "กำลังดำเนินการ" พร้อมบันทึกว่ายังไม่หาย
+        action="confirm" -> (การ์ดรุ่นเก่า) ปิดเรื่องเป็น "ดำเนินการเสร็จสิ้น"
+        action="reject"  -> "ยังไม่หาย" / "ยังมีปัญหาอยู่" ดึงกลับเป็น "กำลังดำเนินการ" + แจ้งทีม IT
+                            ถ้าปิดงานไปเกินกำหนดแล้วได้ reason="reopen_expired"
         """
         try:
             res = await self._client.post(
@@ -272,6 +273,72 @@ class BackendClient:
         except httpx.HTTPError as exc:
             logger.error("ยืนยันผลการแก้ไขไม่สำเร็จ (เชื่อมต่อไม่ได้): %s", exc)
             raise BackendError(str(exc)) from exc
+
+    async def rate_ticket(
+        self,
+        *,
+        ticket_code: str,
+        line_user_id: str,
+        score: int | None = None,
+        comment: str | None = None,
+        viewer_name: str = "",
+    ) -> dict[str, Any]:
+        """ผู้แจ้งให้คะแนน 1–5 ดาว (กดดาวบนการ์ดปิดงาน) หรือส่งความเห็นตามหลังดาวต่ำ
+
+        ส่งเฉพาะช่องที่มีค่า — ไม่ส่ง score = แก้แค่ความเห็น (หลังบ้านคงคะแนนเดิมไว้)
+        คืน {"ok": bool, "ask_comment": bool, "reason": ...} — ask_comment ตัดสินที่หลังบ้านที่เดียว
+        """
+        payload: dict[str, Any] = {
+            "ticket_code": ticket_code,
+            "line_user_id": line_user_id,
+            "viewer_name": viewer_name,
+        }
+        if score is not None:
+            payload["score"] = score
+        if comment is not None:
+            payload["comment"] = comment
+        try:
+            res = await self._client.post("/api/internal/tickets/rate", json=payload)
+            # 403 = ไม่ใช่ผู้แจ้งคนนั้น ไม่ใช่ error ของระบบ ต้องบอกผู้ใช้ให้เข้าใจ
+            if res.status_code == 403:
+                return {"ok": False, "reason": "not_owner"}
+            res.raise_for_status()
+            return res.json()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.text[:300]
+            logger.error("บันทึกคะแนนไม่สำเร็จ status=%s detail=%s", exc.response.status_code, detail)
+            raise BackendError(detail) from exc
+        except httpx.HTTPError as exc:
+            logger.error("บันทึกคะแนนไม่สำเร็จ (เชื่อมต่อไม่ได้): %s", exc)
+            raise BackendError(str(exc)) from exc
+
+    async def line_staff(
+        self, *, line_user_id: str, display_name: str = "", action: str = "check"
+    ) -> dict[str, Any]:
+        """บัญชี LINE นี้เป็นทีม IT ที่สั่งเปิด/ปิดบอทได้ไหม (อนุมัติในหน้าเว็บ "บอท LINE")
+
+        action="check"   -> แค่ถาม
+        action="request" -> ขอสิทธิ์ (สร้างคำขอรออนุมัติ ถ้ายังไม่เคยขอ)
+        คืน {"status": "approved" | "pending" | "none", "name": ชื่อที่บันทึกไว้}
+
+        สิทธิ์อยู่ฝั่งหลังบ้านที่เดียว ไม่ cache ฝั่งบอท — ถอดสิทธิ์ในหน้าเว็บแล้วต้องมีผลทันที
+        (คำสั่งแอดมินนานๆ ใช้ที ถามทุกครั้งไม่เปลือง)
+        """
+        try:
+            res = await self._client.post(
+                "/api/internal/line-staff",
+                json={"line_user_id": line_user_id, "display_name": display_name, "action": action},
+            )
+            res.raise_for_status()
+            data = res.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.error("ตรวจสิทธิ์ทีม IT ไม่สำเร็จ err=%s", exc)
+            raise BackendError(str(exc)) from exc
+        status = data.get("status")
+        return {
+            "status": status if status in ("approved", "pending") else "none",
+            "name": data.get("name") or None,
+        }
 
     async def create_ticket(self, payload: dict[str, Any]) -> dict[str, Any]:
         try:

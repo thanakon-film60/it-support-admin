@@ -3,19 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
-
-const NAV_ITEMS = [
-  { href: "/", icon: "◎", label: "ภาพรวม" },
-  { href: "/tickets", icon: "🎫", label: "Tickets" },
-  { href: "/assets", icon: "💻", label: "ทรัพย์สิน" },
-  { href: "/custodian", icon: "👤", label: "ผู้ครอบครอง" },
-  { href: "/employees", icon: "🧑\u200d💼", label: "พนักงาน" },
-  { href: "/branches", icon: "🏢", label: "สาขา" },
-  { href: "/resolved", icon: "✅", label: "แก้ไขปัญหาแล้ว" },
-  { href: "/repair-history", icon: "🔧", label: "ประวัติซ่อม" },
-  { href: "/stock", icon: "📦", label: "สต็อก" },
-  { href: "/faq", icon: "🤖", label: "FAQ Bot" },
-];
+import { PAGES, type PageKey } from "@/lib/access";
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -23,22 +11,28 @@ function isActive(pathname: string, href: string) {
 
 export function TopNav({
   displayName,
+  pages,
   showLogout = true,
 }: {
   displayName: string;
+  /** หน้าที่บัญชีนี้เข้าได้ — เมนูโชว์เฉพาะหน้าพวกนี้
+   *  (แค่ซ่อนให้ไม่รก ด่านจริงอยู่ที่ requireSession(page) ในแต่ละหน้าและ Server Action) */
+  pages: readonly PageKey[];
   /** ปิดล็อกอินอยู่ -> ไม่ต้องมีปุ่มออกจากระบบ เพราะกดแล้วก็ไม่มีอะไรให้ออก */
   showLogout?: boolean;
 }) {
   const pathname = usePathname();
+  // รายการเมนูมาจาก lib/pages.json ที่เดียวกับโปรแกรมจัดการผู้ใช้ — ลำดับ/ชื่อ/ไอคอนตรงกันเสมอ
+  const navItems = PAGES.filter((page) => pages.includes(page.key));
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-page/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-line bg-page/70 backdrop-blur-xl print:hidden">
       <div className="mx-auto max-w-7xl px-3 sm:px-4">
         {/* แถวบน: โลโก้ + ชื่อผู้ใช้ — เมนูแยกลงแถวล่างบนจอเล็ก เพื่อให้ปุ่มกดได้เต็มนิ้ว */}
         <div className="flex h-14 items-center justify-between gap-3">
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400/25 to-indigo-400/20 text-sm ring-1 ring-inset ring-cyan-400/30">
-              <span className="absolute inset-0 rounded-xl bg-cyan-400/10 blur-md" aria-hidden />
+            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent/25 to-accent-2/20 text-sm ring-1 ring-inset ring-accent/30">
+              <span className="absolute inset-0 rounded-xl bg-accent/10 blur-md" aria-hidden />
               <span className="relative">🖥️</span>
             </span>
             <span className="min-w-0">
@@ -52,7 +46,7 @@ export function TopNav({
           </Link>
 
           <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden max-w-[12rem] truncate rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-xs text-muted sm:inline-block">
+            <span className="hidden max-w-[12rem] truncate rounded-full border border-line bg-ink/[0.03] px-3 py-1.5 text-xs text-muted sm:inline-block">
               {displayName}
             </span>
             {showLogout ? (
@@ -70,7 +64,7 @@ export function TopNav({
 
         {/* แถวเมนู — ปัดซ้ายขวาได้บนมือถือ (7 เมนูใส่บรรทัดเดียวไม่พอบนจอ 390px) */}
         <nav className="no-scrollbar -mx-3 flex items-center gap-1 overflow-x-auto px-3 pb-2 sm:mx-0 sm:px-0">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <Link
@@ -79,15 +73,15 @@ export function TopNav({
                 aria-current={active ? "page" : undefined}
                 className={`relative flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition ${
                   active
-                    ? "bg-accent-bg text-accent ring-1 ring-inset ring-cyan-400/30"
-                    : "text-muted hover:bg-white/[0.04] hover:text-ink"
+                    ? "bg-accent-bg text-accent ring-1 ring-inset ring-accent/30"
+                    : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                 }`}
               >
                 <span aria-hidden>{item.icon}</span>
                 <span>{item.label}</span>
                 {active ? (
                   <span
-                    className="absolute inset-x-3 -bottom-px h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+                    className="absolute inset-x-3 -bottom-px h-px bg-gradient-to-r from-transparent via-accent to-transparent"
                     aria-hidden
                   />
                 ) : null}

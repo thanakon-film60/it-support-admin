@@ -113,3 +113,11 @@ test('ไม่มีพนักงานเลยต้องขึ้นข�
   const html = render({ employees: [], ticketCounts: {}, assetCounts: {} });
   assert.ok(html.includes('ไม่พบพนักงานที่ตรงกับเงื่อนไข'));
 });
+
+test('020: มีปุ่มนำเข้าทะเบียน HR และนับคนที่เป็นสถานะ 0 แยกไว้', () => {
+  const html = render();
+  assert.ok(html.includes('นำเข้าทะเบียน HR (.xlsx)'));
+  const at = html.indexOf('ปิดใช้งาน (สถานะ 0)');
+  assert.notEqual(at, -1, 'ไม่เจอป้ายนับสถานะ 0');
+  assert.equal(Number(html.slice(at, at + 200).match(/>(\d+)</)[1]), 1);
+});

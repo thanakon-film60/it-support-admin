@@ -16,6 +16,7 @@ from linebot.v3.messaging import (
     Configuration,
     FlexMessage,
     FlexContainer,
+    MarkMessagesAsReadByTokenRequest,
     PostbackAction,
     QuickReply,
     QuickReplyItem,
@@ -52,6 +53,8 @@ class LineApi:
         )
         self._client = AsyncApiClient(config)
         self._api = AsyncMessagingApi(self._client)
+        # สถานะล่าสุดของการสั่ง "อ่านแล้ว" — ไว้ log เฉพาะตอนเปลี่ยนสถานะ ไม่ใช่ทุกข้อความ
+        self._mark_read_ok: bool | None = None
 
         # ดาวน์โหลดไฟล์ใช้ httpx ตรงๆ แทน SDK โดยตั้งใจ 2 เหตุผล:
         #   1. ต้องอ่านแบบ stream เพื่อ "ตัดจบกลางทาง" เมื่อไฟล์ใหญ่เกินลิมิต
@@ -110,6 +113,46 @@ class LineApi:
         await self._api.reply_message(
             ReplyMessageRequest(reply_token=reply_token, messages=messages)
         )
+
+    async def mark_as_read(self, token: str) -> bool:
+        """สั่ง "อ่านแล้ว" ให้ข้อความของผู้ใช้ (LINE นับรวมทุกข้อความก่อนหน้าในห้องนั้นด้วย)
+
+        มีผลเฉพาะตอนเปิด Chat ใน OA Manager — ตอนปิด LINE ขึ้นอ่านแล้วให้เองทุกข้อความอยู่แล้ว
+        ทำแบบ best-effort: พลาดแค่ทำให้แชทค้าง "ยังไม่อ่าน" ในแอป OA ห้ามทำให้ event พัง
+        """
+        if not token:
+            return False
+        try:
+            await self._api.mark_messages_as_read_by_token(
+                MarkMessagesAsReadByTokenRequest(mark_as_read_token=token)
+            )
+        except Exception as exc:  # noqa: BLE001 - ดูเหตุผลใน docstring
+            if self._mark_read_ok is not False:
+                logger.warning("สั่งอ่านแล้วไม่สำเร็จ (Chat ใน OA Manager ปิดอยู่หรือเปล่า?): %s", exc)
+            self._mark_read_ok = False
+            return False
+        if self._mark_read_ok is False:
+            logger.info("สั่งอ่านแล้วกลับมาใช้ได้แล้ว")
+        self._mark_read_ok = True
+        return True
+
+    async def get_bot_info(self) -> dict | None:
+        """ข้อมูลบัญชี LINE OA — ที่ต้องใช้คือ chat_mode ("chat" = เปิด Chat / "bot" = ปิด)
+
+        บอทต้องรู้ว่าเปิด Chat อยู่ไหม เพราะถ้าปิด เจ้าหน้าที่มองไม่เห็นแชทเลย
+        การส่งต่อให้เจ้าหน้าที่จะกลายเป็นให้ลูกค้าพิมพ์ใส่ความว่างเปล่า
+        """
+        try:
+            info = await self._api.get_bot_info()
+        except Exception as exc:  # noqa: BLE001 - ไม่รู้ก็แค่ใช้ค่าเริ่มต้น ไม่ควรทำให้บอทล้ม
+            logger.warning("ดึงข้อมูลบัญชี LINE OA ไม่สำเร็จ: %s", exc)
+            return None
+        return {
+            "chat_mode": str(info.chat_mode or "").lower() or None,
+            "mark_as_read_mode": str(info.mark_as_read_mode or "").lower() or None,
+            "basic_id": info.basic_id,
+            "display_name": info.display_name,
+        }
 
     async def get_display_name(self, user_id: str) -> str | None:
         """ดึงชื่อโปรไฟล์ LINE — ถ้าดึงไม่ได้ให้คืน None ไม่ต้อง throw

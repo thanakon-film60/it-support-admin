@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from urllib.parse import quote
 
@@ -76,6 +77,10 @@ class Reply:
     text: str
     quick: list[tuple[str, str]] = field(default_factory=list)
     flex: dict | None = None
+    # True = อย่าสั่ง "อ่านแล้ว" ให้ข้อความของผู้ใช้ที่ทำให้เกิดคำตอบนี้ (ดู main._mark_read)
+    # แชทที่ยังไม่อ่านในแอป LINE Official Account คือสัญญาณให้เจ้าหน้าที่เข้ามาดู —
+    # ใช้กับกรณีที่บอทช่วยไม่ได้ เช่น ขอคุยกับคน หรือบอทตีความข้อความไม่ออก
+    keep_unread: bool = False
 
 
 def truncate_label(label: str) -> str:
@@ -84,11 +89,35 @@ def truncate_label(label: str) -> str:
     return label[: MAX_QUICK_REPLY_LABEL - 1] + "…"
 
 
+_TH_MONTHS = ("ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.")
+
+
+def thai_time(epoch: float | None, now: float | None = None) -> str:
+    """เวลาไทยแบบสั้น: วันนี้ -> "14:05" · วันอื่น -> "12 ต.ค. 14:05"
+
+    คิดเวลาไทย (UTC+7) เองจาก epoch ไม่พึ่ง timezone ของเครื่อง — container ส่วนใหญ่ตั้งเป็น UTC
+    ถ้าใช้ localtime ตรงๆ เวลาบนการ์ดจะช้าไป 7 ชั่วโมงโดยไม่มีใครสังเกต
+    """
+    if not epoch:
+        return "-"
+    t = time.gmtime(epoch + 7 * 3600)
+    n = time.gmtime((time.time() if now is None else now) + 7 * 3600)
+    hm = f"{t.tm_hour:02d}:{t.tm_min:02d}"
+    if (t.tm_year, t.tm_yday) == (n.tm_year, n.tm_yday):
+        return hm
+    return f"{t.tm_mday} {_TH_MONTHS[t.tm_mon - 1]} {hm}"
+
+
 # ---------------------------------------------------------------- เมนู / ทั่วไป
+
+# ส่งต่อให้คนของทีม IT ตอบเองในแชท (ทีมตอบผ่านแอป LINE Official Account)
+HUMAN_BUTTON = ("👤 คุยกับเจ้าหน้าที่", "a=human")
+RESUME_BUTTON = ("🤖 กลับไปใช้บอท", "a=bot_resume")
 
 MENU_BUTTONS: list[tuple[str, str]] = [
     ("📝 แจ้งเรื่องใหม่", "a=start"),
     ("❓ คำถามที่พบบ่อย", "a=faq_menu"),
+    HUMAN_BUTTON,
 ]
 
 
@@ -129,6 +158,8 @@ def welcome(display_name: str | None) -> Reply:
             "• NB2501001 ใครถืออยู่\n"
             "• เรื่องที่ฉันแจ้งไว้ถึงไหนแล้ว\n"
             "\n"
+            "👤 เรื่องอื่นที่บอทช่วยไม่ได้ กด 'คุยกับเจ้าหน้าที่' ทีม IT จะตอบในแชทนี้\n"
+            "\n"
             "กดปุ่มด้านล่าง หรือพิมพ์บอกปัญหามาได้เลยครับ"
         ),
         quick=MENU_BUTTONS,
@@ -138,6 +169,178 @@ def welcome(display_name: str | None) -> Reply:
 
 def menu() -> Reply:
     return Reply(text="เลือกสิ่งที่ต้องการได้เลยครับ:", quick=MENU_BUTTONS)
+
+
+# ---------------------------------------------------------------- ส่งต่อให้เจ้าหน้าที่
+#
+# ระหว่างนี้บอท "เงียบ" กับคนนั้น ข้อความทุกอันจึงต้องบอกทางกลับมาใช้บอทไว้เสมอ
+# ไม่งั้นคนที่กดเล่นๆ หรือเปลี่ยนใจจะนึกว่าบอทเสีย เพราะพิมพ์อะไรไปก็ไม่ตอบ
+
+
+def handoff_started() -> Reply:
+    return Reply(
+        text=(
+            "ส่งต่อให้ทีม IT แล้วครับ 🙋\n"
+            "พิมพ์คำถามหรือรายละเอียดทิ้งไว้ในแชทนี้ได้เลย (ส่งรูปหน้าจอได้) "
+            "เจ้าหน้าที่จะตอบกลับในแชทนี้\n"
+            "\n"
+            "ระหว่างนี้บอทจะไม่ตอบอัตโนมัติ\n"
+            "อยากแจ้งเรื่องผ่านบอทอีกครั้ง กด '🤖 กลับไปใช้บอท' หรือกดเมนูด้านล่างได้เลยครับ"
+        ),
+        quick=[RESUME_BUTTON],
+        keep_unread=True,
+    )
+
+
+def handoff_waiting() -> Reply:
+    return Reply(
+        text="แจ้งทีม IT ไว้แล้วครับ 🙏 เจ้าหน้าที่จะตอบในแชทนี้ — พิมพ์รายละเอียดเพิ่มทิ้งไว้ได้เลย",
+        quick=[RESUME_BUTTON],
+        keep_unread=True,
+    )
+
+
+def handoff_ended() -> Reply:
+    return Reply(text="กลับมาใช้บอทแล้วครับ 🤖\nเลือกสิ่งที่ต้องการได้เลย:", quick=MENU_BUTTONS)
+
+
+def handoff_unavailable() -> Reply:
+    """Chat ใน OA Manager ปิดอยู่ — เจ้าหน้าที่มองไม่เห็นแชท จึงส่งต่อไม่ได้
+
+    บอกตรงๆ ดีกว่ารับปากว่า "ส่งต่อแล้ว" ทั้งที่ไม่มีใครเห็นข้อความเลย
+    """
+    return Reply(
+        text=(
+            "ตอนนี้ยังไม่เปิดให้คุยกับเจ้าหน้าที่ทางแชทนี้ครับ 🙏\n"
+            "แจ้งเรื่องผ่านบอทได้เลย ทีม IT จะเห็นเรื่องในระบบทันที"
+        ),
+        quick=[b for b in MENU_BUTTONS if b != HUMAN_BUTTON],
+    )
+
+
+# ---------------------------------------------------------------- ทีม IT สั่งเปิด/ปิดบอท
+#
+# ทีม IT พิมพ์ "แอดมิน" หาบอทจาก LINE ของตัวเอง (บัญชีที่อนุมัติในหน้าเว็บ "บอท LINE" แล้ว)
+# ได้การ์ดที่ปิด/เปิดบอททั้งระบบ หรือรายคนจากรายชื่อ LINE ของคนที่ทักมาล่าสุด
+
+ADMIN_BUTTON = ("🛠 การ์ดควบคุมบอท", "a=adm")
+
+
+def bot_off_notice() -> Reply:
+    """แจ้งผู้ใช้ตอนทีม IT ปิดบอทอยู่ (ทั้งระบบหรือเฉพาะคนนี้) — ส่งครั้งเดียวต่อวัน แล้วบอทเงียบ
+
+    ไม่มีปุ่มให้กด เพราะระหว่างนี้บอทไม่ตอบอะไรเลย ปุ่มที่กดแล้วเงียบแย่กว่าไม่มีปุ่ม
+    ค้าง "ยังไม่อ่าน" ไว้ให้เจ้าหน้าที่เห็นในแอป LINE OA ว่ามีคนรออยู่
+    """
+    return Reply(
+        text=(
+            "ตอนนี้เจ้าหน้าที่ IT ตอบแชทนี้เองครับ 🙋\n"
+            "พิมพ์เรื่องที่ต้องการทิ้งไว้ได้เลย (ส่งรูปหน้าจอได้) เจ้าหน้าที่จะตอบกลับในแชทนี้\n\n"
+            "ระหว่างนี้บอทจะไม่ตอบอัตโนมัติ"
+        ),
+        keep_unread=True,
+    )
+
+
+def staff_request(status: str) -> Reply:
+    """ตอบคำว่า "ขอสิทธิ์แอดมิน" ตามสถานะที่หลังบ้านบอกมา (approved / pending)"""
+    if status == "approved":
+        return Reply(
+            text="บัญชีนี้มีสิทธิ์ควบคุมบอทอยู่แล้วครับ ✅\nพิมพ์ 'แอดมิน' เมื่อไหร่ก็ได้เพื่อเปิดการ์ดควบคุมบอท",
+            quick=[ADMIN_BUTTON],
+        )
+    return Reply(
+        text=(
+            "ส่งคำขอสิทธิ์ควบคุมบอทแล้วครับ 🙏\n"
+            "รอแอดมินอนุมัติในหน้าเว็บ เมนู 'บอท LINE'\n"
+            "อนุมัติแล้วพิมพ์ 'แอดมิน' ในแชทนี้เพื่อเปิดการ์ดควบคุมบอท"
+        )
+    )
+
+
+def admin_denied() -> Reply:
+    return Reply(
+        text=(
+            "บัญชีนี้ยังไม่มีสิทธิ์ควบคุมบอทครับ\n"
+            "พิมพ์ 'ขอสิทธิ์แอดมิน' แล้วให้แอดมินอนุมัติในหน้าเว็บ (เมนู 'บอท LINE') ก่อน"
+        ),
+        quick=MENU_BUTTONS,
+    )
+
+
+def admin_chat_off() -> Reply:
+    return Reply(
+        text=(
+            "ปิดบอทตอนนี้ไม่ได้ครับ ⚠️\n"
+            "Chat ใน LINE Official Account ปิดอยู่ — ถ้าบอทเงียบด้วย จะไม่มีใครเห็นข้อความของผู้ใช้เลย\n"
+            "เปิด Chat ใน OA Manager (ตั้งค่าการตอบกลับ) ก่อนแล้วค่อยลองใหม่"
+        )
+    )
+
+
+def admin_confirm_global_off() -> Reply:
+    return Reply(
+        text=(
+            "ยืนยันปิดบอททั้งระบบ?\n\n"
+            "ระหว่างปิด ทุกคนที่ทักมาจะได้ข้อความแจ้ง 1 ครั้งต่อวันว่าเจ้าหน้าที่จะตอบเอง แล้วบอทจะเงียบ\n"
+            "ทีม IT ต้องตอบเองในแอป LINE Official Account หรือ chat.line.biz\n"
+            "(ปุ่มดาวและปุ่มเช็คสถานะบนการ์ดเก่ายังกดได้ตามปกติ)"
+        ),
+        quick=[("⛔ ยืนยันปิดบอท", "a=adm_all&v=off&ok=1"), ("↩️ ไม่ปิด", "a=adm")],
+    )
+
+
+def admin_global_done(turned_off: bool) -> Reply:
+    if turned_off:
+        return Reply(text="⛔ ปิดบอททั้งระบบแล้วครับ — ทีม IT ตอบแชทเองในแอป LINE OA ได้เลย")
+    return Reply(text="✅ เปิดบอททั้งระบบแล้วครับ — บอทกลับมาตอบทุกคนตามปกติ")
+
+
+def admin_user_done(name: str, turned_off: bool) -> Reply:
+    if turned_off:
+        return Reply(text=f"⛔ ปิดบอทกับ \"{name}\" แล้วครับ — บอทจะเงียบกับคนนี้จนกว่าจะกดเปิด")
+    return Reply(text=f"✅ เปิดบอทกับ \"{name}\" แล้วครับ — บอทกลับมาตอบคนนี้ตามปกติ")
+
+
+def admin_panel(
+    *, bot_off: dict | None, rows: list[dict], page: int, pages: int, total: int, chat_ok: bool,
+) -> Reply:
+    """การ์ดควบคุมบอท — rows มาจาก flow (ชื่อ LINE + สถานะ + postback ของปุ่มแต่ละแถว)
+
+    ข้อความ (altText / ตอนแสดงการ์ดไม่ได้) สรุปสถานะเป็นบรรทัดๆ ให้อ่านรู้เรื่องแม้ไม่มีการ์ด
+    """
+    lines = [f"🛠 ควบคุมบอท — บอททั้งระบบ: {'ปิดอยู่ 🔴' if bot_off else 'เปิดอยู่ 🟢'}"]
+    if not chat_ok:
+        lines.append("⚠️ Chat ใน LINE OA ปิดอยู่ — สั่งปิดบอทไม่ได้")
+    for r in rows:
+        lines.append(f"• {r['name']}: {r['status']}")
+    if not rows:
+        lines.append("ยังไม่มีผู้ใช้ทักมา")
+    return Reply(
+        text="\n".join(lines),
+        flex=F.admin_panel(
+            bot_off=bot_off, rows=rows, page=page, pages=pages, total=total, chat_ok=chat_ok,
+        ),
+        quick=[("🔄 รีเฟรช", f"a=adm&p={page}")],
+    )
+
+
+def not_understood(examples: list[str]) -> Reply:
+    """ข้อความแรกที่บอทตีความไม่ออกเลย (ไม่ใช่คำถาม ไม่ใช่การแจ้งเรื่อง ไม่ใช่ชื่อสาขา)
+
+    เดิมตอบ "ไม่พบสาขา" ซึ่งถูกเฉพาะคนที่ตั้งใจพิมพ์ชื่อสาขา — คนที่พิมพ์ถามเรื่องที่บอทไม่รู้จัก
+    (เรื่องนอกขอบเขตของบอท) จะงงว่าทำไมโดนถามสาขา จึงเปิดทางไปคุยกับเจ้าหน้าที่ไว้ด้วย
+    """
+    sample = ", ".join(examples[:2]) if examples else "ภูเก็ต, สำนักงานใหญ่"
+    return Reply(
+        text=(
+            "ยังไม่เข้าใจข้อความนี้ครับ 🙏\n"
+            f"• จะแจ้งเรื่อง — เลือกสาขาจากการ์ดด้านล่าง หรือพิมพ์ชื่อสาขา (เช่น {sample})\n"
+            "• เป็นเรื่องอื่นที่อยากคุยกับคน — กด '👤 คุยกับเจ้าหน้าที่'"
+        ),
+        # ทิ้งไว้ "ยังไม่อ่าน" ในแอป LINE OA ให้เจ้าหน้าที่เห็นว่ามีคนพิมพ์มาแล้วบอทช่วยไม่ได้
+        keep_unread=True,
+    )
 
 
 def cancelled() -> Reply:
@@ -204,6 +407,41 @@ _BRANCH_ESCAPES = [("❌ ยกเลิก", "a=cancel")]
 _BRANCH_HINT = "เลือกจากการ์ด หรือพิมพ์ชื่อสาขาเองก็ได้ครับ"
 
 
+def branch_area_hint(example: str) -> str:
+    """คำแนะนำของการ์ดเลือกเขต (บริษัทที่แบ่งตาม Area Manager) — เห็นในแจ้งเตือน/LINE รุ่นเก่าที่ไม่แสดงการ์ด"""
+    eg = f" (เช่น {example})" if example else ""
+    return f"เลือกจากการ์ด หรือพิมพ์ชื่อสาขา / ชื่อ Area Manager{eg} ก็ได้ครับ"
+
+
+def branch_area_subtitle(example: str) -> str:
+    """หัวการ์ดเลือกเขต — บอกไว้บนการ์ดเลยว่าพิมพ์ชื่อ AM ได้ (คำแนะนำด้านบนไม่โผล่บนการ์ด)"""
+    eg = f" เช่น {example}" if example else ""
+    return f"แตะเขต หรือพิมพ์ชื่อ AM{eg}"
+
+
+def _area_example(options: list[dict]) -> str:
+    """ชื่อ AM ตัวอย่าง = เขตสุดท้ายของบริษัทนั้น ("ทีมใบตอง" -> "ใบตอง" · "ทีมทับทิม" -> "ทับทิม")
+
+    เขตท้ายๆ อยู่หน้าหลังของการ์ด จึงเป็นเขตที่หาไม่เจอบ่อยที่สุด (ผู้ใช้แจ้ง 13 ต.ค. 2026 ว่าหาใบตองไม่เจอ)
+    และต้องเป็นชื่อจริงของบริษัทนั้นเสมอ — ยกชื่อ AM ของ Motta ให้คน Montipa พิมพ์ตาม จะไม่เจอเขตไหนเลย
+    """
+    label = str(options[-1].get("label") or "") if options else ""
+    return label.removeprefix("ทีม").strip()
+
+
+#: ปุ่ม "ดูเพิ่ม" ของเมนูสาขาทุกชั้น — ต้องส่ง bk_page ของเมนูสาขาเอง
+#  เดิมไม่ได้ส่งค่านี้ ปุ่มจึงใช้ค่าตั้งต้นของ _picker_reply (a=pk_page = เมนูทรัพย์สิน) กดหน้า 2 แล้วได้
+#  "ดึงรายการทรัพย์สินไม่ได้" ทุกครั้ง — เขตที่อยู่หน้า 2 (ทีมแนน · ทีมใบตอง) และสาขาที่ 9 ขึ้นไปของเขต/ภูมิภาค
+#  เลือกจากการ์ดไม่ได้เลย (ผู้ใช้แจ้ง 13 ต.ค. 2026 พร้อมภาพหน้าจอ)
+BRANCH_PAGE_ACTION = "a=bk_page"
+
+
+def _branch_page_action(level: str) -> str:
+    """ปุ่ม "ดูเพิ่ม" บอกชั้นของการ์ดมาด้วย (l=) — กดจากการ์ดเขตที่เลื่อนขึ้นไปเจอทีหลัง ต้องได้หน้าถัดไปของ
+    "เขต" ตามที่การ์ดเขียนไว้ ไม่ใช่หน้าถัดไปของชั้นที่ session อยู่ตอนนี้"""
+    return f"{BRANCH_PAGE_ACTION}&l={level}"
+
+
 def ask_branch_company(options: list[dict], page: int = 0) -> Reply:
     return _picker_reply(
         title="เลือกบริษัทของคุณครับ",
@@ -214,11 +452,15 @@ def ask_branch_company(options: list[dict], page: int = 0) -> Reply:
         back=None,
         escapes=_BRANCH_ESCAPES,
         hint=_BRANCH_HINT,
+        page_action=_branch_page_action("company"),
     )
 
 
 def ask_branch_group(options: list[dict], company_label: str, group_label: str,
-                     page: int = 0) -> Reply:
+                     page: int = 0, *, by_area: bool = False) -> Reply:
+    """by_area=True (บริษัทที่แบ่งตาม Area Manager — Montipa, Motta): บอกด้วยว่าพิมพ์ชื่อ AM ได้
+    คนจำชื่อหัวหน้าเขตได้แม่นกว่าจำว่าเขตตัวเองอยู่หน้าไหนของการ์ด"""
+    example = _area_example(options) if by_area else ""
     return _picker_reply(
         title=f"เลือก{group_label}",
         crumb=f"บริษัท: {company_label}",
@@ -227,22 +469,30 @@ def ask_branch_group(options: list[dict], company_label: str, group_label: str,
         action="a=bk_grp",
         back=("◀ เปลี่ยนบริษัท", "a=bk_back&to=company"),
         escapes=_BRANCH_ESCAPES,
-        hint=_BRANCH_HINT,
+        hint=branch_area_hint(example) if by_area else _BRANCH_HINT,
+        page_action=_branch_page_action("group"),
+        subtitle=branch_area_subtitle(example) if by_area else None,
     )
 
 
-def ask_branch_list(options: list[dict], crumb: str, page: int = 0, *, skip_group: bool = False) -> Reply:
+def ask_branch_list(
+    options: list[dict], crumb: str, page: int = 0, *, skip_group: bool = False, group_word: str = "กลุ่ม",
+) -> Reply:
     return _picker_reply(
         title="เลือกสาขาของคุณครับ",
         crumb=crumb,
         options=options,
         page=page,
         action="a=bk_branch",
-        back=("◀ เปลี่ยนบริษัท", "a=bk_back&to=company") if skip_group else ("◀ เปลี่ยนกลุ่ม", "a=bk_back&to=group"),
+        back=(
+            ("◀ เปลี่ยนบริษัท", "a=bk_back&to=company") if skip_group
+            else (f"◀ เปลี่ยน{group_word}", "a=bk_back&to=group")
+        ),
         # ชั้นนี้ 1 แถว = 1 สาขา ตัวเลข "1" ต่อท้ายทุกแถวไม่ได้บอกอะไร
         show_count=False,
         escapes=_BRANCH_ESCAPES,
         hint=_BRANCH_HINT,
+        page_action=_branch_page_action("branch"),
     )
 
 
@@ -325,6 +575,7 @@ def _picker_reply(
     escapes: list[tuple[str, str]] | None = None,
     hint: str = "เลือกจากการ์ด หรือพิมพ์รหัสทรัพย์สินมาได้เลยครับ",
     page_action: str = "a=pk_page",
+    subtitle: str | None = None,
 ) -> Reply:
     """ประกอบการ์ดเลือก 1 ชั้น
 
@@ -356,6 +607,7 @@ def _picker_reply(
         data_for_index=lambda i: f"{action}&i={i}",
         footer_buttons=footer,
         show_count=show_count,
+        subtitle=subtitle,
     )
 
     # ข้อความสำรอง — คนที่เปิดจากนาฬิกา/แจ้งเตือน หรือ LINE เวอร์ชันเก่าจะเห็นอันนี้แทนการ์ด
@@ -597,43 +849,91 @@ def rate_limited() -> Reply:
     return Reply(text="ข้อความเข้ามาถี่เกินไปครับ 🙏 รอสักครู่แล้วลองใหม่อีกครั้งนะครับ")
 
 
+# ---------------------------------------------------------------- เบิกอุปกรณ์
+#
+# การเบิก "ต้องระบุอุปกรณ์อย่างน้อย 1 รายการ" เสมอ — ticket เบิกที่ไม่บอกว่าของอะไร ทีม IT เตรียมของไม่ได้
+# ต้องทักกลับไปถามทุกครั้ง (ผู้ใช้แจ้งมา 13 ต.ค. 2026: ticket ขึ้นแค่ "รายละเอียด: เบิกอุปกรณ์")
+# ทุกข้อความในขั้นนี้จึงมีปุ่ม "❌ ยกเลิก" ให้เห็นทางออก แทนที่จะปล่อยให้พิมพ์อะไรก็ได้เพื่อให้ผ่านขั้นไป
+
+CANCEL_BUTTON = ("❌ ยกเลิก", "a=cancel")
+ITEM_TYPE_BUTTON = ("✏️ พิมพ์ชื่ออุปกรณ์", "a=item_other")
+ITEM_PICK_BUTTON = ("📋 เลือกจากรายการ", "a=add_item")
+
+_ITEM_HINT = "ไม่มีในปุ่ม กด '✏️ พิมพ์ชื่ออุปกรณ์' แล้วพิมพ์ชื่อ เช่น สาย HDMI, หมึก HP 682"
+_ITEM_REQUIRED = "ต้องระบุอุปกรณ์อย่างน้อย 1 รายการ — ไม่เบิกแล้วกด '❌ ยกเลิก'"
+
+
+def _item_buttons(stock_items: list[dict]) -> list[tuple[str, str]]:
+    """ปุ่มของในสต็อก + พิมพ์เอง + ยกเลิก — ตัดของในสต็อกให้พอดี 13 ปุ่มตามลิมิตของ LINE"""
+    buttons = [
+        (truncate_label(item["name"]), f"a=item&v={item['id']}")
+        for item in stock_items[: MAX_QUICK_REPLY_ITEMS - 2]
+    ]
+    return [*buttons, ITEM_TYPE_BUTTON, CANCEL_BUTTON]
+
+
 def ask_item(stock_items: list[dict]) -> Reply:
     """ปุ่มเลือกอุปกรณ์ที่จะเบิก — ดึงรายการจริงจากสต็อกในระบบ admin
 
-    ถ้าของในสต็อกมีเกิน 13 รายการ LINE ใส่ปุ่มไม่ไหว จึงตัดให้เหลือ 12 ปุ่ม
-    แล้วเพิ่มปุ่ม 'อื่นๆ (พิมพ์เอง)' ไว้ให้พิมพ์ชื่อของที่ไม่อยู่ในปุ่มได้
+    ถ้าของในสต็อกมีมากกว่าที่ปุ่มใส่ได้ LINE จะรับไม่ไหว จึงตัดให้พอดีแล้วเหลือที่ให้
+    ปุ่ม 'พิมพ์ชื่ออุปกรณ์' (ของที่ไม่อยู่ในปุ่ม) กับ 'ยกเลิก' เสมอ
     """
-    buttons: list[tuple[str, str]] = []
-    for item in stock_items[: MAX_QUICK_REPLY_ITEMS - 1]:
-        buttons.append((truncate_label(item["name"]), f"a=item&v={item['id']}"))
-    buttons.append(("✏️ อื่นๆ (พิมพ์เอง)", "a=item_other"))
-    return Reply(text="เลือกอุปกรณ์ที่ต้องการเบิกครับ:", quick=buttons)
+    return Reply(
+        text=f"เลือกอุปกรณ์ที่ต้องการเบิกครับ:\n\n{_ITEM_HINT}\n\n{_ITEM_REQUIRED}",
+        quick=_item_buttons(stock_items),
+    )
 
 
 ASK_ITEM_NAME = Reply(
-    text="พิมพ์ชื่ออุปกรณ์ที่ต้องการเบิกครับ\n\n(พิมพ์ 'ยกเลิก' เพื่อออก)"
+    text=(
+        "พิมพ์ชื่ออุปกรณ์ที่ต้องการเบิกครับ\n"
+        "เช่น: สาย HDMI · หมึกปริ้นเตอร์ HP 682 · เมาส์ไร้สาย\n\n"
+        "พิมพ์ให้รู้ว่าเป็นของอะไร ทีม IT จะได้เตรียมของถูกชิ้น"
+    ),
+    quick=[ITEM_PICK_BUTTON, CANCEL_BUTTON],
 )
+
+
+def item_required(stock_items: list[dict], typed: str, *, menu_pressed: bool = False) -> Reply:
+    """สิ่งที่พิมพ์มาไม่ใช่ชื่ออุปกรณ์ (เช่น "อุปกรณ์", "ของ", ตัวเลขล้วน, ป้ายปุ่มเมนู) — ถามใหม่
+
+    บอกตรงๆ ว่าทำไมไม่รับ แล้ววางปุ่มของในสต็อก + ยกเลิกไว้ให้กดต่อได้ทันที
+    ไม่งั้นผู้ใช้จะพิมพ์คำเดิมซ้ำแล้วนึกว่าบอทค้าง
+    """
+    if menu_pressed:
+        head = (
+            "ตอนนี้กำลังเบิกอุปกรณ์อยู่ครับ 📦\n"
+            "ระบุอุปกรณ์ที่ต้องการก่อน หรือกด '❌ ยกเลิก' แล้วค่อยเลือกเมนูใหม่"
+        )
+    else:
+        shown = (typed or "").strip()[:40] or "-"
+        head = f"\"{shown}\" ยังไม่ใช่ชื่ออุปกรณ์ครับ 🙏\nบอกด้วยว่าต้องการเบิกอะไร เช่น เมาส์, สาย LAN 5 เมตร"
+    return Reply(text=f"{head}\n\n{_ITEM_HINT}\n\n{_ITEM_REQUIRED}", quick=_item_buttons(stock_items))
 
 
 def ask_qty(item_name: str, unit: str = "ชิ้น") -> Reply:
     return Reply(
         text=(
             f"เลือก: {item_name} ✅\n\n"
-            f"ต้องการกี่{unit}ครับ? (พิมพ์ตัวเลข)\n\n"
-            "(พิมพ์ 'ยกเลิก' เพื่อออก)"
-        )
+            f"ต้องการกี่{unit}ครับ? (พิมพ์ตัวเลข)"
+        ),
+        quick=[CANCEL_BUTTON],
     )
 
 
 def invalid_qty(unit: str = "ชิ้น") -> Reply:
-    return Reply(text=f"กรุณาพิมพ์เป็นตัวเลขครับ เช่น 1 หรือ 2 (จำนวน{unit})")
+    return Reply(text=f"กรุณาพิมพ์เป็นตัวเลขครับ เช่น 1 หรือ 2 (จำนวน{unit})", quick=[CANCEL_BUTTON])
 
 
-def ask_more_items(items: list[dict]) -> Reply:
+def ask_more_items(items: list[dict], *, retry: bool = False) -> Reply:
     summary = "\n".join(f"• {i['name']} x{i['qty']}" for i in items)
+    head = "ไม่เข้าใจข้อความนี้ครับ 🙏\n\n" if retry else ""
     return Reply(
-        text=f"รายการที่เบิกตอนนี้:\n{summary}\n\nต้องการเพิ่มอีกไหมครับ?",
-        quick=[("➕ เพิ่มอีก", "a=add_item"), ("✅ พอแล้ว", "a=done_items")],
+        text=(
+            f"{head}รายการที่เบิกตอนนี้:\n{summary}\n\nต้องการเพิ่มอีกไหมครับ?\n"
+            "(พิมพ์ชื่ออุปกรณ์ชิ้นถัดไปได้เลย หรือกด '✅ พอแล้ว')"
+        ),
+        quick=[("➕ เพิ่มอีก", "a=add_item"), ("✅ พอแล้ว", "a=done_items"), CANCEL_BUTTON],
     )
 
 
@@ -1113,52 +1413,165 @@ def my_tickets_answer(tickets: list[dict]) -> Reply:
     return Reply(text="\n".join(lines), quick=MENU_BUTTONS, flex=F.my_tickets(tickets))
 
 
-# ---------------------------------------------------------------- ยืนยันผลการแก้ไข
+# ---------------------------------------------------------------- ผลการแก้ไข / ให้คะแนน
+#
+# ตั้งแต่ ต.ค. 2026 ทีม IT ปิดงานเองได้ ผู้แจ้งได้การ์ด "แก้ไขเรียบร้อยแล้ว" ที่มีดาว 1–5 + ปุ่ม "ยังมีปัญหาอยู่"
+# (การ์ดสร้างฝั่ง Next.js: src/lib/line/rating-card.ts) ส่วนการ์ดยืนยันรุ่นเก่ายังกดได้ เพราะค้างอยู่ในห้องแชท
+
+RATING_MAX = 5
+# ต้องตรงกับ MAX_RATING_COMMENT ฝั่ง Next.js (src/lib/ticket-feedback.ts) — นับแบบ UTF-16 เหมือนฝั่งนั้น
+MAX_RATING_COMMENT = 500
+# พิมพ์คำเหล่านี้ตอนบอทขอความเห็น = ไม่อยากเขียน (เหมือนกดปุ่ม "ข้าม")
+RATE_SKIP_WORDS = {"ข้าม", "skip"}
+
+
+def rating_buttons(code: str) -> list[tuple[str, str]]:
+    """ปุ่มดาวแบบ quick reply (⭐ ถึง ⭐⭐⭐⭐⭐) — data แบบเดียวกับดาวบนการ์ดปิดงาน"""
+    return [("⭐" * n, f"a=rate&code={code}&s={n}") for n in range(1, RATING_MAX + 1)]
 
 
 def confirm_done_thanks(code: str) -> Reply:
-    """ผู้แจ้งกด "ตกลง" แล้ว — ต้องตอบให้ชัดว่าเรื่องปิดแล้วจริง
+    """ผู้แจ้งกด "เรียบร้อยแล้ว" บนการ์ดรุ่นเก่า — ต้องตอบให้ชัดว่าเรื่องปิดแล้วจริง
 
     ถ้าตอบแค่ "ขอบคุณครับ" ผู้ใช้จะไม่รู้ว่ากดติดหรือเปล่า แล้วจะกดซ้ำอีกหลายครั้ง
+    แนบดาวให้คะแนนไว้ด้วย — เรื่องจากการ์ดเก่าจะได้มีคะแนนเหมือนเรื่องที่ปิดด้วยระบบใหม่
+    (เป็นคำตอบ reply จึงไม่กินโควตา push)
     """
     return Reply(
         text=(
             f"ขอบคุณที่ยืนยันครับ 🙏\n\n"
             f"เรื่อง {code} ปิดเรียบร้อยแล้ว\n"
             "สถานะ: ดำเนินการเสร็จสิ้น ✅\n\n"
-            "ถ้ามีปัญหาอีก แจ้งเข้ามาใหม่ได้ตลอดครับ"
+            "ช่วยให้คะแนนการบริการครั้งนี้ด้วยปุ่มดาวด้านล่างได้เลยครับ\n"
+            "(1 ดาว = ต้องปรับปรุง · 5 ดาว = ดีมาก)"
         ),
-        quick=MENU_BUTTONS,
+        quick=rating_buttons(code),
     )
 
 
-def still_broken_ack(code: str) -> Reply:
+def still_broken_ack(code: str, *, handed_off: bool = False) -> Reply:
+    """ผู้แจ้งกด "ยังมีปัญหาอยู่" / "ยังไม่หาย" — เปิดเรื่องกลับและแจ้งทีม IT แล้ว
+
+    handed_off=True: บอทเปลี่ยนเป็นโหมดคุยกับเจ้าหน้าที่ให้เลย (เงียบกับคนนี้) เพราะสิ่งที่ผู้แจ้งพิมพ์ต่อจากนี้
+    คืออาการที่ยังเป็นอยู่ ซึ่งเป็นของเจ้าหน้าที่ — ถ้าบอทยังตอบ จะตีความเป็นเรื่องใหม่แล้วถามสาขาแทรกกลางบทสนทนา
+    """
+    if handed_off:
+        return Reply(
+            text=(
+                f"รับทราบครับ 🙏 เปิดเรื่อง {code} กลับมาให้ทีม IT ตรวจสอบอีกครั้งแล้ว\n\n"
+                "👤 เจ้าหน้าที่ได้รับแจ้งแล้ว และจะคุยกับคุณต่อในแชทนี้\n"
+                "พิมพ์เล่าอาการที่ยังเป็นอยู่ หรือส่งรูปหน้าจอมาได้เลยครับ\n\n"
+                "ระหว่างนี้บอทจะไม่ตอบแทรก — อยากใช้เมนูบอท กด '🤖 กลับไปใช้บอท'"
+            ),
+            quick=[RESUME_BUTTON],
+            keep_unread=True,
+        )
     return Reply(
         text=(
             f"รับทราบครับ เรื่อง {code} ถูกส่งกลับให้ทีม IT ตรวจสอบอีกครั้งแล้ว\n\n"
-            "ถ้าสะดวก พิมพ์บอกอาการที่ยังเป็นอยู่เพิ่มได้เลยครับ จะได้แก้ตรงจุด"
+            "ทีม IT ได้รับแจ้งแล้ว และจะติดต่อกลับไปครับ 🙏"
         ),
         quick=MENU_BUTTONS,
     )
 
 
 def confirm_not_owner() -> Reply:
-    """คนกดไม่ใช่ผู้แจ้งของเรื่องนั้น — เกิดได้จริงถ้าเลขที่ตั๋วถูกส่งต่อในแชทกลุ่ม"""
+    """คนกดไม่ใช่ผู้แจ้งของเรื่องนั้น — เกิดได้จริงถ้าเลขที่ตั๋วถูกส่งต่อในแชทกลุ่ม
+    ใช้ทั้งปุ่มยืนยัน ปุ่มยังมีปัญหา และดาวให้คะแนน จึงไม่ระบุว่ากดปุ่มอะไร"""
     return Reply(
         text=(
-            "ยืนยันให้ไม่ได้ครับ เพราะเรื่องนี้ไม่ได้แจ้งจากบัญชีนี้\n\n"
-            "ให้ผู้ที่แจ้งเรื่องเป็นคนกดยืนยันนะครับ"
+            "ปุ่มนี้กดได้เฉพาะคนที่แจ้งเรื่องนี้ครับ เพราะเรื่องนี้ไม่ได้แจ้งจากบัญชีนี้\n\n"
+            "ถ้ามีปัญหาแบบเดียวกัน กด 'แจ้งเรื่องใหม่' ได้เลยครับ"
         ),
         quick=MENU_BUTTONS,
     )
 
 
 def confirm_not_resolved(code: str, status_label: str) -> Reply:
-    """กดจากข้อความเก่าหลังสถานะเปลี่ยนไปแล้ว — บอกสถานะปัจจุบันดีกว่าทำเงียบๆ"""
+    """กด "เรียบร้อยแล้ว" จากการ์ดเก่าหลังสถานะเปลี่ยนไปแล้ว — บอกสถานะปัจจุบันดีกว่าทำเงียบๆ"""
     return Reply(
         text=(
             f"เรื่อง {code} ไม่ได้อยู่ในขั้นรอยืนยันแล้วครับ\n\n"
             f"สถานะตอนนี้: {status_label}"
+        ),
+        quick=MENU_BUTTONS,
+    )
+
+
+def reopen_not_possible(code: str, status_label: str) -> Reply:
+    """กด "ยังมีปัญหาอยู่" กับเรื่องที่ไม่ได้ปิดอยู่ (ส่วนใหญ่คือกดซ้ำหลังเปิดกลับไปแล้ว)"""
+    return Reply(
+        text=(
+            f"เรื่อง {code} ไม่ได้อยู่ในสถานะปิดงานแล้วครับ — ไม่ต้องกดซ้ำ\n\n"
+            f"สถานะตอนนี้: {status_label}\n"
+            "อยากเล่าอาการเพิ่ม กด '👤 คุยกับเจ้าหน้าที่' ได้เลยครับ"
+        ),
+        quick=MENU_BUTTONS,
+    )
+
+
+def reopen_expired(code: str, days: int | None) -> Reply:
+    """ปิดงานไปนานเกินกำหนดแล้ว — ให้แจ้งใหม่แทนการดึงเรื่องเก่ากลับมา (เหตุผลอยู่ที่ REOPEN_WINDOW_DAYS ฝั่ง Next.js)"""
+    since = f"เกิน {days} วัน" if days else "นานเกินกำหนด"
+    return Reply(
+        text=(
+            f"เรื่อง {code} ปิดงานไป{since}แล้ว เปิดกลับไม่ได้ครับ\n\n"
+            f"ถ้ายังมีปัญหาอยู่ กด 'แจ้งเรื่องใหม่' แล้วใส่เลขที่ {code} ไว้ในรายละเอียด "
+            "ทีม IT จะดูประวัติเดิมประกอบให้ครับ"
+        ),
+        quick=MENU_BUTTONS,
+    )
+
+
+def _stars(score: int) -> str:
+    return f"{'⭐' * score} ({score}/{RATING_MAX})"
+
+
+def rate_thanks(score: int) -> Reply:
+    return Reply(
+        text=f"ขอบคุณสำหรับคะแนน {_stars(score)} ครับ 🙏\nถ้ามีปัญหาอีก แจ้งเข้ามาใหม่ได้ตลอดครับ",
+        quick=MENU_BUTTONS,
+    )
+
+
+def rate_ask_comment(code: str, score: int) -> Reply:
+    """คะแนนต่ำ — ถามต่อว่าควรปรับปรุงตรงไหน แต่ต้องข้ามได้เสมอ
+    บังคับตอบแล้วคนจะเลิกให้คะแนนต่ำไปเลย ซึ่งคือคะแนนที่ทีม IT อยากรู้ที่สุด"""
+    return Reply(
+        text=(
+            f"ขอบคุณสำหรับคะแนน {_stars(score)} ครับ 🙏\n\n"
+            "ช่วยบอกสั้นๆ ได้ไหมครับว่าควรปรับปรุงตรงไหน ทีม IT จะนำไปแก้ไข\n"
+            "พิมพ์ตอบได้เลย หรือกด 'ข้าม'"
+        ),
+        quick=[("ข้าม", f"a=rate_skip&code={code}")],
+    )
+
+
+def rate_comment_thanks() -> Reply:
+    return Reply(
+        text="ได้รับความเห็นแล้วครับ ขอบคุณมากครับ 🙏\nทีม IT จะนำไปปรับปรุงการบริการ",
+        quick=MENU_BUTTONS,
+    )
+
+
+def rate_comment_skipped() -> Reply:
+    return Reply(text="รับทราบครับ ขอบคุณที่ให้คะแนนครับ 🙏", quick=MENU_BUTTONS)
+
+
+def rate_comment_failed(code: str) -> Reply:
+    """บันทึกความเห็นไม่สำเร็จ — บอทยังรอความเห็นอยู่ ผู้ใช้พิมพ์ส่งใหม่ได้เลยไม่ต้องกดดาวใหม่"""
+    return Reply(
+        text="ขออภัยครับ ระบบขัดข้องชั่วคราว บันทึกความเห็นไม่สำเร็จ 🙏\nลองพิมพ์ส่งอีกครั้ง หรือกด 'ข้าม'",
+        quick=[("ข้าม", f"a=rate_skip&code={code}")],
+    )
+
+
+def rate_not_completed(code: str, status_label: str) -> Reply:
+    """กดดาวบนการ์ดเก่า หลังเรื่องถูกเปิดกลับไปแล้ว (เช่นกด "ยังมีปัญหาอยู่" ไปก่อน)"""
+    return Reply(
+        text=(
+            f"เรื่อง {code} ยังไม่ได้ปิดงานครับ (สถานะตอนนี้: {status_label})\n"
+            "ให้คะแนนได้หลังทีม IT ปิดงานแล้ว — จะมีการ์ดส่งมาให้อีกครั้งครับ"
         ),
         quick=MENU_BUTTONS,
     )

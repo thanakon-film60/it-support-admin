@@ -2,8 +2,10 @@ import { listCustodianRows } from "@/lib/db/equipment";
 import { listUsers } from "@/lib/db/users";
 import type { CustodianFormOptions } from "@/lib/types";
 import { CustodianBoard } from "@/components/assets/CustodianBoard";
+import { requireSession } from "@/lib/auth";
 
-export default function CustodianPage() {
+export default async function CustodianPage() {
+  await requireSession("custodian");
   const rows = listCustodianRows();
   const users = listUsers();
 

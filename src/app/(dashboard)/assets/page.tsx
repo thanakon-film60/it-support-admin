@@ -2,6 +2,7 @@ import { listEquipment, listEquipmentSummary } from "@/lib/db/equipment";
 import { listUsers } from "@/lib/db/users";
 import type { AssetFormOptions, EquipmentStatus } from "@/lib/types";
 import { AssetsBoard } from "@/components/assets/AssetsBoard";
+import { requireSession } from "@/lib/auth";
 
 /** ตัดค่าว่าง/ขีด ตัดช่องว่างหัวท้าย ตัดตัวซ้ำ แล้วเรียงแบบภาษาไทย */
 function uniqSorted(values: (string | null | undefined)[]): string[] {
@@ -28,6 +29,7 @@ export default async function AssetsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await requireSession("assets");
   const params = await searchParams;
   const raw = Array.isArray(params.status) ? params.status[0] : params.status;
   const initialStatus: "all" | EquipmentStatus = EQUIPMENT_STATUSES.includes(

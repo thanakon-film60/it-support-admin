@@ -244,7 +244,7 @@ class Knowledge:
         return []
 
     def branch_groups(self, company: str) -> list[dict[str, Any]]:
-        """กลุ่ม/ทีมของบริษัทหนึ่ง เรียงตามลำดับที่หลังบ้านจัดไว้ (ภูมิภาค/ผังทีม)"""
+        """กลุ่ม/ทีมของบริษัทหนึ่ง เรียงตามลำดับที่หลังบ้านจัดไว้ (เขตของ Area Manager ตามผังทีมขาย)"""
         entry = next((c for c in self.companies if c.get("code") == company), None)
         if entry and entry.get("groups"):
             return entry["groups"]

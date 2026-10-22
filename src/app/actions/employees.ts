@@ -3,14 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
 import {
+  applyRegistryImport,
   createEmployee,
   deleteEmployee,
   getEmployeeByCode,
   listEmployees,
+  MassDeactivationError,
+  planRegistryImport,
   setEmployeeActive,
   unbindLineUser,
   updateEmployee,
+  type RegistryImportResult,
+  type RegistryPerson,
+  type RegistryPlan,
 } from "@/lib/db/employees";
+import { RegistryError, sanitizeRegistryRows } from "@/lib/employee-import";
 import { isCompanyCode } from "@/lib/companies";
 import { listEquipment } from "@/lib/db/equipment";
 import { listTickets } from "@/lib/db/tickets";
@@ -33,7 +40,7 @@ function revalidateAll() {
 
 /** จำนวน "ประวัติที่ผูกอยู่" ของพนักงาน 1 คน — ใช้ตัดสินว่าลบถาวรได้ไหม */
 export async function employeeUsage(id: string): Promise<{ tickets: number; assets: number }> {
-  await requireSession();
+  await requireSession("employees");
   return {
     tickets: listTickets().filter((t) => t.requester_id === id).length,
     assets: listEquipment().filter((e) => e.current_holder_id === id).length,
@@ -75,7 +82,7 @@ export async function createEmployeeAction(
   _prev: EmployeeFormState,
   formData: FormData
 ): Promise<EmployeeFormState> {
-  await requireSession();
+  await requireSession("employees");
 
   const input = readForm(formData);
   const error = validate(input);
@@ -90,7 +97,7 @@ export async function updateEmployeeAction(
   id: string,
   formData: FormData
 ): Promise<EmployeeFormState> {
-  await requireSession();
+  await requireSession("employees");
 
   const target = listEmployees(true).find((u) => u.id === id);
   if (!target) return { error: "ไม่พบพนักงานคนนี้" };
@@ -121,7 +128,7 @@ export async function toggleEmployeeAction(
   id: string,
   active: boolean
 ): Promise<EmployeeFormState> {
-  await requireSession();
+  await requireSession("employees");
   if (!setEmployeeActive(id, active)) return { error: "ไม่พบพนักงานคนนี้" };
   revalidateAll();
   return { success: true };
@@ -132,7 +139,7 @@ export async function toggleEmployeeAction(
  *  ใช้ตอนพนักงานลาออกแล้วมือถือ/บัญชี LINE ถูกส่งต่อ หรือตอนผูกผิดคนไว้ตั้งแต่แรก
  *  ซึ่งเจ้าตัวแก้เองในแชทไม่ได้ถ้าไม่รู้ว่ามีปุ่ม "เปลี่ยนคนแจ้ง" อยู่ */
 export async function unlinkEmployeeLineAction(id: string): Promise<EmployeeFormState> {
-  await requireSession();
+  await requireSession("employees");
   const target = listEmployees(true).find((u) => u.id === id);
   if (!target) return { error: "ไม่พบพนักงานคนนี้" };
   if (!target.line_user_id) return { error: "คนนี้ยังไม่ได้ผูกบัญชี LINE" };
@@ -146,7 +153,7 @@ export async function unlinkEmployeeLineAction(id: string): Promise<EmployeeForm
  *  มี ticket หรือถือทรัพย์สินอยู่ต้องใช้ "ปิดการใช้งาน" แทน ไม่งั้นประวัติจะอ้างถึงคนที่ไม่มีตัวตน
  *  และรายงานย้อนหลังจะบอกไม่ได้ว่าใครแจ้ง/ใครถือเครื่องอยู่ตอนนั้น */
 export async function deleteEmployeeAction(id: string): Promise<EmployeeFormState> {
-  await requireSession();
+  await requireSession("employees");
 
   const target = listEmployees(true).find((u) => u.id === id);
   if (!target) return { error: "ไม่พบพนักงานคนนี้" };
@@ -165,4 +172,98 @@ export async function deleteEmployeeAction(id: string): Promise<EmployeeFormStat
   if (!deleteEmployee(id)) return { error: "ลบไม่สำเร็จ" };
   revalidateAll();
   return { success: true };
+}
+
+// ---------------------------------------------------------------- นำเข้าทะเบียนล่าสุดจาก HR (020)
+//
+// หน้าเว็บอ่านไฟล์ .xlsx เอง แล้วส่งมาแค่ "แถวข้อมูล" — เหตุผลอยู่หัวไฟล์ lib/employee-import.ts
+// ทุกแถวถูกตรวจซ้ำที่นี่ (sanitizeRegistryRows) เพราะของที่มาจากเบราว์เซอร์แก้ได้ทุกช่อง
+// ไม่มีขั้น "เก็บไฟล์ไว้รอยืนยัน" — ยืนยัน = หน้าเว็บส่งแถวชุดเดิมมาอีกรอบ แล้วคำนวณใหม่จากข้อมูลล่าสุด
+
+/** รายชื่อตัวอย่างในหน้าตรวจผลไม่เกินนี้ต่อกลุ่ม — ตัวเลขใน counts คือยอดจริง */
+const PREVIEW_LIST_LIMIT = 100;
+
+export interface RegistryPreview {
+  counts: {
+    in_file: number;
+    inserted: number;
+    updated: number;
+    reactivated: number;
+    unchanged: number;
+    deactivate: number;
+    kept_missing: number;
+    ambiguous: number;
+    without_code: number;
+  };
+  inserted: RegistryPerson[];
+  updated: RegistryPerson[];
+  reactivated: RegistryPerson[];
+  deactivate: RegistryPerson[];
+  ambiguous: string[];
+  kept_missing_by_prefix: Record<string, number>;
+  keep_prefixes: string[];
+  active_in_scope: number;
+  mass: boolean;
+  departments: RegistryPlan["departments"];
+}
+
+function toPreview(plan: RegistryPlan): RegistryPreview {
+  const cut = <T,>(list: T[]) => list.slice(0, PREVIEW_LIST_LIMIT);
+  return {
+    counts: {
+      in_file: plan.in_file,
+      inserted: plan.inserted.length,
+      updated: plan.updated.length,
+      reactivated: plan.reactivated.length,
+      unchanged: plan.unchanged,
+      deactivate: plan.deactivate.length,
+      kept_missing: plan.kept_missing,
+      ambiguous: plan.ambiguous.length,
+      without_code: plan.without_code,
+    },
+    inserted: cut(plan.inserted),
+    updated: cut(plan.updated),
+    reactivated: cut(plan.reactivated),
+    deactivate: cut(plan.deactivate),
+    ambiguous: cut(plan.ambiguous),
+    kept_missing_by_prefix: plan.kept_missing_by_prefix,
+    keep_prefixes: plan.keep_prefixes,
+    active_in_scope: plan.active_in_scope,
+    mass: plan.mass,
+    departments: plan.departments,
+  };
+}
+
+/** ดูผลก่อนบันทึก — ไม่เขียนอะไรเลย */
+export async function previewRegistryAction(
+  rows: unknown
+): Promise<{ error?: string; preview?: RegistryPreview }> {
+  await requireSession("employees");
+  try {
+    const clean = sanitizeRegistryRows(rows);
+    if (clean.length === 0) return { error: "ไม่มีรายชื่อที่ใช้ได้ในไฟล์นี้" };
+    return { preview: toPreview(planRegistryImport(clean)) };
+  } catch (e) {
+    if (e instanceof RegistryError) return { error: e.message };
+    throw e;
+  }
+}
+
+/** นำเข้าจริง — จะเปลี่ยนคนจำนวนมากเป็นสถานะ 0 ต้องส่ง confirmMass=true (หน้าเว็บให้ติ๊กยืนยันก่อน) */
+export async function importRegistryAction(
+  rows: unknown,
+  confirmMass: boolean
+): Promise<{ error?: string; needConfirm?: boolean; result?: RegistryImportResult }> {
+  await requireSession("employees");
+  try {
+    const clean = sanitizeRegistryRows(rows);
+    if (clean.length === 0) return { error: "ไม่มีรายชื่อที่ใช้ได้ในไฟล์นี้" };
+    const result = applyRegistryImport(clean, { confirmMass: confirmMass === true });
+    revalidateAll();
+    return { result };
+  } catch (e) {
+    if (e instanceof MassDeactivationError) return { error: e.message, needConfirm: true };
+    if (e instanceof RegistryError) return { error: e.message };
+    throw e;
+  }
 }

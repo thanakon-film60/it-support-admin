@@ -1,0 +1,142 @@
+[
+  {
+    "id": "b5d3fd5e-3433-426d-8a28-32033183be95",
+    "at": "2026-10-13T10:40:58.055Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "unlock",
+    "entry_id": null,
+    "label": null,
+    "detail": null
+  },
+  {
+    "id": "48fdc26d-4109-4037-8305-72b8102a77e1",
+    "at": "2026-10-13T10:41:37.796Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "unlock",
+    "entry_id": null,
+    "label": null,
+    "detail": null
+  },
+  {
+    "id": "d0479cf7-8970-48bf-a37d-f570b52b7565",
+    "at": "2026-10-13T10:42:17.118Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "import",
+    "entry_id": null,
+    "label": null,
+    "detail": "เพิ่ม 33 · ซ้ำ 0 · แถวมีปัญหา 0"
+  },
+  {
+    "id": "5f6ce633-8b5a-48c0-a748-70758c8345c1",
+    "at": "2026-10-13T10:42:19.873Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "30cbc7b5-a9e4-4e65-972f-6632faa2e02d",
+    "label": "v1.rhMPjJcg0AfJjhG_.CAjyc84johI2zUqBP0pj-w.aBhdryCF2zvbfOnQ-ifnVMV9KNiWadagW0sngkNU_f2znEeqQ2U5whowmruRox6V",
+    "detail": null
+  },
+  {
+    "id": "f1462dbb-aa04-4d90-9961-9aa0e57e924e",
+    "at": "2026-10-13T10:42:22.204Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "0786ceaa-36af-4b1f-bfcd-e5d94904fa25",
+    "label": "v1.WZMxSR-B7_hSfZwS.fiXIDcu46MEnBVRP_TNdIw.Yz-tDsOCmNUOQYAKXO-fyYz67f19MQCoT7AEWVVNUmvNTmrZCQPvJqYu2ABpI_I",
+    "detail": null
+  },
+  {
+    "id": "421b4fb0-b03a-40f1-bccc-588160c91f3c",
+    "at": "2026-10-13T10:42:24.234Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "471753cd-e539-4897-904a-20674731d5d2",
+    "label": "v1.hICZFi_DCmqjni0E.qi4O_VnTTlWURznpZcDpbw.KLOI0rhwVUbaZJxcKOpJMXlvGazXAmeZ2VbKNna7ew",
+    "detail": null
+  },
+  {
+    "id": "c44d2cd1-895f-4f6f-98db-7a0ec64930dc",
+    "at": "2026-10-13T10:42:26.680Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "e0de184e-98a5-45ba-8bec-b1824d45edce",
+    "label": "v1.F0_kIS5te5iOVzOv.QBFDuAkoJ6wHv873DMh8gA.CXcQ2PCg4B9sDHTUPsqGr2neI_vwbb5S2ttieRER",
+    "detail": null
+  },
+  {
+    "id": "2e483c50-911f-41e9-80fe-e1e4565915b9",
+    "at": "2026-10-13T10:42:44.043Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "d5decb82-2f76-43ce-891a-5aa7e94787a8",
+    "label": "v1.zHd0TKZRMV_gRLAE.0TrIteAn_FuQV0CvNCmouQ.QXwo8jPhE6KczBvckwLGF7kv5cn0t4kzhtlrhyMIggCsFt4mJQ",
+    "detail": null
+  },
+  {
+    "id": "989c74fd-51c3-4cc7-8fc1-6e041c40315f",
+    "at": "2026-10-13T10:42:50.476Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "e423b942-a9e7-4d09-9494-806576a83bfc",
+    "label": "v1.SLmGu1Kal7KhkO2F.yzBt5PfBS2jAGRDRpj6v1Q.RNXbbm1MseBmjbn47psZWLKK6f_8kn2bTHKR",
+    "detail": null
+  },
+  {
+    "id": "9fd85ab3-7000-4339-8925-851fa184d66e",
+    "at": "2026-10-13T10:42:52.455Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "aefbf02a-6a49-427e-a3d8-35526289f644",
+    "label": "v1.PYl0xu5a-45GpkjV.daa90jT4Jv91U-2C9z-7lQ.rEYMChAhrt7QDcf8pY_8swsnltZIVW8",
+    "detail": null
+  },
+  {
+    "id": "80b2538c-86a4-4f90-a3fe-ea24ee5bb84a",
+    "at": "2026-10-13T10:43:10.976Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "ebfadf51-38ad-4a8a-99d3-c9c1b2904c0b",
+    "label": "v1.3719D9Peb07oHUPW.b-5x8x5iNMC1vqzzi50Y-w.qUso7WK4pD_8NX39nyU",
+    "detail": null
+  },
+  {
+    "id": "e2540aeb-a27e-4019-9f30-52f12e36d681",
+    "at": "2026-10-13T10:43:14.161Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "view",
+    "entry_id": "973e4161-232b-4853-8b41-f3e34f50d2b4",
+    "label": "v1.E0cX4MOblTc5jVKc.h4W-8yMz3o_U4OqBcfmZvg.NxeXY8w1g8_l-g",
+    "detail": null
+  },
+  {
+    "id": "0f8de663-24fb-49bd-a659-18832988e7d9",
+    "at": "2026-10-13T10:43:52.351Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "lock",
+    "entry_id": null,
+    "label": null,
+    "detail": null
+  },
+  {
+    "id": "763a0c45-5ec6-4d7c-b6a5-1f49ebfebef3",
+    "at": "2026-10-13T10:44:16.456Z",
+    "staff_id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "staff_name": "ผู้ดูแลระบบ IT",
+    "action": "unlock",
+    "entry_id": null,
+    "label": null,
+    "detail": null
+  }
+]

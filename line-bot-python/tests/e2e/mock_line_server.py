@@ -33,12 +33,32 @@ async def profile(user_id: str):
     return {"userId": user_id, "displayName": "Film", "pictureUrl": "", "statusMessage": ""}
 
 
+# ข้อมูลบัญชี — บอทถามตอนสตาร์ทว่าเปิด Chat อยู่ไหม (ปุ่ม "คุยกับเจ้าหน้าที่" ใช้ได้เฉพาะตอนเปิด)
+@app.get("/v2/bot/info")
+async def bot_info():
+    return {
+        "userId": "U_mock_bot", "basicId": "@mock", "displayName": "IT Support (mock)",
+        "chatMode": "chat", "markAsReadMode": "manual",
+    }
+
+
+# บอทสั่ง "อ่านแล้ว" ให้ข้อความที่ตอบจบเอง — เก็บ token ไว้ตรวจว่าสั่งเฉพาะข้อความที่ควรสั่ง
+marked: list[str] = []
+
+
+@app.post("/v2/bot/chat/markAsRead")
+async def mark_as_read(request: Request):
+    marked.append((await request.json()).get("markAsReadToken", ""))
+    return {}
+
+
 @app.get("/_captured")
 async def get_captured():
-    return {"count": len(captured), "items": captured}
+    return {"count": len(captured), "items": captured, "marked": marked}
 
 
 @app.post("/_reset")
 async def reset():
     captured.clear()
+    marked.clear()
     return {"ok": True}

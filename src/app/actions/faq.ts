@@ -37,7 +37,7 @@ export async function createFaqItemAction(
   _prev: FaqFormState,
   formData: FormData
 ): Promise<FaqFormState> {
-  await requireSession();
+  await requireSession("faq");
 
   const title = String(formData.get("title") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim();
@@ -70,7 +70,7 @@ export async function updateFaqItemAction(
   _prev: FaqFormState,
   formData: FormData
 ): Promise<FaqFormState> {
-  await requireSession();
+  await requireSession("faq");
 
   const existing = getFaqItemById(id);
   if (!existing) return { error: "ไม่พบ FAQ นี้" };
@@ -112,7 +112,7 @@ export async function updateFaqItemAction(
 }
 
 export async function deleteFaqItemAction(id: string): Promise<FaqFormState> {
-  await requireSession();
+  await requireSession("faq");
   if (!getFaqItemById(id)) return { error: "ไม่พบ FAQ นี้" };
   // FAQ ไม่ได้ถูกอ้างจากที่อื่น (บอทค้นสดทุกครั้ง) จึงลบได้จริงโดยไม่ทิ้งแถวกำพร้าไว้
   deleteFaqItem(id);

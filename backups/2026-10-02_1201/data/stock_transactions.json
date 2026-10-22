@@ -1,0 +1,22 @@
+[
+  {
+    "id": "421a9b92-c88b-4dc8-82b3-fa4c939a3105",
+    "stock_item_id": "1839431b-da5f-4008-a125-a560688f399e",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ธีรภัทร it)",
+    "reference_no": "ITRQ2026090011",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-25T15:58:44.233Z"
+  },
+  {
+    "id": "637c797e-42f5-4cc0-84a0-de914b01c5b2",
+    "stock_item_id": "019fddce-e97c-4bee-bc23-5cffd5756f79",
+    "type": "out",
+    "quantity": 3,
+    "staff_name": "LINE Bot (ธีรภัทร บัวหอม)",
+    "reference_no": "ITRQ2026090012",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-28T09:21:44.934Z"
+  }
+]

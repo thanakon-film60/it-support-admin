@@ -1,5 +1,5 @@
 import { listStockItemsWithStatus } from "@/lib/db/stock";
-import { getSession } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { StockBoard } from "@/components/stock/StockBoard";
 
 // searchParams ของ Next.js 16 เป็น Promise — ดูหมายเหตุเดียวกันที่หน้า tickets
@@ -8,6 +8,7 @@ export default async function StockPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const session = await requireSession("stock");
   const params = await searchParams;
   const raw = Array.isArray(params.status) ? params.status[0] : params.status;
   // "low" = ใกล้หมดทั้งสองระดับ (ถึงขั้นต่ำ + ต่ำกว่า) ให้ตรงกับตัวเลขบนการ์ดหน้าภาพรวม
@@ -16,11 +17,10 @@ export default async function StockPage({
     : "all";
 
   const items = listStockItemsWithStatus();
-  const session = await getSession();
   return (
     <StockBoard
       items={items}
-      staffName={session?.displayName ?? "ไม่ระบุ"}
+      staffName={session.displayName || "ไม่ระบุ"}
       initialStatus={initialStatus}
     />
   );

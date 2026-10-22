@@ -18,7 +18,7 @@ const eslintConfig = defineConfig([
   {
     // เทสต์กับสคริปต์กลุ่มนี้รันด้วย node ตรงๆ (.cjs) จึงต้องใช้ require()
     // เป็นรูปแบบที่ถูกต้องของไฟล์ .cjs ไม่ใช่ของที่ควรแก้ให้เป็น import
-    files: ["tests/**/*.cjs", "scripts/**/*.cjs", "db/**/*.js"],
+    files: ["tests/**/*.cjs", "scripts/**/*.cjs", "tools/**/*.cjs", "db/**/*.js"],
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
 ]);

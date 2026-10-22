@@ -477,6 +477,8 @@ def welcome(display_name: str | None) -> dict:
         footer=[
             _button("แจ้งเรื่องใหม่", "a=start", color=INFO_COLOR),
             _button("คำถามที่พบบ่อย", "a=faq_menu", style="secondary"),
+            # เรื่องนอกขอบเขตบอท — ส่งต่อให้ทีม IT ตอบเองในแชท (ดู flow._handoff_gate)
+            _button("คุยกับเจ้าหน้าที่", "a=human", style="secondary"),
         ],
     )
 
@@ -591,11 +593,13 @@ def picker(
     data_for_index,
     footer_buttons: list[dict],
     show_count: bool = True,
+    subtitle: str | None = None,
 ) -> dict:
     """การ์ดเลือกตัวเลือกทีละชั้น พร้อมแบ่งหน้า
 
     options = [{"value","label","sub","count"}] ทั้งหมด (ยังไม่ตัดหน้า)
     data_for_index = ฟังก์ชันรับ index จริงในลิสต์ แล้วคืนสตริง postback data
+    subtitle = คำอธิบายใต้หัวการ์ด (ไม่ส่ง = ข้อความมาตรฐาน)
     """
     total = len(options)
     start = page * PICK_PAGE_SIZE
@@ -638,8 +642,123 @@ def picker(
         )
 
     has_free_text = any(b.get("action", {}).get("data") == "a=describe_request" for b in footer_buttons)
+    if not subtitle:
+        subtitle = "เลือกอุปกรณ์ หรือพิมพ์เรื่องที่ต้องการให้ช่วย" if has_free_text else "แตะรายการเพื่อไปต่อ"
     return _bubble(
-        header=_header(title, INFO_COLOR, "เลือกอุปกรณ์ หรือพิมพ์เรื่องที่ต้องการให้ช่วย" if has_free_text else "แตะรายการเพื่อไปต่อ"),
+        header=_header(title, INFO_COLOR, subtitle),
         body=body,
         footer=footer_buttons,
     )
+
+
+# ---------------------------------------------------------------- การ์ดควบคุมบอท (ทีม IT)
+
+
+def _admin_row(row: dict) -> dict:
+    """หนึ่งแถว = ผู้ใช้ 1 คน · แตะทั้งแถวเพื่อสลับปิด/เปิดบอทกับคนนั้น
+
+    ใช้ box ที่มี action แบบเดียวกับเมนูเลือก (ไม่ใช่ปุ่ม) เพราะชื่อ LINE ยาวและมีอิโมจิได้
+    ป้ายปุ่มของ LINE ยาวได้แค่ 20 ตัวอักษร ชื่อจะโดนตัดจนแยกคนไม่ออก
+    """
+    turning_on = row.get("action") == "on"
+    pill_color = OK_COLOR if turning_on else DANGER_COLOR
+    pill_bg = "#E8F7EE" if turning_on else "#FDECEC"
+    status = row.get("status") or ""
+    detail = row.get("detail")
+    return {
+        "type": "box",
+        "layout": "horizontal",
+        "paddingAll": "10px",
+        "spacing": "sm",
+        "alignItems": "center",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": LINE_COLOR,
+        "borderWidth": "1px",
+        "cornerRadius": "12px",
+        "action": {
+            "type": "postback",
+            "data": row["data"],
+            # ข้อความที่โผล่ในแชทของทีม IT ตอนแตะ — อ่านย้อนหลังได้ว่าเคยสั่งอะไรกับใคร
+            "displayText": f"{row.get('button', '')}: {row.get('name', '')}"[:300],
+        },
+        "contents": [
+            {
+                "type": "box",
+                "layout": "vertical",
+                "flex": 5,
+                "contents": [
+                    _text(row.get("name") or "-", weight="bold"),
+                    _text(f"{status} · {detail}" if detail else status, size="xxs", color=MUTED, margin="xs"),
+                ],
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
+                "flex": 0,
+                "backgroundColor": pill_bg,
+                "cornerRadius": "8px",
+                "paddingAll": "6px",
+                "contents": [
+                    _text(row.get("button") or "-", size="xs", color=pill_color, weight="bold", align="center")
+                ],
+            },
+        ],
+    }
+
+
+def admin_panel(
+    *, bot_off: dict | None, rows: list[dict], page: int, pages: int, total: int, chat_ok: bool,
+) -> dict:
+    """การ์ดควบคุมบอทของทีม IT: สถานะทั้งระบบ + ผู้ใช้ที่ทักมาล่าสุดพร้อมปิด/เปิดรายคน"""
+    if bot_off:
+        by = bot_off.get("by")
+        subtitle = "บอททั้งระบบ: ปิดอยู่" + (f" · โดย {by}" if by else "")
+        dot = DANGER_COLOR
+    else:
+        subtitle = "บอททั้งระบบ: เปิดอยู่"
+        dot = OK_COLOR
+
+    body: list[dict] = []
+    if not chat_ok:
+        body.append({
+            "type": "box", "layout": "vertical", "paddingAll": "10px",
+            "backgroundColor": "#FFF4E5", "cornerRadius": "8px",
+            "contents": [_text(
+                "⚠️ Chat ใน LINE OA ปิดอยู่ — สั่งปิดบอทไม่ได้ เพราะจะไม่มีใครเห็นข้อความ",
+                size="xs", color=WARN_COLOR,
+            )],
+        })
+    if bot_off:
+        body.append({
+            "type": "box", "layout": "vertical", "paddingAll": "10px",
+            "backgroundColor": "#FDECEC", "cornerRadius": "8px",
+            "contents": [_text(
+                "ปิดทั้งระบบอยู่: ทุกคนได้ข้อความแจ้ง 1 ครั้งต่อวัน แล้วบอทเงียบ "
+                "— การตั้งค่ารายคนข้างล่างมีผลหลังเปิดบอททั้งระบบ",
+                size="xs", color=DANGER_COLOR,
+            )],
+        })
+    body.append(_text("ผู้ใช้ที่ทักมาล่าสุด — แตะแถวเพื่อปิด/เปิดบอทกับคนนั้น", size="xs", color=MUTED))
+    body.extend(_admin_row(r) for r in rows)
+    if not rows:
+        body.append(_text("ยังไม่มีผู้ใช้ทักมา", size="sm", color=MUTED))
+    if pages > 1:
+        body.append({
+            "type": "text", "text": f"หน้า {page + 1} / {pages} · ทั้งหมด {total} คน",
+            "size": "xxs", "color": MUTED, "align": "center", "margin": "md",
+        })
+
+    footer: list[dict] = []
+    if bot_off:
+        footer.append(_button("✅ เปิดบอททั้งระบบ", "a=adm_all&v=on", color=OK_COLOR))
+    elif chat_ok:
+        footer.append(_button("⛔ ปิดบอททั้งระบบ", "a=adm_all&v=off", color=DANGER_COLOR))
+    nav: list[dict] = []
+    if page > 0:
+        nav.append(_button("◀ ก่อนหน้า", f"a=adm&p={page - 1}", style="secondary"))
+    if page < pages - 1:
+        nav.append(_button("ถัดไป ▶", f"a=adm&p={page + 1}", style="secondary"))
+    if nav:
+        footer.append({"type": "box", "layout": "horizontal", "spacing": "sm", "contents": nav})
+
+    return _bubble(header=_header("🛠 ควบคุมบอท", dot, subtitle), body=body, footer=footer or None)

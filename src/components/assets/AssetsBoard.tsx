@@ -370,7 +370,7 @@ function RowButton({
       className={`min-h-[2.25rem] rounded-lg border border-line px-3 text-xs text-muted transition disabled:opacity-40 ${
         danger
           ? "hover:border-rose-400/40 hover:text-rose-300"
-          : "hover:border-cyan-400/40 hover:text-accent"
+          : "hover:border-accent/40 hover:text-accent"
       }`}
     >
       {children}

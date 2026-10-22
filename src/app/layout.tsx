@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, IBM_Plex_Sans_Thai, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { themeInitScript } from "@/lib/theme";
 
 // Inter = ตัวหลักตามที่ต้องการ (ละติน + ตัวเลข)
 const inter = Inter({
@@ -32,6 +33,7 @@ export const metadata: Metadata = {
 };
 
 // ให้เต็มจอบนมือถือจริงๆ และสีแถบ address bar กลืนกับพื้นแอป
+// (ค่านี้คือธีมมืดตั้งต้น — คนที่เลือกธีมสว่าง ThemeLauncher เปลี่ยน meta ให้เองตอนเปิดหน้า)
 export const viewport: Viewport = {
   themeColor: "#060910",
   width: "device-width",
@@ -45,10 +47,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // ไม่ใส่ data-theme/data-accent ตั้งต้นจากฝั่ง server โดยตั้งใจ: ถ้า React เป็นเจ้าของ attribute นี้
+    // ทุกครั้งที่หน้าแดชบอร์ดรีเฟรชข้อมูลเอง (router.refresh ทุก 30 วินาที) ค่าอาจถูกตั้งกลับเป็นธีมมืด
+    // suppressHydrationWarning = ยอมให้ attribute ที่สคริปต์ข้างล่างตั้งไว้ต่างจาก HTML ของ server
     <html
       lang="th"
       className={`${inter.variable} ${plexThai.variable} ${jetbrains.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* ตั้งธีม/สีหลักที่เครื่องนี้เลือกไว้ระหว่างอ่าน HTML ก่อนวาดจอครั้งแรก — กันจอดำแวบก่อนเปลี่ยนเป็นธีมสว่าง */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
+      </head>
       <body className="bg-page text-ink antialiased">{children}</body>
     </html>
   );

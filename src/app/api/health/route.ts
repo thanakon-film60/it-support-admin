@@ -2,6 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { SECURITY_FLAGS } from "@/lib/security";
 import { COMPANIES, listBranches } from "@/lib/db/branches";
+import { driveRoot, quotaBytes } from "@/lib/drive/storage";
+import { DEFAULT_NOTIFY_STATUSES } from "@/lib/line/notify";
+import { vaultKeyProblem } from "@/lib/vault/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +47,16 @@ export async function GET() {
     uploadsWritable = false;
   }
 
+  // คลังไฟล์ (/files) อยู่บน volume "drive" แยกจาก app_data — เขียนไม่ได้เมื่อไหร่ (EACCES / ไม่ได้ mount)
+  // หน้า /files ยังเปิดได้ปกติแต่อัปโหลดล้มทุกไฟล์ จึงให้ deploy.ps1 ถามตรงนี้แทนการรอผู้ใช้เจอเอง
+  let driveWritable = false;
+  try {
+    fs.accessSync(driveRoot(), fs.constants.W_OK);
+    driveWritable = true;
+  } catch {
+    driveWritable = false;
+  }
+
   return Response.json({
     ok: true,
     // ฟีเจอร์ชุดที่เพิ่มเข้ามารอบนี้ — ถ้า endpoint นี้ตอบได้ แปลว่าโค้ดชุดใหม่ติดแล้วแน่นอน
@@ -53,10 +66,16 @@ export async function GET() {
       // endpoint รับรูปจากบอท LINE
       attachments_api: true,
       // สถานะที่จะ push แจ้งผู้แจ้งทาง LINE
-      ticket_status_notify: process.env.LINE_NOTIFY_STATUSES ?? "resolved,closed,cancelled",
+      ticket_status_notify: process.env.LINE_NOTIFY_STATUSES ?? DEFAULT_NOTIFY_STATUSES,
+      // ทีม IT ปิดงานเองได้ + การ์ดให้คะแนน 1–5 ดาว (ต.ค. 2026) — false/ไม่มี = ยังเป็นระบบรอผู้แจ้งยืนยัน
+      ticket_rating: true,
       // ตั้งค่า LINE ครบไหม (บอกแค่ว่ามี/ไม่มี ไม่เปิดเผยค่า)
       line_token_configured: Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN),
       internal_api_key_configured: Boolean(process.env.INTERNAL_API_KEY),
+      // หน้ารหัสผ่าน (/passwords) + สิทธิ์รายหน้า (ต.ค. 2026) — กุญแจตั้งครบรูปแบบไหม (บอกแค่ใช่/ไม่ใช่ ไม่เปิดเผยค่า)
+      // false = หน้ารหัสผ่านใช้ไม่ได้ ต้องใส่ VAULT_KEY ใน .env แล้ว deploy ใหม่
+      page_permissions: true,
+      vault_key_configured: vaultKeyProblem() === null,
       // บันทึก log ตอนผู้ใช้กดปุ่ม "เช็คสถานะเรื่องนี้" ในแชท
       ticket_view_log: true,
       // บริษัท/สาขาเป็น master data จริงแล้ว (เดิม derive จาก location ของ ticket เก่า)
@@ -88,6 +107,8 @@ export async function GET() {
       data_store: dataStore,
       collections,
       uploads_writable: uploadsWritable,
+      drive_writable: driveWritable,
+      drive_quota_gb: quotaBytes() / 1024 ** 3,
     },
   });
 }

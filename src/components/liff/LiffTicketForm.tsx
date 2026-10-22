@@ -124,7 +124,7 @@ export function LiffTicketForm({
     setResultCode(result.ticketCode ?? null);
   }
 
-  // จัดสาขาเป็นกลุ่ม (ภูมิภาค / ทีม) ให้ <optgroup> ใช้ — เลือกจากร้อยกว่าสาขาในลิสต์แบนๆ หายาก
+  // จัดสาขาเป็นกลุ่ม (เขตของ Area Manager) ให้ <optgroup> ใช้ — เลือกจากร้อยกว่าสาขาในลิสต์แบนๆ หายาก
   const branchGroups: [string, typeof branches][] = [];
   for (const b of branches) {
     if (b.company !== company) continue;

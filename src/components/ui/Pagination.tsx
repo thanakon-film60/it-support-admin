@@ -155,7 +155,7 @@ export function Pagination<T>({
   if (total <= HIDE_BELOW) return null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white/[0.02] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-ink/[0.02] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
       <div className="flex items-center gap-2 text-xs text-muted">
         <span>
           แสดง <span className="font-num text-ink">{from}</span>–
@@ -187,7 +187,7 @@ export function Pagination<T>({
               type="button"
               onClick={() => setPage(page - 1)}
               disabled={page <= 1}
-              className={`${btn} border border-line text-muted hover:border-cyan-400/40 hover:text-ink`}
+              className={`${btn} border border-line text-muted hover:border-accent/40 hover:text-ink`}
               aria-label="หน้าก่อนหน้า"
             >
               ‹
@@ -212,8 +212,8 @@ export function Pagination<T>({
                     aria-current={p === page ? "page" : undefined}
                     className={`${btn} font-num ${
                       p === page
-                        ? "bg-accent-bg text-accent ring-1 ring-inset ring-cyan-400/35"
-                        : "border border-line text-muted hover:border-cyan-400/40 hover:text-ink"
+                        ? "bg-accent-bg text-accent ring-1 ring-inset ring-accent/35"
+                        : "border border-line text-muted hover:border-accent/40 hover:text-ink"
                     }`}
                   >
                     {p}
@@ -226,7 +226,7 @@ export function Pagination<T>({
               type="button"
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages}
-              className={`${btn} border border-line text-muted hover:border-cyan-400/40 hover:text-ink`}
+              className={`${btn} border border-line text-muted hover:border-accent/40 hover:text-ink`}
               aria-label="หน้าถัดไป"
             >
               ›

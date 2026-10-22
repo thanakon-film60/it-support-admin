@@ -169,7 +169,7 @@ export function BranchesBoard({
                   <p className="font-medium text-ink">
                     {b.name}
                     {b.active === false && (
-                      <span className="ml-2 rounded-full bg-white/[0.06] px-2 py-0.5 text-[0.65rem] text-muted">
+                      <span className="ml-2 rounded-full bg-ink/[0.06] px-2 py-0.5 text-[0.65rem] text-muted">
                         ปิดใช้งาน
                       </span>
                     )}
@@ -239,7 +239,7 @@ export function BranchesBoard({
                 <td className="px-4 py-3 font-medium text-ink">
                   {b.name}
                   {b.active === false && (
-                    <span className="ml-2 rounded-full bg-white/[0.06] px-2 py-0.5 text-[0.65rem] text-muted">
+                    <span className="ml-2 rounded-full bg-ink/[0.06] px-2 py-0.5 text-[0.65rem] text-muted">
                       ปิดใช้งาน
                     </span>
                   )}
@@ -344,7 +344,7 @@ function RowButton({
       className={`min-h-[2.25rem] rounded-lg border border-line px-3 text-xs text-muted transition disabled:opacity-40 ${
         danger
           ? "hover:border-rose-400/40 hover:text-rose-300"
-          : "hover:border-cyan-400/40 hover:text-accent"
+          : "hover:border-accent/40 hover:text-accent"
       }`}
     >
       {children}
@@ -448,7 +448,7 @@ function BranchFormModal({
           <input
             name="group"
             defaultValue={branch?.group ?? ""}
-            placeholder="เช่น ภาคใต้ หรือ ทีม ปอ"
+            placeholder="เช่น ทีมก้อย หรือ ทีมปอ"
             className={MODAL_INPUT}
           />
         </Field>

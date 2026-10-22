@@ -45,7 +45,13 @@ const reset = () => {
   }
 };
 
-after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+// ต้อง chdir กลับก่อนลบ — เทสต์ชุดนี้ process.chdir(tmp) ไว้ และ Windows ลบโฟลเดอร์ที่เป็น
+// cwd ของโปรเซสอยู่ไม่ได้ (EPERM) ไฟล์เทสต์อื่นทำแล้ว ไฟล์นี้ตกหล่น ผลคือชุดเทสต์แดง 1 เคส
+// ทุกครั้งบน Windows จนคนเริ่มชินกับการเห็นสีแดง ซึ่งอันตรายกว่าไม่มีเทสต์
+after(() => {
+  process.chdir(root);
+  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+});
 
 test('ติดตั้งใหม่ได้รายชื่อครบทั้งทะเบียน ไม่ใช่ข้อมูลตัวอย่าง', () => {
   reset();

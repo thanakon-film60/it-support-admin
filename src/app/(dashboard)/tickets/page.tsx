@@ -1,9 +1,16 @@
 import { listStatusEditors, listTicketsWithRelations } from "@/lib/db/tickets";
+import { groupEventsByTicket } from "@/lib/db/ticketEvents";
+import { listStockTransactions } from "@/lib/db/stock";
 import { canNotifyOnLine } from "@/lib/line/notify";
 import { listTicketViews, summarizeViews } from "@/lib/db/ticketViews";
-import { TICKET_STATUS_ORDER } from "@/components/ui/Badge";
-import type { TicketStatus, TicketView } from "@/lib/types";
-import { TicketsBoard } from "@/components/tickets/TicketsBoard";
+import { isTicketStatus } from "@/lib/ticket-status";
+import type { TicketEvent, TicketStatus, TicketType, TicketView } from "@/lib/types";
+import type { TicketPart } from "@/lib/ticket-export";
+import { TicketsBoard, type RatingFilter } from "@/components/tickets/TicketsBoard";
+import { requireSession } from "@/lib/auth";
+
+const TICKET_TYPES: TicketType[] = ["repair", "withdraw", "return", "it_service"];
+const RATING_FILTERS: RatingFilter[] = ["low", "satisfied", "unrated"];
 
 /** จำนวน log ต่อ ticket ที่ส่งลงไปให้หน้าเว็บ
  *
@@ -27,16 +34,33 @@ export default async function TicketsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await requireSession("tickets");
   const params = await searchParams;
+  // รับเฉพาะค่าที่มีจริง — ถ้า URL ถูกแก้มั่ว (หรือเป็นสถานะของระบบเดิมจากบุ๊กมาร์กเก่า เช่น ?status=completed)
+  // ให้ตกกลับไปแสดงทั้งหมด ดีกว่าโชว์ตารางว่างเปล่า
+  // ?type=repair มาจากหน้าประวัติซ่อมเดิม · ?status=resolved มาจากหน้าแก้ไขปัญหาแล้วเดิม (redirect)
   const statusParam = one(params.status);
-  // รับเฉพาะสถานะที่มีจริง — ถ้า URL ถูกแก้มั่วให้ตกกลับไปแสดงทั้งหมด ดีกว่าโชว์ตารางว่างเปล่า
-  const initialStatus: "all" | TicketStatus =
-    statusParam && TICKET_STATUS_ORDER.includes(statusParam as TicketStatus)
-      ? (statusParam as TicketStatus)
-      : "all";
+  const typeParam = one(params.type);
+  const ratingParam = one(params.rating);
+  const initialStatus: "all" | TicketStatus = isTicketStatus(statusParam) ? statusParam : "all";
+  const initialType: "all" | TicketType = TICKET_TYPES.includes(typeParam as TicketType) ? (typeParam as TicketType) : "all";
+  const initialRating: RatingFilter = RATING_FILTERS.includes(ratingParam as RatingFilter) ? (ratingParam as RatingFilter) : "all";
 
   const tickets = listTicketsWithRelations();
   const summaries = summarizeViews();
+
+  // ไทม์ไลน์ + อะไหล่ที่เบิก (เดิมอยู่หน้าแก้ไขปัญหาแล้ว) — จัดกลุ่มต่อ ticket id ครั้งเดียวที่นี่
+  // อะไหล่ผูกกับ ticket ผ่าน "เลขที่อ้างอิง" ของรายการเบิกสต็อก (ไม่ได้เพิ่มฟิลด์ใหม่ เพราะ reference_no
+  // มีอยู่แล้วและเป็นที่ที่คนคีย์เลขที่ตั๋วอยู่จริง)
+  const eventsById = groupEventsByTicket();
+  const idByCode = new Map(tickets.map((t) => [t.ticket_code.toUpperCase(), t.id]));
+  const parts: Record<string, TicketPart[]> = {};
+  for (const txn of listStockTransactions()) {
+    const id = txn.type === "out" ? idByCode.get(txn.reference_no?.trim().toUpperCase() ?? "") : undefined;
+    if (id) (parts[id] ??= []).push({ name: txn.item_name, qty: txn.quantity, unit: txn.item_unit });
+  }
+  const events: Record<string, TicketEvent[]> = {};
+  for (const t of tickets) if (eventsById[t.id]?.length) events[t.id] = eventsById[t.id];
 
   // เรื่องไหนแจ้งกลับทาง LINE ได้บ้าง — ต้องคำนวณที่นี่เพราะต้องอ่านตาราง users
   // (client component แตะ lib/db เองไม่ได้) แอดมินจะได้รู้ "ก่อนกดบันทึก" ว่าส่งได้หรือไม่ได้
@@ -55,7 +79,11 @@ export default async function TicketsPage({
       initialTickets={tickets}
       viewSummaries={summaries}
       recentViews={recentViews}
+      events={events}
+      parts={parts}
       initialStatus={initialStatus}
+      initialType={initialType}
+      initialRating={initialRating}
       initialTicketCode={one(params.code)}
       editors={listStatusEditors()}
       notifiable={notifiable}

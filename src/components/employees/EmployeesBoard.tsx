@@ -14,6 +14,7 @@ import {
   unlinkEmployeeLineAction,
   updateEmployeeAction,
 } from "@/app/actions/employees";
+import { RegistryImportPanel } from "./RegistryImportPanel";
 
 const CONTROL =
   "rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent";
@@ -34,6 +35,8 @@ function departmentOf(user: User, fallback: string): string {
  *  ซึ่งในบริษัทที่มีพนักงาน 326 คนเกิดสัปดาห์ละหลายครั้ง
  *
  *  รายชื่อ 193 คนจาก HR ยังไม่ถูกจัดฝ่าย (ขึ้นเป็น "อื่นๆ") — หน้านี้คือที่ที่ค่อยๆ เติมให้ครบ
+ *
+ *  020: สถานะ 1 = ใช้งาน · 0 = ปิดใช้งาน (active=false · ไม่ลบ) · นำเข้าทะเบียนล่าสุดของ HR ได้ที่ RegistryImportPanel
  */
 export function EmployeesBoard({
   employees,
@@ -60,6 +63,7 @@ export function EmployeesBoard({
   const [showInactive, setShowInactive] = useState(false);
   const [editing, setEditing] = useState<Editing>(null);
   const [deleting, setDeleting] = useState<User | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const deptOf = (u: User) => departmentOf(u, otherDepartment);
 
@@ -94,6 +98,7 @@ export function EmployeesBoard({
       total: active.length,
       linked: active.filter((u) => u.line_user_id).length,
       unassigned: active.filter((u) => !u.department?.trim()).length,
+      inactive: employees.length - active.length,
     };
   }, [employees]);
 
@@ -118,13 +123,23 @@ export function EmployeesBoard({
       <PageHeader
         title="พนักงาน"
         description='ทะเบียนที่บอทใช้ถาม "ผู้แจ้งคือใคร" — ปิดใช้งานแล้วจะหายจากเมนูเลือกผู้แจ้งทันที'
-        actions={<Button onClick={() => setEditing({ mode: "new" })}>+ เพิ่มพนักงาน</Button>}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setImporting((v) => !v)}>
+              นำเข้าทะเบียน HR (.xlsx)
+            </Button>
+            <Button onClick={() => setEditing({ mode: "new" })}>+ เพิ่มพนักงาน</Button>
+          </div>
+        }
       />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {importing && <RegistryImportPanel onClose={() => setImporting(false)} />}
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatChip label="พนักงานทั้งหมด" value={stats.total} />
         <StatChip label="ผูกบัญชี LINE แล้ว" value={stats.linked} />
         <StatChip label="ยังไม่ระบุฝ่าย" value={stats.unassigned} />
+        <StatChip label="ปิดใช้งาน (สถานะ 0)" value={stats.inactive} />
       </div>
 
       {error && (
@@ -165,7 +180,7 @@ export function EmployeesBoard({
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
           />
-          แสดงคนที่ปิดใช้งาน
+          แสดงคนที่ปิดใช้งาน (สถานะ 0)
         </label>
       </div>
 
@@ -186,7 +201,7 @@ export function EmployeesBoard({
                   {u.title ?? ""}
                   {u.display_name}
                   {u.nickname ? <span className="text-muted"> ({u.nickname})</span> : null}
-                  {u.active === false && <Tag>ปิดใช้งาน</Tag>}
+                  {u.active === false && <Tag>สถานะ 0 · ปิดใช้งาน</Tag>}
                   {u.line_user_id && <Tag tone="accent">LINE</Tag>}
                 </p>
                 <p className="mt-0.5 text-xs text-muted">
@@ -259,7 +274,7 @@ export function EmployeesBoard({
                   {u.title ?? ""}
                   {u.display_name}
                   {u.nickname ? <span className="text-muted"> ({u.nickname})</span> : null}
-                  {u.active === false && <Tag>ปิดใช้งาน</Tag>}
+                  {u.active === false && <Tag>สถานะ 0 · ปิดใช้งาน</Tag>}
                 </td>
                 <td className="px-4 py-3 text-muted">{deptOf(u)}</td>
                 <td className="px-4 py-3 text-muted">
@@ -352,7 +367,7 @@ function Tag({ children, tone }: { children: React.ReactNode; tone?: "accent" })
   return (
     <span
       className={`ml-2 rounded-full px-2 py-0.5 text-[0.65rem] ${
-        tone === "accent" ? "bg-accent-bg text-accent" : "bg-white/[0.06] text-muted"
+        tone === "accent" ? "bg-accent-bg text-accent" : "bg-ink/[0.06] text-muted"
       }`}
     >
       {children}
@@ -386,7 +401,7 @@ function RowActions({
         </RowButton>
       ) : null}
       <RowButton onClick={onToggle} disabled={pending}>
-        {employee.active === false ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+        {employee.active === false ? "เปิดใช้งาน (→1)" : "ปิดใช้งาน (→0)"}
       </RowButton>
       <RowButton onClick={onDelete} disabled={pending} danger>
         ลบ
@@ -414,7 +429,7 @@ function RowButton({
       className={`min-h-[2.25rem] rounded-lg border border-line px-3 text-xs text-muted transition disabled:opacity-40 ${
         danger
           ? "hover:border-rose-400/40 hover:text-rose-300"
-          : "hover:border-cyan-400/40 hover:text-accent"
+          : "hover:border-accent/40 hover:text-accent"
       }`}
     >
       {children}

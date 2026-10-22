@@ -1,11 +1,13 @@
 import { COMPANIES, listAllBranches } from "@/lib/db/branches";
 import { listTickets } from "@/lib/db/tickets";
 import { BranchesBoard } from "@/components/branches/BranchesBoard";
+import { requireSession } from "@/lib/auth";
 
 // อ่าน master data ที่แอดมินแก้ได้ตลอด -> ห้าม prerender เป็น static
 export const dynamic = "force-dynamic";
 
-export default function BranchesPage() {
+export default async function BranchesPage() {
+  await requireSession("branches");
   const branches = listAllBranches();
 
   // นับจำนวนเรื่องต่อสาขาไว้ล่วงหน้าฝั่งเซิร์ฟเวอร์ครั้งเดียว

@@ -45,7 +45,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 rounded-lg bg-accent px-4 py-2 font-semibold text-slate-900 transition hover:opacity-90 disabled:opacity-60"
+        className="mt-2 rounded-lg bg-accent px-4 py-2 font-semibold text-on-accent transition hover:opacity-90 disabled:opacity-60"
       >
         {pending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
       </button>

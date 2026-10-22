@@ -27,18 +27,22 @@ export type EquipmentStatus =
 
 export type TicketType = "repair" | "withdraw" | "return" | "it_service";
 
-export type TicketStatus =
-  | "pending"
-  | "in_progress"
-  | "waiting_info"
-  | "waiting_delivery"
-  | "resolved"
-  /** ผู้แจ้งกด "ตกลง" ยืนยันว่าแก้ไขเรียบร้อยแล้ว — เรื่องจบสมบูรณ์
-   *  ต่างจาก resolved ตรงที่ resolved คือ "ทีม IT บอกว่าเสร็จ"
-   *  ส่วน completed คือ "ผู้แจ้งยืนยันแล้วว่าใช้ได้จริง" ซึ่งเป็นหลักฐานที่ต่างกันคนละระดับ */
-  | "completed"
-  | "closed"
-  | "cancelled";
+/** สถานะของเรื่อง — 3 ค่า (21 ต.ค. 2026 ผู้ใช้ขอ: ยุบเหลือ 2 แล้วเพิ่ม "ยกเลิก" กลับในวันเดียวกัน)
+ *
+ *  pending   = รอดำเนินการ — ทุกอย่างที่ทีม IT ยังต้องทำอะไรต่อ (รวมที่เดิมแยกเป็นกำลังทำ/รอข้อมูล/รออะไหล่)
+ *  resolved  = แก้ไขแล้ว — ทีม IT ปิดงาน ผู้แจ้งได้การ์ดให้คะแนน 1–5 ดาว (meta.rating · lib/ticket-feedback.ts)
+ *              ผู้แจ้งกด "ยังมีปัญหาอยู่" ภายในเวลาที่กำหนด = กลับเป็น pending
+ *  cancelled = ยกเลิก — ปิดเรื่องโดยไม่ได้แก้ (แจ้งซ้ำ/แจ้งผิด/ผู้แจ้งขอยกเลิก) ไม่มีการ์ดให้คะแนน ไม่นับเป็นงานที่แก้เสร็จ
+ *
+ *  ข้อมูลเก่าที่ยังเป็นสถานะเดิมถูกแปลงอัตโนมัติตอนอ่าน (migrateLegacyStatuses ใน lib/db/tickets.ts) */
+export type TicketStatus = "pending" | "resolved" | "cancelled";
+
+/** สถานะของระบบเดิม — ยังโผล่ใน status_history / ไทม์ไลน์ของเรื่องเก่า (อ่านอย่างเดียว ห้ามเขียนใหม่)
+ *  ความหมาย "resolved" ของระบบเดิม (รอผู้แจ้งกดยืนยัน) ไม่ได้อยู่ในนี้ เพราะชื่อซ้ำกับสถานะปัจจุบัน
+ *  — ประวัติเก่าที่เขียนว่า resolved จึงแสดงเป็น "แก้ไขแล้ว" ซึ่งตรงความหมายอยู่แล้ว */
+export type LegacyTicketStatus = "in_progress" | "waiting_info" | "waiting_delivery" | "completed" | "closed";
+
+export type AnyTicketStatus = TicketStatus | LegacyTicketStatus;
 
 export type StockTxnType = "in" | "adjust" | "out";
 
@@ -145,13 +149,26 @@ export interface FaqItem {
   created_at: string;
 }
 
+/** บัญชีเจ้าหน้าที่ที่ล็อกอินหน้าแอดมิน — data/staff_accounts.json
+ *
+ *  สร้าง/แก้ด้วยโปรแกรม tools/staff_admin.py (หน้าเว็บไม่มีเมนูจัดการบัญชี โดยตั้งใจ:
+ *  งานนี้ทำได้เฉพาะคนที่เข้าถึงเครื่องเซิร์ฟเวอร์ ไม่ใช่ทุกคนที่เปิดเว็บจากอินเทอร์เน็ตได้)
+ *  ช่องที่มี ? = บัญชีรุ่นก่อนไม่มี ต้องอ่านแบบมีค่าตั้งต้นเสมอ (ดู pagesOf / getSession) */
 export interface StaffAccount {
   id: string;
   username: string;
   password_hash: string;
   display_name: string;
+  /** admin = เข้าได้ทุกหน้า · it_staff = เฉพาะหน้าใน pages */
   role: "admin" | "it_staff";
   created_at: string;
+  /** key ของหน้าที่เข้าได้ (ดู lib/pages.json) — ใช้เฉพาะ it_staff */
+  pages?: string[];
+  /** false = ปิดใช้งาน: ล็อกอินไม่ได้ และ session ที่ค้างอยู่ใช้ไม่ได้ทันที · ไม่มีช่องนี้ = ใช้งานได้ */
+  active?: boolean;
+  /** เพิ่มทีละ 1 ทุกครั้งที่เปลี่ยนรหัสผ่าน/สั่งออกจากระบบ — cookie ที่ออกก่อนหน้านั้นใช้ไม่ได้อีก */
+  session_version?: number;
+  updated_at?: string;
 }
 
 // ----- view-model types (คำนวณจากข้อมูลดิบ ไม่ใช่คอลัมน์จริงในตาราง) -----
@@ -203,6 +220,21 @@ export interface Branch {
   created_at: string;
 }
 
+/** บัญชี LINE ของทีม IT ที่สั่งเปิด/ปิดบอทจากแชทได้ (พิมพ์ "แอดมิน" หาบอท) — data/line_staff.json
+ *  ขอสิทธิ์จากแชท ("ขอสิทธิ์แอดมิน") แล้วแอดมินอนุมัติในหน้า "บอท LINE" */
+export interface LineStaff {
+  id: string;
+  line_user_id: string;
+  /** ชื่อโปรไฟล์ LINE ล่าสุดที่บอทเห็น — แสดงบนการ์ดว่า "ปิดโดยใคร" */
+  display_name: string | null;
+  status: "pending" | "approved";
+  requested_at: string;
+  approved_at: string | null;
+  approved_by: string | null;
+  /** ครั้งล่าสุดที่ใช้คำสั่งแอดมินในแชท — ไว้ดูว่าบัญชีไหนไม่ได้ใช้แล้ว ควรถอดสิทธิ์ */
+  last_seen_at: string | null;
+}
+
 export interface CustodianFormOptions {
   owners: { name: string; employee_id: string | null; department: string | null }[];
   departments: string[];
@@ -219,10 +251,12 @@ export interface TicketEvent {
   id: string;
   ticket_id: string;
   ticket_code: string;
-  /** created = เปิดเรื่อง · status = เปลี่ยนสถานะ · confirmed = ผู้แจ้งกดตกลง · note = บันทึกเพิ่ม */
-  type: "created" | "status" | "confirmed" | "note";
-  from_status: TicketStatus | null;
-  to_status: TicketStatus | null;
+  /** created = เปิดเรื่อง · status = เปลี่ยนสถานะ · confirmed = ผู้แจ้งกดตกลง (การ์ดรุ่นเก่า)
+   *  · rated = ผู้แจ้งให้คะแนน/เขียนความเห็นหลังปิดงาน · note = บันทึกเพิ่ม */
+  type: "created" | "status" | "confirmed" | "rated" | "note";
+  /** เรื่องเก่ามีสถานะของระบบเดิมปนอยู่ — แสดงผลด้วย statusLabel() ไม่ใช่ TICKET_STATUS_LABEL ตรงๆ */
+  from_status: AnyTicketStatus | null;
+  to_status: AnyTicketStatus | null;
   actor: string;
   /** admin = ทีม IT ในหน้าแอดมิน · requester = ผู้แจ้งกดในแชท LINE · system = ระบบทำเอง */
   actor_role: "admin" | "requester" | "system";
@@ -262,4 +296,61 @@ export interface AssetFormOptions {
   owners: { name: string; employee_id: string | null; department: string | null }[];
   /** รหัสทรัพย์สินทั้งหมด (ตัวพิมพ์ใหญ่) ใช้เตือนตอนกรอกรหัสซ้ำ */
   assetCodes: string[];
+}
+
+/** ข้อความที่ฝากไว้ในหน้า /notes — เก็บบนเซิร์ฟเวอร์ (data/notes.json)
+ *
+ *  เก็บฝั่งเซิร์ฟเวอร์ ไม่ใช่ localStorage เพราะจุดประสงค์ทั้งหมดของหน้านี้คือ "เขียนจากเครื่องหนึ่ง
+ *  แล้วเปิดอ่านจากอีกเครื่อง" ซึ่ง localStorage ทำไม่ได้ (อยู่แค่ในเบราว์เซอร์เครื่องนั้น และหายเมื่อล้างประวัติ) */
+export interface Note {
+  id: string;
+  body: string;
+  /** ชื่อที่แสดงของบัญชีที่ล็อกอินตอนเขียน — เก็บเป็นข้อความ ไม่เก็บ id ของบัญชี
+   *  เพราะบัญชีถูกลบหรือเปลี่ยนชื่อได้ แต่ข้อความเก่าต้องยังบอกได้ว่าใครเป็นคนเขียน */
+  author: string;
+  created_at: string;
+  /** null = ยังไม่เคยแก้ — แยกจาก created_at เพื่อให้หน้าเว็บบอกได้ว่า "ข้อความนี้ถูกแก้หลังเขียน" */
+  updated_at: string | null;
+  updated_by: string | null;
+}
+
+/* ---- คลังไฟล์ (/files) — ข้อมูลกำกับเก็บใน data/*.json ส่วนตัวไฟล์จริงอยู่ใน DRIVE_DIR ----
+ * แยกสองที่โดยตั้งใจ: data/ ถูก backup.bat คัดลอกเข้าโฟลเดอร์โปรเจกต์ทุกครั้ง ถ้าไฟล์ขนาดหลายร้อย MB
+ * อยู่ในนั้นด้วย backup จะใหญ่ขึ้นเรื่อยๆ และเสี่ยงหลุดขึ้น GitHub ไปพร้อมกับโฟลเดอร์ backups/ */
+
+export interface DriveFolder {
+  id: string;
+  name: string;
+  /** null = อยู่ชั้นบนสุดของคลัง */
+  parent_id: string | null;
+  created_at: string;
+  created_by: string;
+}
+
+export interface DriveFile {
+  id: string;
+  folder_id: string | null;
+  name: string;
+  size: number;
+  /** ชนิดไฟล์ที่เบราว์เซอร์บอกมาตอนอัปโหลด — ใช้แสดงผลเท่านั้น ตอนดาวน์โหลดไม่เชื่อค่านี้ */
+  mime: string;
+  /** ข้อความกำกับไฟล์ เช่น "ไดรเวอร์ปริ้นเตอร์ห้องบัญชี ใช้กับ Windows 11" */
+  note: string | null;
+  /** ไว้ตรวจว่าไฟล์ที่ดาวน์โหลดไปตรงกับที่อัปโหลดทุกไบต์ (สำคัญกับไฟล์ติดตั้งโปรแกรม) */
+  sha256: string | null;
+  uploaded_at: string;
+  uploaded_by: string;
+  updated_at: string | null;
+  updated_by: string | null;
+}
+
+/** การอัปโหลดที่ยังส่งไม่ครบ — ไฟล์ใหญ่ถูกส่งเป็นท่อนๆ จึงต้องจำไว้ว่าท่อนต่อไปเป็นของไฟล์ไหน */
+export interface DriveUpload {
+  id: string;
+  folder_id: string | null;
+  name: string;
+  size: number;
+  mime: string;
+  created_at: string;
+  created_by: string;
 }

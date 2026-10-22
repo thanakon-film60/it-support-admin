@@ -31,6 +31,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
+      # กุญแจเข้ารหัสหน้า "รหัสผ่าน" (/passwords) — ว่าง = หน้านั้นใช้ไม่ได้ แต่ส่วนอื่นทำงานปกติ (ดู .env.example)
+      VAULT_KEY: ${VAULT_KEY:-}
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
       LINE_LOGIN_CHANNEL_ID: ${LINE_LOGIN_CHANNEL_ID}
@@ -44,16 +46,26 @@ services:
       # สถานะที่จะ push แจ้งผู้แจ้งทาง LINE — ค่าตั้งต้นส่งเฉพาะตอน "จบเรื่อง"
       # เพราะแพ็กเกจฟรีของ LINE OA ส่ง push ได้ 300 ข้อความ/เดือน (ข้อความ reply ไม่นับ)
       # ตั้งเป็นค่าว่างเพื่อปิดการแจ้งเตือนทั้งหมด (ดู src/lib/line/notify.ts)
-      LINE_NOTIFY_STATUSES: ${LINE_NOTIFY_STATUSES:-resolved,closed,cancelled}
-      # LINE user id ของทีม IT ที่จะได้ข้อความ "ผู้แจ้งเปิดดูสถานะแล้ว" (คั่นด้วยจุลภาค)
+      LINE_NOTIFY_STATUSES: ${LINE_NOTIFY_STATUSES:-resolved,completed,closed,cancelled}
+      # LINE user id ของทีม IT ที่จะได้ข้อความ "ผู้แจ้งเปิดดูสถานะแล้ว" / "ผู้แจ้งกดยังมีปัญหาอยู่" (คั่นด้วยจุลภาค)
       # เว้นว่าง = ไม่ push แค่ขึ้นในหน้าแอดมิน — ดู .env.example เรื่องโควตา push
       LINE_ADMIN_USER_IDS: ${LINE_ADMIN_USER_IDS:-}
+      # ปุ่ม "รับแชทต่อเอง" บน ticket สั่งบอทให้เงียบกับผู้แจ้งคนนั้น (LINE ไม่ส่ง webhook ตอนเจ้าหน้าที่ตอบแชท)
+      # ชื่อ service "bot" ในเครือข่ายของ compose — เส้น /internal/* ของบอทไม่ได้เปิดผ่าน tunnel (ส่งเฉพาะ ^/webhook)
+      LINE_BOT_INTERNAL_URL: ${LINE_BOT_INTERNAL_URL:-http://bot:8000}
       # กันการกด Inspect/ดูซอร์สบนหน้าแอดมิน — กันได้แค่คนที่กดเล่น ไม่ได้กันคนที่ตั้งใจ
       # (ดูคำเตือนเต็มที่ src/components/security/BlockDevTools.tsx)
       # ค่าพวกนี้อ่านตอน request จึงเปลี่ยนแล้วแค่ `docker compose up -d app` ไม่ต้อง --build
       BLOCK_DEVTOOLS: ${BLOCK_DEVTOOLS:-true}
       BLOCK_CONTEXT_MENU: ${BLOCK_CONTEXT_MENU:-true}
       BLOCK_DEVTOOLS_DETECT: ${BLOCK_DEVTOOLS_DETECT:-false}
+      # คลังไฟล์ (/files): ที่เก็บตัวไฟล์ + เพดานพื้นที่รวม (GB) — ดิสก์เดียวกับข้อมูลทั้งระบบ
+      # ถ้าคลังไฟล์กินจนดิสก์เต็ม การบันทึก ticket/สต็อกจะล้มไปด้วย จึงต้องมีเพดาน
+      DRIVE_DIR: /app/drive
+      DRIVE_QUOTA_GB: ${DRIVE_QUOTA_GB:-20}
+      # นำเข้าทะเบียน HR (/employees · 020): กลุ่มรหัสที่ไม่อยู่ในไฟล์แล้ว "คงสถานะเดิม" แทนที่จะเป็น 0
+      # ตั้งต้น AS,MS,PS = พนักงานสาขา (ทะเบียน HR ชุดปัจจุบันมีแต่พนักงานสำนักงาน) — ค่าเดียวกับอีก 2 ระบบ
+      EMPLOYEE_SYNC_KEEP_PREFIXES: ${EMPLOYEE_SYNC_KEEP_PREFIXES:-AS,MS,PS}
       NODE_ENV: production
     volumes:
       # รูปที่อัปโหลดผ่านฟอร์ม FAQ ถูกเขียนลงดิสก์จริง (src/app/actions/faq.ts) ถ้าไม่แยกเป็น
@@ -64,6 +76,9 @@ services:
       # ถ้าไม่ mount เป็น volume ข้อมูลทั้งหมดจะหายทุกครั้งที่ `docker compose build app` ใหม่ —
       # พบว่าเป็นแบบนี้มาตลอดตอนแก้บั๊ก EACCES 2026-09-14 (ดู it-support-admin-analysis.md)
       - app_data:/app/data
+      # ตัวไฟล์ของคลังไฟล์ — volume แยกโดยตั้งใจ: backup.bat คัดลอก app_data เข้าโฟลเดอร์ backups/
+      # ของโปรเจกต์ ถ้าไฟล์หลายร้อย MB อยู่ในนั้นด้วย backup จะบวมและเสี่ยงหลุดขึ้น GitHub
+      - drive:/app/drive
     ports:
       # ไว้ทดสอบ http://localhost:3000 ตรงๆ จากเครื่องนี้ก่อนพึ่งพา Caddy/โดเมน
       - "127.0.0.1:3000:3000"
@@ -138,21 +153,49 @@ services:
       RICHMENU_AUTO_INSTALL: ${RICHMENU_AUTO_INSTALL:-true}
       # ตั้ง true ครั้งเดียวเมื่อ 'เปลี่ยนรูปแต่ปุ่มเหมือนเดิม' แล้วค่อยเอากลับเป็น false
       RICHMENU_FORCE_REINSTALL: ${RICHMENU_FORCE_REINSTALL:-false}
+      # ปุ่ม "คุยกับเจ้าหน้าที่": บอทเงียบกับคนที่ขอคุยกี่ชั่วโมง (นับจากข้อความล่าสุดของเขา)
+      # ระหว่างนั้นทีม IT ตอบเองในแอป LINE Official Account — ต้องเปิด Chat ใน OA Manager ไว้
+      HANDOFF_HOURS: ${HANDOFF_HOURS:-24}
+      # สั่ง "อ่านแล้ว" ให้ข้อความที่บอทตอบจบเอง แชทที่ค้าง "ยังไม่อ่าน" ในแอป OA = คนที่รอเจ้าหน้าที่
+      MARK_AS_READ: ${MARK_AS_READ:-true}
     volumes:
       # บอทต้องอ่านไฟล์รูปเมนูตอนติดตั้ง — mount แบบ read-only แทนการ COPY เข้า image
       # จะได้เปลี่ยนรูป (รัน line-oa/make_assets.py) แล้ว restart เอาอยู่ ไม่ต้อง build ใหม่
       - ./line-oa/assets:/app/line-oa:ro
     ports:
-      # ไว้ทดสอบ http://localhost:8000/health ตรงๆ จากเครื่องนี้ และให้ `tailscale serve` ชี้มาที่นี่
+      # ไว้ทดสอบ http://localhost:8000/health ตรงๆ จากเครื่องนี้ (คนนอกเข้าทาง service "tunnel" ด้านล่าง)
       - "127.0.0.1:8000:8000"
     depends_on:
       - app
       - redis
 
+  # ทางเข้าจากอินเทอร์เน็ต: Cloudflare Tunnel — ใช้แทน Tailscale Funnel ตั้งแต่ 7 ต.ค. 2026
+  # cloudflared ต่อ "ออก" ไปหา Cloudflare เอง ไม่ต้องเปิด port ที่เราเตอร์ และขึ้นเองพร้อม Docker Desktop
+  # (Funnel ต้องมีตัวเรียกใน Startup และเคยค้างที่ control plane จนบอทเงียบ)
+  # เส้นทางตั้งไว้ในหน้า Cloudflare > Tunnels > IT-Support-Admin > Routes (ลำดับสำคัญ — ตัวบนชนะ):
+  #   1. it.thanakronpart-time.com  path ^/webhook  -> http://bot:8000   LINE ยิง webhook
+  #   2. it.thanakronpart-time.com                  -> http://app:3000   เว็บแอดมิน (ต้องล็อกอิน)
+  # token อยู่ใน .env (CLOUDFLARE_TUNNEL_TOKEN) ใส่ด้วย use-cloudflare.bat — ห้ามพิมพ์ลงไฟล์นี้
+  # deploy.ps1 สตาร์ท service นี้เฉพาะเมื่อมี token แล้ว ไม่งั้น container จะวนรีสตาร์ทไม่จบ
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+      # /ready ตอบ 200 เมื่อต่อ Cloudflare ติดแล้ว — deploy.ps1 กับ use-cloudflare.ps1 ถามผ่าน container app
+      # (http://tunnel:20241/ready) โดยตั้งใจ "ไม่" เปิดพอร์ตนี้ออกมาที่เครื่อง: cloudflared ของงานอื่นที่ติดตั้ง
+      # บนเครื่องนี้จองพอร์ต 20241-20245 ไว้แล้ว เปิดชนกันแล้ว container สตาร์ทไม่ขึ้น (เจอจริง 8 ต.ค. 2026)
+      TUNNEL_METRICS: 0.0.0.0:20241
+    depends_on:
+      - app
+      - bot
+
 volumes:
   pgdata:
   uploads:
   app_data:
+  drive:
   caddy_data:
   caddy_config:
   redis_data:

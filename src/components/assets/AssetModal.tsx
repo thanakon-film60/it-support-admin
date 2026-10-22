@@ -258,13 +258,13 @@ function AssetFormBody({
         />
       </Field>
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-line bg-white/[0.02] px-3 py-2.5 text-sm text-ink transition hover:border-cyan-400/40">
+      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-line bg-ink/[0.02] px-3 py-2.5 text-sm text-ink transition hover:border-accent/40">
         <input
           type="checkbox"
           name="has_owner"
           checked={hasOwner}
           onChange={(e) => setHasOwner(e.target.checked)}
-          className="h-4 w-4 accent-cyan-400"
+          className="h-4 w-4 accent-accent"
         />
         มีผู้ครอบครอง
       </label>

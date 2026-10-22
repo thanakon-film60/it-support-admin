@@ -38,9 +38,60 @@ export function readCollection<T>(name: string, seedFn?: () => T[]): T[] {
   }
 }
 
+/** ไฟล์อ่านไม่ออก — readCollectionStrict โยนตัวนี้แทนการแกล้งทำเป็นว่า "ยังไม่มีข้อมูล" */
+export class CollectionReadError extends Error {
+  constructor(name: string) {
+    super(`อ่านไฟล์ ${name}.json ไม่ออก (ไฟล์เสีย)`);
+    this.name = "CollectionReadError";
+  }
+}
+
+/**
+ * อ่าน collection แบบไม่กลืน error — ไฟล์ที่มีอยู่แต่อ่านไม่ออกจะ throw แทนการคืน []
+ *
+ * readCollection ข้างบนคืน [] เมื่อ JSON พัง ซึ่งพอรับได้กับข้อมูลที่ seed กลับมาเองได้
+ * แต่อันตรายมากกับข้อมูลที่คนพิมพ์เอง (หน้าฝากข้อความ): หน้าเว็บจะเห็นว่า "ว่าง" แล้วการบันทึก
+ * ครั้งถัดไปจะเขียน [ข้อความใหม่ 1 อัน] ทับไฟล์เดิมทั้งไฟล์ ข้อความเก่าทั้งหมดหายโดยไม่มีอะไรฟ้อง
+ * ไฟล์ยังไม่มี = ยังไม่เคยบันทึก -> คืน [] ได้ตามปกติ และไม่สร้างไฟล์จนกว่าจะเขียนจริง
+ * ไฟล์ว่าง 0 ไบต์ถือว่าเสีย เพราะ writeCollection เขียนอย่างน้อย "[]" เสมอ
+ */
+export function readCollectionStrict<T>(name: string): T[] {
+  const p = filePath(name);
+  if (!fs.existsSync(p)) return [];
+  const raw = fs.readFileSync(p, "utf-8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new CollectionReadError(name);
+  }
+  if (!Array.isArray(parsed)) throw new CollectionReadError(name);
+  return parsed as T[];
+}
+
 export function writeCollection<T>(name: string, data: T[]): void {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(filePath(name), JSON.stringify(data, null, 2), "utf-8");
+  const target = filePath(name);
+  const body = JSON.stringify(data, null, 2);
+  // เขียนลงไฟล์ชั่วคราวก่อนแล้วค่อย rename ทับ — rename ในระบบไฟล์เดียวกันเป็น atomic
+  // ถ้าโปรเซสตายกลางทาง (container restart / ไฟดับ) ไฟล์จริงยังเป็นชุดเดิมครบ ไม่ใช่ครึ่งไฟล์
+  // ไฟล์ครึ่งไฟล์อันตรายกว่าที่เห็น: readCollection อ่านไม่ออกจะคืน [] แล้วการเขียนครั้งถัดไปทับของเดิมหมด
+  const tmp = `${target}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, body, "utf-8");
+  try {
+    fs.renameSync(tmp, target);
+  } catch (err) {
+    try {
+      fs.unlinkSync(tmp);
+    } catch {
+      // ลบไฟล์ชั่วคราวไม่ได้ก็ไม่เสียหาย — ไม่มีโค้ดไหนอ่านไฟล์ .tmp
+    }
+    // Windows (ตอนรัน npm run dev) rename ทับไฟล์ที่โปรแกรมอื่นเปิดค้างอยู่ไม่ได้ เช่น antivirus
+    // กำลังสแกน — ถอยไปเขียนตรงแบบเดิม ดีกว่าทำให้การบันทึกล้มทั้งที่เมื่อก่อนบันทึกได้
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw err;
+    fs.writeFileSync(target, body, "utf-8");
+  }
 }
 
 export function upsertOne<T extends { id: string }>(

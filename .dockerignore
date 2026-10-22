@@ -5,6 +5,8 @@ node_modules
 .next
 .git
 data
+# ไฟล์คลังไฟล์ตอนรัน npm run dev — อาจหลายสิบ GB ห้ามติดเข้า build context
+drive
 public/uploads
 .env
 .env.*
@@ -17,3 +19,5 @@ Dockerfile
 Caddyfile
 .claude-prompt.md
 domains.png
+# รหัสผ่านจริงของบริษัท — ห้ามติดเข้า build context (COPY . . ใน builder จะลากเข้า layer ของ image)
+Password-story

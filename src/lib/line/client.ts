@@ -18,10 +18,8 @@ function getAccessToken(): string {
   return token;
 }
 
-/** ปุ่มลัดที่ปักอยู่เหนือแป้นพิมพ์ — ใช้ให้ผู้แจ้งกด "ตกลง" ยืนยันว่าแก้ไขเสร็จแล้ว
- *
- *  เลือก quick reply แทน Flex เพราะข้อความแจ้งเตือนนี้เป็น push ที่เด้งขึ้นมาตอนผู้ใช้
- *  ไม่ได้เปิดแชทอยู่ ปุ่มจึงต้องอยู่ตรงที่กดง่ายที่สุดทันทีที่เปิดเข้ามา ไม่ใช่ต้องเลื่อนหาในการ์ด
+/** ปุ่มลัดที่ปักอยู่เหนือแป้นพิมพ์ (quick reply) — ตอนนี้การ์ดแจ้งผลใช้ปุ่มในตัวการ์ดแทน
+ *  (confirm-card.ts / rating-card.ts) ชนิดนี้เหลือไว้ให้ข้อความ text ที่อยากแนบปุ่มลัด
  */
 export interface LineQuickReply {
   items: {
@@ -58,6 +56,13 @@ export async function replyMessage(replyToken: string, messages: LineMessage[]):
   }
 }
 
+/** รอ LINE ได้นานสุดเท่านี้ต่อครั้ง
+ *
+ *  push ถูกเรียกระหว่างที่แอดมินกด "บันทึกและส่ง LINE" — fetch ที่ไม่มีเพดานเวลา ถ้า LINE ค้าง
+ *  หน้าต่างแอดมินจะหมุนค้างไปเรื่อยๆ โดยที่สถานะบันทึกไปแล้ว ตัดที่ 10 วินาทีแล้วรายงาน "ส่งไม่สำเร็จ"
+ *  ให้คนตัดสินใจเอง ดีกว่าให้รอโดยไม่รู้ว่าเกิดอะไรขึ้น */
+const LINE_PUSH_TIMEOUT_MS = 10_000;
+
 /** ส่งข้อความแบบ push (ไม่ผูกกับ reply token — ใช้ยิงหาผู้ใช้ตอนไหนก็ได้ เช่นแจ้งอัปเดตสถานะ ticket) */
 export async function pushMessage(to: string, messages: LineMessage[]): Promise<void> {
   const res = await fetch(`${LINE_API_BASE}/message/push`, {
@@ -67,6 +72,7 @@ export async function pushMessage(to: string, messages: LineMessage[]): Promise<
       Authorization: `Bearer ${getAccessToken()}`,
     },
     body: JSON.stringify({ to, messages: messages.slice(0, 5) }),
+    signal: AbortSignal.timeout(LINE_PUSH_TIMEOUT_MS),
   });
   if (!res.ok) {
     console.error("[LINE] pushMessage failed:", res.status, await res.text());

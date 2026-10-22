@@ -1,4 +1,5 @@
 import type { TicketStatus, EquipmentStatus } from "@/lib/types";
+import { TICKET_STATUS_LABEL, TICKET_STATUS_ORDER } from "@/lib/ticket-status";
 
 /* ป้ายสถานะแบบ "เรืองแสงจาง" — พื้นโปร่ง 10% + ขอบวงใน + จุดนำหน้า
    อ่านง่ายกว่าพิลล์พื้นสว่างบนธีมมืด และแยกสถานะออกจากกันได้ด้วยสีเดียวไม่ต้องพึ่งข้อความ */
@@ -9,30 +10,11 @@ function Dot({ className }: { className: string }) {
   return <span className={`h-1.5 w-1.5 rounded-full ${className}`} aria-hidden />;
 }
 
-const TICKET_STATUS_LABEL: Record<TicketStatus, string> = {
-  pending: "รอดำเนินการ",
-  in_progress: "กำลังดำเนินการ",
-  waiting_info: "รอข้อมูล",
-  waiting_delivery: "รอส่งมอบ",
-  resolved: "แก้ไขแล้ว",
-  completed: "ดำเนินการเสร็จสิ้น",
-  closed: "ปิดแล้ว",
-  cancelled: "ยกเลิก",
-};
-
+// ส้ม = ยังต้องทำ · เขียว = แก้เสร็จ · แดง = ยกเลิก (ปิดโดยไม่ได้แก้) — ต้องแยกเขียวกับแดงได้ทันที
+// ไม่งั้นคนกวาดตาดูตารางจะนับเรื่องที่ยกเลิกเป็นงานที่ทำเสร็จ
 const TICKET_STATUS_STYLE: Record<TicketStatus, { pill: string; dot: string }> = {
   pending: { pill: "bg-amber-400/10 text-amber-300 ring-amber-400/25", dot: "bg-amber-300" },
-  in_progress: { pill: "bg-cyan-400/10 text-cyan-300 ring-cyan-400/25", dot: "bg-cyan-300" },
-  waiting_info: { pill: "bg-violet-400/10 text-violet-300 ring-violet-400/25", dot: "bg-violet-300" },
-  waiting_delivery: { pill: "bg-orange-400/10 text-orange-300 ring-orange-400/25", dot: "bg-orange-300" },
-  resolved: { pill: "bg-emerald-400/10 text-emerald-300 ring-emerald-400/25", dot: "bg-emerald-300" },
-  // เขียวเข้มกว่า resolved หนึ่งขั้น — เป็นสถานะสุดท้ายที่ "ผู้แจ้งยืนยันแล้ว"
-  // ต้องแยกออกจาก resolved ด้วยตา ไม่งั้นแอดมินจะไม่รู้ว่าใบไหนรอผู้แจ้งตอบอยู่
-  completed: {
-    pill: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/40",
-    dot: "bg-emerald-300",
-  },
-  closed: { pill: "bg-slate-400/10 text-slate-300 ring-slate-400/20", dot: "bg-slate-400" },
+  resolved: { pill: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/40", dot: "bg-emerald-300" },
   cancelled: { pill: "bg-rose-500/10 text-rose-300 ring-rose-400/25", dot: "bg-rose-400" },
 };
 
@@ -46,18 +28,8 @@ export function TicketStatusBadge({ status }: { status: TicketStatus }) {
   );
 }
 
-export const TICKET_STATUS_ORDER: TicketStatus[] = [
-  "pending",
-  "in_progress",
-  "waiting_info",
-  "waiting_delivery",
-  "resolved",
-  "completed",
-  "closed",
-  "cancelled",
-];
-
-export { TICKET_STATUS_LABEL };
+// ค่าคงที่อยู่ที่ lib/ticket-status.ts (ฝั่งเซิร์ฟเวอร์ใช้ด้วย) — ส่งต่อจากที่นี่ให้ไฟล์ที่ import จาก Badge อยู่เดิม
+export { TICKET_STATUS_LABEL, TICKET_STATUS_ORDER };
 
 const EQUIPMENT_STATUS_STYLE: Record<EquipmentStatus, { pill: string; dot: string }> = {
   ว่าง: { pill: "bg-emerald-400/10 text-emerald-300 ring-emerald-400/25", dot: "bg-emerald-300" },

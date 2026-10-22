@@ -53,9 +53,9 @@ const form = (fields) => {
 test('บันทึกชื่อผู้แก้ไข และไม่ล้างชื่อเดิมทิ้งเมื่อครั้งถัดไปไม่ได้ส่งชื่อมา', () => {
   const target = listTickets()[0];
 
-  updateTicketStatus(target.id, 'in_progress', '  ฟิล์ม (IT)  ');
+  updateTicketStatus(target.id, 'pending', '  ฟิล์ม (IT)  ');
   const first = byId(target.id);
-  assert.equal(first.status, 'in_progress');
+  assert.equal(first.status, 'pending');
   assert.equal(first.status_updated_by, 'ฟิล์ม (IT)'); // ตัดช่องว่างหัวท้ายให้แล้ว
   assert.ok(first.status_updated_at);
 
@@ -77,31 +77,32 @@ test('บันทึกชื่อผู้แก้ไข และไม่�
 test('Server Action ปฏิเสธชื่อว่าง/ยาวเกิน โดยไม่แตะสถานะเดิม', async () => {
   const target = listTickets()[1];
   const before = target.status;
+  const next = before === 'resolved' ? 'pending' : 'resolved';
 
   for (const bad of [undefined, '', '   ']) {
-    const result = await changeTicketStatusAction(target.id, 'closed', bad);
+    const result = await changeTicketStatusAction(target.id, next, bad);
     assert.equal(result.error, 'กรุณาระบุชื่อผู้แก้ไข');
     assert.equal(byId(target.id).status, before, 'สถานะต้องไม่เปลี่ยนเมื่อถูกปฏิเสธ');
   }
 
-  const tooLong = await changeTicketStatusAction(target.id, 'closed', 'ก'.repeat(61));
+  const tooLong = await changeTicketStatusAction(target.id, next, 'ก'.repeat(61));
   assert.match(tooLong.error ?? '', /ยาวเกินไป/);
   assert.equal(byId(target.id).status, before);
 
-  const ok = await changeTicketStatusAction(target.id, 'closed', 'ต้น');
+  const ok = await changeTicketStatusAction(target.id, next, 'ต้น');
   assert.equal(ok.success, true);
-  assert.equal(byId(target.id).status, 'closed');
+  assert.equal(byId(target.id).status, next);
   assert.equal(byId(target.id).status_updated_by, 'ต้น');
 });
 
 test('รายชื่อผู้แก้ไขไม่ซ้ำ และคนที่เพิ่งแก้ล่าสุดอยู่บนสุด', async () => {
   const [a, b] = listTickets().slice(2, 4);
-  await changeTicketStatusAction(a.id, a.status === 'in_progress' ? 'pending' : 'in_progress', 'ฟิล์ม (IT)');
+  await changeTicketStatusAction(a.id, a.status === 'resolved' ? 'pending' : 'resolved', 'ฟิล์ม (IT)');
   // รอให้ timestamp ต่างกันจริงก่อนแก้ใบถัดไป — สองใบที่ถูกแก้ในมิลลิวินาทีเดียวกัน
   // ลำดับจะขึ้นกับลำดับของ listTickets ไม่ใช่เวลาที่แก้ (ซึ่งไม่กระทบผู้ใช้จริง
   // เพราะมันเป็นแค่ลำดับตัวเลือกในช่องพิมพ์ชื่อ) แต่ทำให้เทสต์ล้มแบบสุ่มถ้าไม่เว้นระยะ
   await new Promise((r) => setTimeout(r, 5));
-  await changeTicketStatusAction(b.id, b.status === 'in_progress' ? 'pending' : 'in_progress', 'FILM (IT)'); // สะกดคนละแบบ
+  await changeTicketStatusAction(b.id, b.status === 'resolved' ? 'pending' : 'resolved', 'FILM (IT)'); // สะกดคนละแบบ
 
   const editors = listStatusEditors();
   const lowered = editors.map((e) => e.toLowerCase());
@@ -195,8 +196,10 @@ test('คืนเครื่อง: ปลดผู้ครอบครอง
 
 test('บันทึกหมายเหตุลงประวัติทุกครั้ง แม้ครั้งที่ไม่ได้ส่ง LINE', async () => {
   const target = listTickets()[5];
+  const firstStatus = target.status === 'resolved' ? 'pending' : 'resolved';
+  const secondStatus = firstStatus === 'resolved' ? 'pending' : 'resolved';
 
-  const first = await changeTicketStatusAction(target.id, 'in_progress', 'ฟิล์ม', {
+  const first = await changeTicketStatusAction(target.id, firstStatus, 'ฟิล์ม', {
     note: 'รับเรื่องแล้ว กำลังหาอะไหล่',
   });
   assert.equal(first.success, true);
@@ -205,17 +208,91 @@ test('บันทึกหมายเหตุลงประวัติท�
   const history = readStatusHistory(byId(target.id));
   assert.equal(history.length, 1);
   assert.equal(history[0].from, target.status);
-  assert.equal(history[0].to, 'in_progress');
+  assert.equal(history[0].to, firstStatus);
   assert.equal(history[0].by, 'ฟิล์ม');
   assert.equal(history[0].note, 'รับเรื่องแล้ว กำลังหาอะไรที่ไม่ตรง'.slice(0, 0) + 'รับเรื่องแล้ว กำลังหาอะไหล่');
   assert.equal(history[0].notified, null, 'ไม่ได้เลือกให้ส่ง = null ไม่ใช่ false');
 
   // ครั้งที่สองต้องต่อท้าย ไม่ใช่ทับของเดิม — ประวัติที่หายไปคือข้อมูลที่กู้ไม่ได้
-  await changeTicketStatusAction(target.id, 'resolved', 'ต้น', { note: 'เปลี่ยนอะไหล่เรียบร้อย' });
+  await changeTicketStatusAction(target.id, secondStatus, 'ต้น', { note: 'เปลี่ยนอะไหล่เรียบร้อย' });
   const after = readStatusHistory(byId(target.id));
   assert.equal(after.length, 2);
   assert.equal(after[1].by, 'ต้น');
-  assert.equal(after[1].from, 'in_progress');
+  assert.equal(after[1].from, firstStatus);
+  assert.equal(after[1].role, 'admin', 'ต้องบอกได้ว่าคนเปลี่ยนคือทีม IT ไม่ใช่ผู้แจ้ง');
+});
+
+/* ---------------------------------------------------------------- ทีม IT ปิดงานเองได้ (ต.ค. 2026) */
+
+test('ทีม IT ปิดงาน (แก้ไขแล้ว) ได้เองทันที ไม่ต้องรอผู้แจ้งยืนยัน', async () => {
+  const ticket = createTicket({
+    type: 'repair', status: 'pending', company: 'central', location: 'สำนักงานใหญ่',
+    requester_id: 'unused', equipment_id: null, description: 'จอไม่ติด', repair_cost: null, meta: null,
+  });
+  const saved = await changeTicketStatusAction(ticket.id, 'resolved', 'ฟิล์ม (IT)', { note: 'เปลี่ยนสายจอแล้ว' });
+
+  assert.equal(saved.success, true);
+  assert.equal(saved.ticket.status, 'resolved');
+  assert.ok(saved.ticket.resolved_at, 'ต้องบันทึกวันเสร็จงาน');
+  assert.equal(saved.ticket.meta.completed_by, 'ฟิล์ม (IT)');
+  assert.equal(saved.ticket.meta.resolution_note, 'เปลี่ยนสายจอแล้ว');
+  // ชื่อช่างที่ปิดงานต้องอ่านกลับได้ (หน้า log / ข้อความแจ้งทีมตอนผู้แจ้งเปิดเรื่องกลับใช้ค่านี้)
+  const { readResolvedBy } = require(path.join(root, 'src/lib/ticket-confirmation.ts'));
+  assert.equal(readResolvedBy(saved.ticket).by, 'ฟิล์ม (IT)');
+});
+
+test('สถานะของระบบเดิม (กำลังดำเนินการ / ดำเนินการเสร็จสิ้น / ปิดแล้ว ฯลฯ) ถูกปฏิเสธ โดยไม่แตะข้อมูล', async () => {
+  // หน้าต่างที่เปิดค้างไว้ก่อนอัปเดต หรือคนที่เรียก Server Action ตรงๆ ยังส่งค่าเดิมมาได้
+  // ถ้าหลุดเข้าไป เรื่องนั้นจะไม่มีแท็บ/ป้ายให้แสดง และหายไปจากทั้งสองแท็บของหน้า Tickets
+  const fresh = createTicket({
+    type: 'it_service', status: 'pending', company: 'central', location: 'สำนักงานใหญ่',
+    requester_id: 'unused', equipment_id: null, description: 'ขอสิทธิ์', repair_cost: null, meta: null,
+  });
+  const before = JSON.stringify(byId(fresh.id));
+  for (const legacy of ['in_progress', 'waiting_info', 'waiting_delivery', 'completed', 'closed']) {
+    const refused = await changeTicketStatusAction(fresh.id, legacy, 'ฟิล์ม', { note: 'ทดสอบ' });
+    assert.equal(refused.error, 'สถานะไม่ถูกต้อง', legacy);
+  }
+  assert.equal(JSON.stringify(byId(fresh.id)), before, 'ถูกปฏิเสธแล้วต้องไม่แตะข้อมูลเลย');
+});
+
+test('ยกเลิก: ปิดเรื่องโดยไม่ได้แก้ — ไม่มีวันปิดงาน ไม่มีการ์ดดาว ผู้แจ้งได้ข้อความธรรมดา และคะแนนรอบเดิมถูกถอด', async () => {
+  // ยกเลิกต้องไม่ถูกนับเป็นงานที่แก้เสร็จ: ถ้ามี resolved_at/การ์ดดาว ตัวเลข "ปิดงานกี่เรื่อง / ใช้เวลาเฉลี่ย / คะแนนเฉลี่ย"
+  // จะรวมเรื่องที่ไม่ได้แก้จริง (แจ้งซ้ำ/แจ้งผิด) ไปด้วยโดยไม่มีใครรู้
+  const { readRating } = require(path.join(root, 'src/lib/ticket-feedback.ts'));
+  const { rateTicketByRequester } = require(path.join(root, 'src/lib/db/tickets.ts'));
+  const originalFetch = global.fetch;
+  const originalToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  process.env.LINE_CHANNEL_ACCESS_TOKEN = 'mock-token';
+  const ticket = createTicket({
+    type: 'repair', status: 'pending', company: 'central', location: 'สำนักงานใหญ่',
+    requester_id: 'unused', equipment_id: null, description: 'จอไม่ติด (แจ้งซ้ำ)', repair_cost: null,
+    meta: { line_user_id: 'U_cancel_requester' },
+  });
+  const requests = [];
+  try {
+    global.fetch = async (url, init) => { requests.push(JSON.parse(init.body)); return new Response('{}', { status: 200 }); };
+    // ปิดไปก่อนแล้วได้คะแนน — แล้วค่อยรู้ว่าเป็นเรื่องซ้ำ ต้องเปลี่ยนเป็นยกเลิกได้และคะแนนต้องหลุดออก
+    await changeTicketStatusAction(ticket.id, 'resolved', 'IT', { note: 'ปิดไปก่อน' });
+    rateTicketByRequester({ ticketId: ticket.id, score: 5, by: 'ผู้แจ้ง', lineUserId: 'U_cancel_requester' });
+
+    const saved = await changeTicketStatusAction(ticket.id, 'cancelled', 'IT', { note: 'แจ้งซ้ำกับ ITSR2026100001', notifyLine: true });
+    assert.equal(saved.success, true);
+    assert.equal(saved.ticket.status, 'cancelled');
+    assert.equal(saved.ticket.resolved_at, null, 'ยกเลิกไม่ใช่ทำเสร็จ — ต้องไม่มีวันปิดงาน');
+    assert.equal(readRating(saved.ticket), null, 'คะแนนของรอบที่ปิดไปต้องหลุด ไม่งั้นไปปนในคะแนนเฉลี่ย');
+    assert.equal(saved.ticket.meta.resolution_note, 'แจ้งซ้ำกับ ITSR2026100001');
+
+    assert.equal(saved.notify, 'sent');
+    const [message] = requests.at(-1).messages;
+    assert.equal(message.type, 'text', 'ยกเลิกไม่มีงานให้ประเมิน — ห้ามส่งการ์ดดาว');
+    assert.match(message.text, /ถูกยกเลิก/);
+    assert.match(message.text, /แจ้งซ้ำกับ ITSR2026100001/, 'เหตุผลที่ทีม IT เขียนต้องไปถึงผู้แจ้ง');
+  } finally {
+    global.fetch = originalFetch;
+    if (originalToken === undefined) delete process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    else process.env.LINE_CHANNEL_ACCESS_TOKEN = originalToken;
+  }
 });
 
 test('ติ๊กแจ้ง LINE แต่ผู้แจ้งไม่มี LINE ผูกไว้ -> บอกเหตุผล ไม่เงียบ', async () => {
@@ -237,7 +314,7 @@ test('ติ๊กแจ้ง LINE แต่ผู้แจ้งไม่ม�
   });
   assert.equal(canNotifyOnLine(ticket), false);
 
-  const result = await changeTicketStatusAction(ticket.id, 'closed', 'ฟิล์ม', {
+  const result = await changeTicketStatusAction(ticket.id, 'resolved', 'ฟิล์ม', {
     note: 'ปิดงาน',
     notifyLine: true,
   });
@@ -247,13 +324,13 @@ test('ติ๊กแจ้ง LINE แต่ผู้แจ้งไม่ม�
   const history = readStatusHistory(byId(ticket.id));
   assert.equal(history[history.length - 1].notified, false, 'ต้องบันทึกว่าแจ้งไม่สำเร็จ');
   assert.equal(history[history.length - 1].note, 'ปิดงาน');
-  assert.equal(byId(ticket.id).status, 'closed');
+  assert.equal(byId(ticket.id).status, 'resolved');
 });
 
 test('หมายเหตุยาวเกิน 500 ตัวอักษรถูกปฏิเสธ โดยไม่แตะสถานะ', async () => {
   const target = listTickets()[7];
   const before = target.status;
-  const result = await changeTicketStatusAction(target.id, 'cancelled', 'ฟิล์ม', {
+  const result = await changeTicketStatusAction(target.id, 'resolved', 'ฟิล์ม', {
     note: 'ก'.repeat(501),
   });
   assert.match(result.error ?? '', /ยาวเกินไป/);
@@ -291,15 +368,16 @@ test('เพิ่มหมายเหตุหลังแก้ไขเส�
 test('หน้าต่างเก่าต้องไม่เขียนทับสถานะที่ผู้อื่นบันทึกไปแล้ว', async () => {
   const ticket = listTickets()[0];
   const before = JSON.stringify(ticket);
-  const saved = await changeTicketStatusAction(ticket.id, 'closed', 'IT', { expectedUpdatedAt: null });
+  const next = ticket.status === 'resolved' ? 'pending' : 'resolved';
+  const saved = await changeTicketStatusAction(ticket.id, next, 'IT', { expectedUpdatedAt: null });
   assert.match(saved.error, /อัปเดตแล้ว/);
   assert.equal(JSON.stringify(byId(ticket.id)), before);
 });
 
 test('adding a note to an open ticket does not set its resolution date', async () => {
   const ticket = listTickets()[0];
-  updateTicketStatus(ticket.id, 'in_progress', 'IT');
-  const saved = await changeTicketStatusAction(ticket.id, 'in_progress', 'IT', { note: 'Still investigating' });
+  updateTicketStatus(ticket.id, 'pending', 'IT');
+  const saved = await changeTicketStatusAction(ticket.id, 'pending', 'IT', { note: 'Still investigating' });
   assert.equal(saved.success, true);
   assert.equal(saved.ticket.resolved_at, null);
 });
@@ -317,7 +395,7 @@ test('LINE ส่งข้อความตรงกับตัวอย่า
   const requests = [];
   try {
     global.fetch = async (url, init) => {
-      requests.push({ url, body: JSON.parse(init.body) });
+      requests.push({ url, body: JSON.parse(init.body), signal: init.signal });
       return new Response('{}', { status: 200 });
     };
     const note = 'เปลี่ยนสายเรียบร้อยแล้ว';
@@ -326,16 +404,24 @@ test('LINE ส่งข้อความตรงกับตัวอย่า
     assert.equal(requests.length, 1);
     assert.match(requests[0].url, /\/message\/push$/);
     assert.equal(requests[0].body.to, 'U_test_requester');
-    // สถานะ resolved ส่งเป็นการ์ด Flex ที่มีปุ่มยืนยันในตัว ไม่ใช่ข้อความเปล่า
+    // ต้องมีเพดานเวลา — ไม่งั้น LINE ค้างเมื่อไหร่ หน้าต่างแอดมินหมุนค้างไม่รู้จบ
+    assert.ok(requests[0].signal instanceof AbortSignal, 'push ต้องส่ง signal สำหรับ timeout');
+    // ปิดงาน = การ์ด Flex ที่มีดาวให้คะแนน + ปุ่มยังมีปัญหา ไม่ใช่ข้อความเปล่า
     // และต้องเป็น "ข้อความเดียว" เท่านั้น เพราะ push แพ็กเกจฟรีมีโควตา 300 ข้อความ/เดือน
+    assert.equal(requests[0].body.messages.length, 1);
     const [card] = requests[0].body.messages;
     assert.equal(card.type, 'flex');
     assert.equal(card.altText, buildTicketStatusMessage(sent.ticket, note));
-    const buttons = card.contents.footer.contents;
-    assert.equal(buttons[0].action.data, `a=confirm&code=${sent.ticket.ticket_code}&v=1`);
-    assert.equal(buttons[1].action.data, `a=confirm&code=${sent.ticket.ticket_code}&v=0`);
+    const code = sent.ticket.ticket_code;
+    const stars = card.contents.body.contents.at(-1).contents;
+    assert.deepEqual(stars.map((s) => s.action.data), [1, 2, 3, 4, 5].map((n) => `a=rate&code=${code}&s=${n}`));
+    const [reopen] = card.contents.footer.contents;
+    // ใช้ data เดียวกับปุ่ม "ยังไม่หาย" ของการ์ดเก่า — บอทมีทางเปิดเรื่องกลับทางเดียว
+    assert.equal(reopen.action.data, `a=confirm&code=${code}&v=0`);
     // label ของ action ยาวเกิน 20 ตัวอักษรเมื่อไหร่ LINE ตอบ 400 ทั้งข้อความ ไม่ใช่แค่ตัดคำ
-    for (const b of buttons) assert.ok(b.action.label.length <= 20, b.action.label);
+    for (const action of [...stars.map((s) => s.action), reopen.action]) {
+      assert.ok(action.label.length <= 20, action.label);
+    }
     assert.equal(readStatusHistory(sent.ticket).at(-1).notified, true);
 
     for (const status of [401, 429, 500]) {
@@ -368,14 +454,14 @@ test('ผลส่ง LINE ต้องติดกับประวัติ�
   });
   try {
     global.fetch = async () => {
-      updateTicketStatus(ticket.id, 'closed', 'other', { note: 'another edit' });
+      updateTicketStatus(ticket.id, 'pending', 'other', { note: 'another edit' });
       return new Response('{}', { status: 200 });
     };
     const saved = await changeTicketStatusAction(ticket.id, 'resolved', 'IT', { notifyLine: true });
     const history = readStatusHistory(saved.ticket);
     assert.equal(history[0].notified, true);
     assert.equal(history[1].notified, null);
-    assert.equal(saved.ticket.status, 'closed');
+    assert.equal(saved.ticket.status, 'pending');
   } finally {
     global.fetch = originalFetch;
     if (originalToken === undefined) delete process.env.LINE_CHANNEL_ACCESS_TOKEN;

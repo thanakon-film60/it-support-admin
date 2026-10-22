@@ -14,6 +14,11 @@ export const dynamic = "force-dynamic";
 
 const VALID_TYPES: TicketType[] = ["repair", "withdraw", "return", "it_service"];
 
+/** ป้ายปุ่ม rich menu ของบอท (ปุ่มแบบส่งข้อความ) — กดแล้วป้ายนี้กลายเป็น "ข้อความแรก" ของผู้ใช้
+ *  แต่มันบอกแค่ประเภทเรื่อง ซึ่งมีคอลัมน์ของมันอยู่แล้ว จึงไม่ใส่ซ้ำในรายละเอียด
+ *  ต้องตรงกับ MAIN_BUTTONS ใน line-bot-python/app/richmenu.py */
+const MENU_LABELS = new Set(["แจ้งซ่อม", "เบิกอุปกรณ์", "คืนอุปกรณ์", "ขอใช้บริการ IT"]);
+
 interface Payload {
   request_id?: string;
   initial_message?: string | null;
@@ -138,6 +143,16 @@ export async function POST(request: NextRequest) {
       items: existing.meta?.items ?? [], image_urls: existing.meta?.image_urls ?? [] });
   }
 
+  // เบิกต้องบอกว่า "ของอะไร" เสมอ — ticket เบิกที่ไม่มีรายการ ทีม IT เตรียมของไม่ได้ ต้องทักไปถามเอง
+  // (ผู้ใช้แจ้ง 13 ต.ค. 2026) บอทบังคับให้ระบุอยู่แล้ว ด่านนี้กันทางที่ยิงเข้ามาตรงๆ (สคริปต์ / บอทรุ่นเก่า)
+  // อยู่หลังการเช็ค request_id ซ้ำ — ลองส่งซ้ำของเรื่องที่สร้างไปแล้วต้องได้ใบเดิมกลับไปเหมือนเดิม
+  if (type === "withdraw" && items.length === 0) {
+    return Response.json(
+      { error: "การเบิกต้องระบุอุปกรณ์อย่างน้อย 1 รายการ", reason: "items_required" },
+      { status: 400 }
+    );
+  }
+
   const matches = body.asset_code?.trim() ? findEquipmentByAssetCode(body.asset_code.trim()) : [];
   const equipment = body.equipment_id?.trim()
     ? getEquipmentById(body.equipment_id.trim())
@@ -165,11 +180,24 @@ export async function POST(request: NextRequest) {
 
   const imageUrls = sanitizeImageUrls(body.image_urls);
 
-  // ถ้าไม่มี description ให้ประกอบข้อความสรุปจากรายการที่เบิกแทน เพื่อไม่ให้ ticket ว่างเปล่า
-  const fallbackDescription =
+  // บรรทัดสรุปรายการของ: "ขอเบิก เมาส์ x2, คีย์บอร์ด x1"
+  //
+  // เรื่องเบิก/คืนขึ้นต้นด้วยบรรทัดนี้เสมอ — เดิมใช้เป็นแค่ค่าสำรองตอนไม่มีข้อความอื่น ผลคือคนที่กดเมนู
+  // "เบิกอุปกรณ์" ได้รายละเอียดแค่ "เบิกอุปกรณ์" (ป้ายปุ่ม) แล้วรายการของจริงหายไปจากสายตาทีม IT
+  // (ITRQ2026090012 — ผู้ใช้แจ้ง 13 ต.ค. 2026 ว่าไม่รู้ว่าเขาจะเบิกอะไร)
+  const itemsLine =
     items.length > 0
-      ? `${type === "return" ? "ขอคืน" : "รายการอุปกรณ์"} ${items.map((i) => `${i.name} x${i.qty}`).join(", ")}`
-      : "(ไม่ได้ระบุรายละเอียด — แจ้งผ่าน LINE Bot)";
+      ? `${type === "return" ? "ขอคืน" : type === "withdraw" ? "ขอเบิก" : "รายการอุปกรณ์"} ${items.map((i) => `${i.name} x${i.qty}`).join(", ")}`
+      : null;
+  const told = [body.initial_message?.trim(), body.description?.trim()].filter(
+    (text): text is string => Boolean(text) && !MENU_LABELS.has(text as string)
+  );
+  const description =
+    [type === "withdraw" || type === "return" ? itemsLine : null, ...told]
+      .filter((text, index, all) => text && all.indexOf(text) === index)
+      .join("\n\n") ||
+    itemsLine ||
+    "(ไม่ได้ระบุรายละเอียด — แจ้งผ่าน LINE Bot)";
 
   const ticketInput: NewTicketInput = {
     type,
@@ -178,8 +206,7 @@ export async function POST(request: NextRequest) {
     location: locationInput || "ไม่ระบุสาขา",
     requester_id: requester.id,
     equipment_id: equipment?.id ?? null,
-    description: [body.initial_message?.trim(), body.description?.trim()]
-      .filter((text, index, all) => text && all.indexOf(text) === index).join("\n\n") || fallbackDescription,
+    description,
     repair_cost: null,
     meta: {
       source: "line-bot",

@@ -5,17 +5,20 @@
     ไม่ต้องรันไฟล์นี้ตรงๆ — ดับเบิลคลิก deploy.bat ที่โฟลเดอร์หลักของโปรเจกต์แทน
 
     สคริปต์นี้ทำ 3 อย่าง:
-      1. build + start container (app, bot)
+      1. build + start container (app, bot และ tunnel ของ Cloudflare เมื่อใส่ token แล้ว)
       2. ตรวจว่าของใหม่ทำงานจริงทุกจุด ไม่ใช่แค่ "คำสั่งไม่ error"
-      3. ตั้ง Tailscale Funnel ให้ LINE ยิง webhook เข้ามาได้
+      3. ตรวจทางเข้าจากอินเทอร์เน็ต (Cloudflare Tunnel) ว่าคนนอกเปิดเว็บได้ และ LINE ยิง webhook เข้ามาได้จริง
 
     ออกแบบให้รันซ้ำได้เสมอ ไม่มีขั้นตอนไหนที่รันสองรอบแล้วพัง
 #>
 
 param(
-    # ข้ามการตั้ง Tailscale Funnel (ใช้ตอนที่จัดการ ingress เองด้วยวิธีอื่น)
-    [switch]$SkipTailscale,
-    # ตั้งให้ Funnel ทำงานเองทุกครั้งที่ล็อกอินเข้า Windows
+    # ข้ามการตรวจทางเข้าจากอินเทอร์เน็ต (ชื่อเดิม -SkipTailscale ยังใช้ได้)
+    [Alias('SkipTailscale')]
+    [switch]$SkipPublic,
+    # ทางสำรองชั่วคราว: กลับไปใช้ Tailscale Funnel แทน Cloudflare Tunnel (ต้องย้าย LINE webhook กลับเองด้วย)
+    [switch]$Funnel,
+    # ใช้คู่กับ -Funnel เท่านั้น: ตั้งให้ Funnel ทำงานเองทุกครั้งที่ล็อกอินเข้า Windows
     [switch]$InstallAutostart
 )
 
@@ -27,7 +30,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 # Windows PowerShell 5.1 บนบางเครื่องยังตั้ง TLS 1.0 เป็นค่าตั้งต้น ซึ่งเซิร์ฟเวอร์สมัยใหม่
-# ปฏิเสธไปแล้ว ทำให้การเช็คโดเมน https (Tailscale Funnel) ล้มเหลวทั้งที่ระบบปกติดี
+# ปฏิเสธไปแล้ว ทำให้การเช็คโดเมน https (Cloudflare / LINE API) ล้มเหลวทั้งที่ระบบปกติดี
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch { }
 
 # ---------------------------------------------------------------- ตัวช่วยแสดงผล
@@ -98,6 +101,52 @@ function Invoke-Local {
     }
 }
 
+# อ่านค่าเดียวจาก .env — ห้ามพิมพ์ค่าที่ได้ออกจอ (ไฟล์นี้มีความลับของระบบ)
+function Read-EnvValue {
+    param([string]$Name)
+    $f = Join-Path $RepoRoot '.env'
+    if (-not (Test-Path $f)) { return $null }
+    $line = Get-Content $f -Encoding UTF8 | Where-Object { $_ -match "^\s*$Name\s*=" } | Select-Object -Last 1
+    if (-not $line) { return $null }
+    return (($line -replace "^\s*$Name\s*=\s*", '') -replace '^["'']|["'']$', '').Trim()
+}
+
+# tunnel ต่อ Cloudflare ติดหรือยัง — cloudflared ตอบ 200 ที่ /ready ถามจากในเครือข่ายของ compose ผ่าน
+# container app (มี node) แทนการเปิดพอร์ตออกมาที่เครื่อง: cloudflared ของงานอื่นที่ติดตั้งบนเครื่องนี้
+# จองพอร์ต 20241-20245 ไว้แล้ว เปิดชนกันแล้ว container tunnel สตาร์ทไม่ขึ้น (เจอจริง 8 ต.ค. 2026)
+# EAP = Continue เฉพาะในนี้: compose เขียนคำเตือนลง stderr ได้ทั้งที่สำเร็จ ถ้า Stop จะกลายเป็น "ไม่ผ่าน" ปลอม
+function Test-TunnelReady {
+    $ErrorActionPreference = 'Continue'
+    $js = "fetch('http://tunnel:20241/ready').then(r=>process.exit(r.status==200?0:1),()=>process.exit(1))"
+    try {
+        docker compose exec -T app node -e $js 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } catch { return $false }
+}
+
+# ตัวชี้ขาดว่าบอทรับข้อความได้จริง: ให้เซิร์ฟเวอร์ LINE ยิง webhook เข้ามาเอง (ไม่กินโควตา push)
+# และตรวจว่า Webhook URL ใน LINE ชี้มาที่ทางเข้าปัจจุบัน — ย้ายทางเข้าแล้วลืมย้าย URL = บอทเงียบ
+function Test-LineWebhookUrl {
+    param([string]$Want)
+    $token = Read-EnvValue 'LINE_CHANNEL_ACCESS_TOKEN'
+    if (-not $token) { Write-Warn 'ไม่พบ LINE_CHANNEL_ACCESS_TOKEN ใน .env — ข้ามการให้ LINE ทดสอบ'; return }
+    $h = @{ Authorization = "Bearer $token" }
+    try {
+        $ep = Invoke-RestMethod -Uri 'https://api.line.me/v2/bot/channel/webhook/endpoint' -Headers $h -TimeoutSec 15
+        if ($ep.endpoint -ne $Want) {
+            Write-Fail "LINE ยังส่ง webhook ไปที่ '$($ep.endpoint)' ไม่ใช่ '$Want' — ดับเบิลคลิก use-cloudflare.bat เพื่อย้าย"
+        } elseif (-not $ep.active) {
+            Write-Warn 'Webhook URL ถูกแล้ว แต่ "Use webhook" ยังปิดอยู่ใน LINE Developers Console'
+        }
+    } catch { Write-Warn "อ่าน Webhook URL จาก LINE ไม่ได้: $($_.Exception.Message)" }
+    try {
+        $t = Invoke-RestMethod -Uri 'https://api.line.me/v2/bot/channel/webhook/test' -Method Post -Headers $h `
+            -ContentType 'application/json' -Body (@{ endpoint = $Want } | ConvertTo-Json) -TimeoutSec 30
+        if ($t.success) { Write-Pass "LINE ยิง webhook เข้ามาได้จริง (statusCode $($t.statusCode))" }
+        else { Write-Fail "LINE ยิงเข้ามาไม่สำเร็จ: $($t.reason) $($t.detail)" }
+    } catch { Write-Warn "เรียก LINE webhook test ไม่ได้: $($_.Exception.Message)" }
+}
+
 # ---------------------------------------------------------------- เริ่ม
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
@@ -148,9 +197,15 @@ if (Test-Path $menuImage) {
 # ---- 1. build + start ----
 
 Write-Step "1. Build และสตาร์ท container (ใช้เวลา 1-3 นาที)"
-Write-Info "กำลังรัน: docker compose up -d --build app bot"
+# tunnel (Cloudflare) สตาร์ทเฉพาะเมื่อใส่ token แล้ว — ไม่มี token แล้วสั่ง up จะวนรีสตาร์ทไม่จบ
+$tunnelToken = Read-EnvValue 'CLOUDFLARE_TUNNEL_TOKEN'
+$publicHost = Read-EnvValue 'PUBLIC_HOST'
+if (-not $publicHost) { $publicHost = 'it.thanakronpart-time.com' }
+$services = @('app', 'bot')
+if ($tunnelToken -and -not $Funnel) { $services += 'tunnel' }
+Write-Info "กำลังรัน: docker compose up -d --build $($services -join ' ')"
 
-docker compose up -d --build app bot
+docker compose up -d --build @services
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "build ไม่สำเร็จ — อ่านข้อความ error ด้านบน"
     return
@@ -262,6 +317,37 @@ if ($null -eq $h) {
         } else {
             Write-Fail "บอทยังไม่มีขั้นตอนเลือกบริษัท (first_step = '$($h.first_step)') — ลอง: docker compose up -d --build --force-recreate bot"
         }
+
+        # ปุ่ม "คุยกับเจ้าหน้าที่" ส่งต่อได้เฉพาะตอนเปิด Chat ใน LINE OA Manager (ทีม IT ตอบในแอป LINE OA)
+        # บอทถาม LINE เองแบบ background ตอนสตาร์ท รอบแรกอาจยังเป็น unknown อยู่ 1-2 วินาที
+        $chatMode = $h.chat_mode
+        for ($i = 0; $i -lt 5 -and $chatMode -eq 'unknown'; $i++) {
+            Start-Sleep -Seconds 2
+            try { $chatMode = ((Invoke-Local 'http://127.0.0.1:8000/health').Body | ConvertFrom-Json).chat_mode } catch { }
+        }
+        if ($null -eq $chatMode) {
+            Write-Fail "บอทยังไม่มีปุ่ม 'คุยกับเจ้าหน้าที่' (/health ไม่มี chat_mode) — ลอง: docker compose up -d --build --force-recreate bot"
+        } elseif ($chatMode -eq 'chat') {
+            Write-Pass "Chat ใน LINE OA เปิดอยู่ — ทีม IT ตอบในแอป LINE Official Account ได้ (บอทเงียบ $($h.handoff_hours) ชม. กับคนที่ขอคุย)"
+        } elseif ($chatMode -eq 'bot') {
+            Write-Warn "Chat ใน LINE OA ปิดอยู่ — ปุ่ม 'คุยกับเจ้าหน้าที่' จะตอบว่ายังไม่เปิดให้คุย (เปิดที่ OA Manager > Settings > Response settings > Chat)"
+        } else {
+            Write-Warn "ยังถาม LINE ไม่ได้ว่าเปิด Chat อยู่ไหม (chat_mode = '$chatMode') — ดู: docker compose logs bot --tail 50"
+        }
+
+        # ทีม IT ปิดบอทจากการ์ดในแชท (พิมพ์ "แอดมิน") — เก็บใน Redis จึงไม่หายตอน deploy
+        # ปิดทั้งระบบค้างไว้ = บอทไม่ตอบใครเลย ต้องเห็นตรงนี้ ไม่งั้นจะนึกว่า deploy ทำบอทพัง
+        if (-not ($h.PSObject.Properties.Name -contains 'bot_off')) {
+            Write-Fail "บอทยังไม่มีคำสั่งเปิด/ปิดบอทจากแชท (/health ไม่มี bot_off) — ลอง: docker compose up -d --build --force-recreate bot"
+        } elseif ($null -eq $h.bot_off) {
+            Write-Warn "อ่านสถานะเปิด/ปิดบอทไม่ได้ (Redis มีปัญหา?) — ดู: docker compose logs bot --tail 50"
+        } elseif ($h.bot_off -eq $true) {
+            Write-Warn "ตอนนี้ปิดบอททั้งระบบอยู่ — ผู้ใช้ทุกคนได้ข้อความแจ้งแล้วบอทเงียบ (เปิดที่หน้า 'บอท LINE' หรือพิมพ์ 'แอดมิน' ในแชท)"
+        } elseif ($h.users_off -gt 0) {
+            Write-Info "ปิดบอทรายคนไว้ $($h.users_off) คน (ดูรายชื่อที่หน้า 'บอท LINE')"
+        } else {
+            Write-Pass "บอทตอบทุกคนตามปกติ (ทีม IT ปิด/เปิดได้ด้วยการพิมพ์ 'แอดมิน' ในแชท)"
+        }
     } else {
         Write-Fail "บอทยังรันโค้ดเก่า (/health ไม่มีฟิลด์ richmenu) — ลองรัน: docker compose up -d --build --force-recreate bot"
     }
@@ -319,6 +405,16 @@ if ($null -eq $ah) {
         Write-Fail "เขียนโฟลเดอร์ uploads ไม่ได้ — รูปที่ผู้ใช้ส่งมาจะบันทึกไม่สำเร็จ"
     }
 
+    # คลังไฟล์ (/files) อยู่บน volume "drive" แยกจาก app_data — ถ้าเขียนไม่ได้ (EACCES) หน้าเว็บยังเปิดได้ปกติ
+    # แต่อัปโหลดทุกไฟล์จะล้ม จึงต้องตรวจตรงนี้แทนการรอให้ผู้ใช้เจอเอง
+    if ($null -eq $ah.storage.drive_writable) {
+        Write-Warn "แอปยังไม่มีคลังไฟล์ (/files) — โค้ดเก่ากว่ารอบนี้ ถ้าเพิ่งแก้มา ให้ build ใหม่อีกครั้ง"
+    } elseif ($ah.storage.drive_writable) {
+        Write-Pass "คลังไฟล์ (/files) เขียนได้ · เพดานรวม $($ah.storage.drive_quota_gb) GB"
+    } else {
+        Write-Fail "เขียนโฟลเดอร์คลังไฟล์ไม่ได้ — อัปโหลดใน /files จะล้มทุกไฟล์ ตรวจ volume drive ใน docker-compose.yml"
+    }
+
     # ชุดกัน Inspect ไม่ทิ้งร่องรอยใน DOM เวลาไม่ทำงาน ดูจากหน้าเว็บจึงไม่มีทางรู้
     # ต้องถาม /api/health เท่านั้น (นี่คือเหตุผลที่เพิ่มก้อน security เข้าไปใน endpoint นั้น)
     if ($null -ne $ah.security) {
@@ -356,71 +452,51 @@ if ($root.Status -eq 200 -and $root.Headers) {
 }
 
 # ---- 4. ทางเข้าจากอินเทอร์เน็ต ----
+# ตั้งแต่ 7 ต.ค. 2026 ใช้ Cloudflare Tunnel (service "tunnel" ใน docker-compose.yml) แทน Tailscale Funnel
+# ตรวจ 3 ชั้น: tunnel ต่อ Cloudflare ติด → คนนอกเปิดเว็บ/ถึงบอทได้จริง → LINE ยิงเข้ามาได้จริง
+# ยิงจากเครื่องนี้พิสูจน์ได้จริง เพราะชื่อนี้ resolve ไป Cloudflare แล้ววิ่งกลับเข้ามาทาง tunnel
+# (ต่างจาก *.ts.net ที่ MagicDNS ลัดเข้าเครื่องตรงๆ จนเคย "ผ่าน" ทั้งที่คนนอกเข้าไม่ได้)
+# -Funnel = ทางสำรองแบบเดิม — ตรรกะทั้งหมดของ Funnel ยังอยู่ที่ enable-funnel.ps1 ที่เดียว
 
-if (-not $SkipTailscale) {
-    Write-Step "4. ทางเข้าจากอินเทอร์เน็ต (Tailscale Funnel)"
-
-    # เหตุผลเดียวกับใน backup.ps1: tailscale เขียนข้อความปกติลง stderr ได้
-    # ถ้าปล่อยให้ 2>&1 เจอ $ErrorActionPreference = 'Stop' สคริปต์จะตายทั้งที่ Funnel ทำงานอยู่
-    $ErrorActionPreference = 'Continue'
-
-    $tailscale = Get-Command tailscale.exe -ErrorAction SilentlyContinue
-    if (-not $tailscale) {
-        $guess = 'C:\Program Files\Tailscale\tailscale.exe'
-        if (Test-Path $guess) { $tailscale = $guess } else { $tailscale = $null }
-    } else {
-        $tailscale = $tailscale.Source
+if ($Funnel) {
+    Write-Step "4. ทางเข้าจากอินเทอร์เน็ต (Tailscale Funnel — ทางสำรอง)"
+    $funnelArgs = @{}
+    if ($InstallAutostart) { $funnelArgs.InstallAutostart = $true }
+    # เพิ่ง recreate container — ให้รอ app/bot ขึ้นก่อนตรวจ ไม่งั้นได้ "ไม่ผ่าน" ปลอม
+    & (Join-Path $PSScriptRoot 'enable-funnel.ps1') -WaitSeconds 120 @funnelArgs
+    switch ($LASTEXITCODE) {
+        0       { Write-Pass "คนนอกเข้าเว็บแอดมินได้ และ LINE ยิง webhook เข้ามาได้จริง" }
+        2       { Write-Warn "ตั้ง Funnel แล้ว แต่ยืนยันจากข้างนอกไม่ได้ในรอบนี้ — ดับเบิลคลิก enable-funnel.bat ซ้ำภายหลัง" }
+        default { Write-Fail "คนนอกยังเข้าไม่ได้ — ดูรายละเอียดข้างบน หรือรัน .\scripts\enable-funnel.ps1 -Force" }
     }
-
-    if (-not $tailscale) {
-        Write-Warn "ไม่พบ tailscale.exe — ข้ามขั้นนี้ ถ้ายังไม่มีทางเข้าอื่น LINE จะยิง webhook เข้ามาไม่ได้"
+} elseif (-not $SkipPublic) {
+    Write-Step "4. ทางเข้าจากอินเทอร์เน็ต (Cloudflare Tunnel → https://$publicHost)"
+    if (-not $tunnelToken) {
+        Write-Fail "ยังไม่ได้ใส่ token ของ Cloudflare Tunnel — ดับเบิลคลิก use-cloudflare.bat (ตอนนี้คนนอกและ LINE เข้าไม่ได้)"
     } else {
-        $status = & $tailscale funnel status 2>&1 | Out-String
-
-        # ต้องเป็น funnel เท่านั้น ห้ามเป็น serve — สองคำสั่งเขียนทับ config ตัวเดียวกัน
-        # การเผลอรัน serve จะสลับเป็น "tailnet only" เงียบๆ แล้ว webhook ตายโดยไม่มี error
-        if ($status -match 'Funnel on') {
-            Write-Pass "Funnel เปิดอยู่แล้ว"
+        $tunnelReady = $false
+        $deadline = (Get-Date).AddSeconds(60)
+        while (-not $tunnelReady -and (Get-Date) -lt $deadline) {
+            if (Test-TunnelReady) { $tunnelReady = $true } else { Start-Sleep -Seconds 3 }
+        }
+        if (-not $tunnelReady) {
+            Write-Fail "Cloudflare Tunnel ต่อไม่ติด — ดู log: docker compose logs tunnel --tail 30 (เจอ Unauthorized = token ผิด → use-cloudflare.bat -NewToken)"
         } else {
-            Write-Info "Funnel ยังไม่เปิด — กำลังตั้งให้"
-            & $tailscale funnel --bg 3000 2>&1 | Out-Null
-            & $tailscale funnel --bg --set-path=/webhook 8000 2>&1 | Out-Null
-            Start-Sleep -Seconds 3
-            $status = & $tailscale funnel status 2>&1 | Out-String
-            if ($status -match 'Funnel on') { Write-Pass "ตั้ง Funnel เรียบร้อย" }
-            else { Write-Fail "ตั้ง Funnel ไม่สำเร็จ — ลองรันเองดู: tailscale funnel --bg 3000" }
-        }
-
-        if ($status -match 'tailnet only') {
-            Write-Fail "Funnel เป็นโหมด 'tailnet only' — คนนอกวงเข้าไม่ได้ และ LINE จะยิง webhook ไม่เข้า (มักเกิดจากเผลอรัน tailscale serve)"
-        }
-
-        # ยิงจากอินเทอร์เน็ตจริงเข้ามาที่ webhook เพื่อพิสูจน์ว่าทางเข้าใช้ได้
-        $m = [regex]::Match($status, 'https://([a-z0-9\-\.]+\.ts\.net)')
-        if ($m.Success) {
-            $host2 = $m.Groups[1].Value
-            Write-Info "โดเมนสาธารณะ: $host2"
-            $pub = Invoke-Local "https://$host2/webhook" 20
-            if ($pub.Status -eq 200 -and $pub.Body -match 'line-bot-python') {
-                Write-Pass "LINE ยิง webhook เข้ามาได้จริง (ทดสอบจากภายนอกแล้ว)"
+            Write-Pass "Cloudflare Tunnel ต่อติดแล้ว"
+            $pub = Invoke-Local "https://$publicHost/api/health" 20
+            if ($pub.Status -eq 200 -and $pub.Body -match '"ok"\s*:\s*true') {
+                Write-Pass "คนนอกเปิดเว็บแอดมินได้: https://$publicHost"
             } else {
-                Write-Warn "เรียก https://$host2/webhook ได้ status $($pub.Status) — Funnel อาจยังไม่พร้อม รออีก 1-2 นาทีแล้วลองใหม่"
+                Write-Fail "เปิด https://$publicHost จากข้างนอกไม่ได้ (สถานะ $($pub.Status)) — ตรวจ Routes ของ tunnel IT-Support-Admin ในหน้า Cloudflare"
             }
+            $hook = Invoke-Local "https://$publicHost/webhook" 20
+            if ($hook.Status -eq 200 -and $hook.Body -match 'line-bot-python') {
+                Write-Pass "/webhook ถึงบอท LINE"
+            } else {
+                Write-Fail "https://$publicHost/webhook ไม่ถึงบอท (สถานะ $($hook.Status)) — route ^/webhook ต้องอยู่บนสุดและชี้ http://bot:8000"
+            }
+            Test-LineWebhookUrl "https://$publicHost/webhook"
         }
-    }
-}
-
-# ---- 5. ตั้งให้ทำงานเองหลังรีบูต ----
-
-if ($InstallAutostart) {
-    Write-Step "5. ตั้งให้ Funnel ทำงานเองทุกครั้งที่ล็อกอิน Windows"
-    $startup = [Environment]::GetFolderPath('Startup')
-    $src = Join-Path $PSScriptRoot 'startup-funnel.bat'
-    if (Test-Path $src) {
-        Copy-Item $src (Join-Path $startup 'it-support-funnel.bat') -Force
-        Write-Pass "คัดลอกไปที่ $startup แล้ว — หลังรีบูตและล็อกอิน Funnel จะเปิดเอง"
-    } else {
-        Write-Warn "ไม่พบ $src"
     }
 }
 
@@ -431,6 +507,7 @@ Write-Host "============================================================" -Foreg
 
 if ($script:Failures.Count -eq 0) {
     Write-Host "  พร้อมใช้งานแล้ว" -ForegroundColor Green
+    if (-not $Funnel) { Write-Host "  เว็บแอดมิน (เปิดได้ทุกที่): https://$publicHost" -ForegroundColor White }
     Write-Host ""
     Write-Host "  ทดสอบด้วยตัวเองจากมือถือ:" -ForegroundColor White
     Write-Host "    1. เพิ่ม LINE OA เป็นเพื่อน (QR อยู่ที่ qr\line-oa-qr-logo.png)" -ForegroundColor Gray
@@ -440,6 +517,7 @@ if ($script:Failures.Count -eq 0) {
     Write-Host "    5. เลือก Motta -> ต้องขึ้นปุ่มทีม แล้วเลือกทีมจึงเห็นสาขาของทีมนั้น" -ForegroundColor Gray
     Write-Host "    6. แจ้งเรื่องจนจบ แล้วเปิด http://127.0.0.1:3000/tickets ดูว่ารูปขึ้นและคอลัมน์บริษัทถูกต้อง" -ForegroundColor Gray
     Write-Host "    7. กดเปลี่ยนสถานะเป็น 'แก้ไขแล้ว' -> ต้องได้ข้อความแจ้งเตือนกลับเข้า LINE" -ForegroundColor Gray
+    Write-Host "    8. กด 'คุยกับเจ้าหน้าที่' -> บอทตอบ 'ส่งต่อให้ทีม IT แล้ว' แล้วเงียบ / แชทนั้นขึ้นในแอป LINE Official Account ให้ทีมตอบ" -ForegroundColor Gray
     Write-Host "" -ForegroundColor Gray
     Write-Host "  แก้รายชื่อสาขาได้ที่ http://127.0.0.1:3000/branches (เพิ่ม/ปิดสาขาแล้วปุ่มในบอทเปลี่ยนทันที)" -ForegroundColor Gray
 } else {

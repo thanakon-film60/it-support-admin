@@ -1,12 +1,9 @@
-import { listRepairHistory, listStatusEditors } from "@/lib/db/tickets";
-import { RepairHistoryBoard } from "@/components/tickets/RepairHistoryBoard";
-import { canNotifyOnLine } from "@/lib/line/notify";
+import { redirect } from "next/navigation";
 
+/** หน้า "ประวัติซ่อม" เดิม — รวมเข้าหน้า Tickets แล้ว (21 ต.ค. 2026 ผู้ใช้ขอ)
+ *
+ *  ประวัติซ่อม = Tickets ที่กรองประเภท "แจ้งซ่อม" (ค่าซ่อม/ทรัพย์สิน/ยอดรวมอยู่ในหน้า Tickets ครบ)
+ *  เก็บเส้นทางไว้ให้ลิงก์/บุ๊กมาร์กเก่ายังใช้ได้ — หน้านี้ไม่อ่านข้อมูลเอง จึงไม่ต้องตรวจสิทธิ์ */
 export default function RepairHistoryPage() {
-  const rows = listRepairHistory();
-  // ประกอบรายชื่อผู้แก้ไขฝั่งเซิร์ฟเวอร์แล้วส่งลงเป็น prop — client component แตะ lib/db เองไม่ได้
-  // (จะลาก node:fs เข้า bundle ของเบราว์เซอร์แล้ว next build ล้ม ดู tests/client-bundle.test.cjs)
-  const editors = listStatusEditors();
-  const notifiable = Object.fromEntries(rows.map((ticket) => [ticket.id, canNotifyOnLine(ticket)]));
-  return <RepairHistoryBoard rows={rows} editors={editors} notifiable={notifiable} />;
+  redirect("/tickets?type=repair");
 }

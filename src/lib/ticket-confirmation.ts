@@ -1,7 +1,8 @@
 import type { Ticket } from "./types";
 
 /**
- * อ่านผลการยืนยันของผู้แจ้งออกจาก `ticket.meta`
+ * อ่านผลการยืนยันของผู้แจ้งออกจาก `ticket.meta` (การ์ดยืนยันรุ่นเก่า — ก่อน ต.ค. 2026)
+ * คะแนนความพึงพอใจของระบบใหม่อยู่ที่ ticket-feedback.ts
  *
  * ทำไมต้องมีไฟล์นี้แยก ไม่ไปอยู่ใน lib/db/tickets.ts:
  *   หน้า /completed เป็น client component ซึ่งห้าม import lib/db/* เด็ดขาด
@@ -62,11 +63,14 @@ export function formatLeadTime(hours: number | null): string {
   return h > 0 ? `${d} วัน ${h} ชม.` : `${d} วัน`;
 }
 
-/** ทีม IT คนที่กด "แก้ไขแล้ว" เป็นครั้งสุดท้าย — อ่านจาก status_history
+/** ทีม IT คนที่ปิดงานครั้งสุดท้าย — อ่านจาก status_history
  *
- *  ทำไมไม่ใช้ ticket.status_updated_by: ฟิลด์นั้นคือ "คนที่แตะล่าสุด" ซึ่งอาจเป็นคนที่มาปิดงาน
- *  ทีหลัง หรือคนที่แก้สถานะผิดแล้วแก้กลับ คำถามของหน้า /completed คือ "ใครเป็นคนแก้เรื่องนี้"
- *  ซึ่งตอบได้จากรายการที่เปลี่ยนสถานะเป็น resolved เท่านั้น
+ *  ทำไมไม่ใช้ ticket.status_updated_by: ฟิลด์นั้นคือ "คนที่แตะล่าสุด" ซึ่งอาจเป็นคนที่แก้สถานะผิด
+ *  แล้วแก้กลับ คำถามที่ต้องตอบคือ "ใครเป็นคนแก้เรื่องนี้" ซึ่งตอบได้จากรายการที่ปิดงานเท่านั้น:
+ *    - เปลี่ยนเป็น resolved โดยทีม IT (ระบบ 2 สถานะ ตั้งแต่ 21 ต.ค. 2026 · และ "แก้ไขแล้ว" ของระบบเดิม)
+ *    - เปลี่ยนเป็น completed โดย role "admin" (ระบบเดิม ต.ค. 2026 — ทีม IT ปิดงานเอง)
+ *  ไม่นับ: completed ที่ไม่มี role (ข้อมูลก่อน ต.ค. 2026 มาจากผู้แจ้งกดยืนยันทางเดียว — ชื่อลูกค้าจะขึ้นเป็นคนแก้งาน)
+ *  และ resolved ที่ role "system" (ระบบแปลงสถานะเดิมให้ — ชื่อ "ระบบ" ไม่ได้ตอบว่าใครแก้)
  *
  *  คืน null ได้ตามปกติ — เรื่องเก่าที่ปิดไปก่อนมีระบบประวัติจะไม่มีข้อมูลส่วนนี้
  */
@@ -80,7 +84,10 @@ export function readResolvedBy(
     const e = raw[i];
     if (!e || typeof e !== "object") continue;
     const entry = e as Record<string, unknown>;
-    if (entry.to !== "resolved") continue;
+    const closedByIt =
+      (entry.to === "resolved" && entry.role !== "system" && entry.role !== "requester") ||
+      (entry.to === "completed" && entry.role === "admin");
+    if (!closedByIt) continue;
     if (typeof entry.at !== "string") continue;
     return {
       by: typeof entry.by === "string" && entry.by.trim() ? entry.by : "-",

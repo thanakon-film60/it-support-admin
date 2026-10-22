@@ -1,0 +1,49 @@
+{
+  "pages": 7,
+  "pdf_pages": 7,
+  "layout": [
+    {
+      "page": 1,
+      "title": "แจ้งปัญหา IT ง่าย ๆ ใน 5 ขั้นตอน",
+      "overflow": false,
+      "boxes": []
+    },
+    {
+      "page": 2,
+      "title": "เริ่มต้นให้ถูกที่ เลือกเรื่องให้ตรง",
+      "overflow": false,
+      "boxes": []
+    },
+    {
+      "page": 3,
+      "title": "ระบุอุปกรณ์ ผู้แจ้ง และอาการ",
+      "overflow": false,
+      "boxes": []
+    },
+    {
+      "page": 4,
+      "title": "รับเลขเรื่อง ติดตาม แล้วบอกผล",
+      "overflow": false,
+      "boxes": []
+    },
+    {
+      "page": 5,
+      "title": "นอกจากแจ้งซ่อม ยังทำอะไรได้อีก",
+      "overflow": false,
+      "boxes": []
+    },
+    {
+      "page": 6,
+      "title": "เช็กข้อมูลเองได้ อ่านสถานะให้เป็น",
+      "overflow": false,
+      "boxes": []
+    },
+    {
+      "page": 7,
+      "title": "ติดตรงไหน? เช็กก่อนแจ้งซ้ำ",
+      "overflow": false,
+      "boxes": []
+    }
+  ],
+  "reference_url": "https://www.canva.com/design/DAHPOuTerUc/Pr72eCg8hzMmPfvYRwZjSQ/view"
+}

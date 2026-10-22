@@ -66,6 +66,15 @@ export function inDateRange(iso: string | null | undefined, range: DateRangeValu
   return t >= b.min && t <= b.max;
 }
 
+/** ช่วงที่เลือกเป็นข้อความคนอ่าน — ใช้พิมพ์ลงไฟล์ส่งออก ("เดือนนี้" / "2026-10-01 ถึง 2026-10-20") */
+export function dateRangeLabel(range: DateRangeValue): string {
+  if (range.preset !== "custom") return PRESET_LABEL[range.preset];
+  if (range.from && range.to) return `${range.from} ถึง ${range.to}`;
+  if (range.from) return `ตั้งแต่ ${range.from}`;
+  if (range.to) return `ถึง ${range.to}`;
+  return PRESET_LABEL.all;
+}
+
 export function isDateRangeActive(range: DateRangeValue): boolean {
   if (range.preset === "all") return false;
   if (range.preset === "custom") return Boolean(range.from || range.to);

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "employees",
+    "version": "2026-09-25",
+    "synced_at": "2026-09-25T18:02:50.572Z",
+    "added": 296,
+    "updated": 30
+  },
+  {
+    "id": "branches",
+    "version": "2026-10-13",
+    "synced_at": "2026-10-13T12:01:58.410Z",
+    "added": 2,
+    "updated": 69
+  },
+  {
+    "id": "branches-montipa",
+    "version": "2026-10-15",
+    "synced_at": "2026-10-15T15:09:52.776Z",
+    "added": 0,
+    "updated": 30
+  }
+]

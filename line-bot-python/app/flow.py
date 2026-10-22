@@ -10,6 +10,7 @@
   ASK_TYPE ──(กดประเภท)──▶ ASK_ASSET
   ASK_ASSET ──(พิมพ์รหัส / กดข้าม)──┬─ ถ้าเป็น "เบิก" ─▶ ASK_ITEM ─▶ ASK_QTY ─▶ ASK_MORE_ITEMS ─┐
                                      └─ ถ้าเป็น "ซ่อม/คืน" ─────────────────────────────────────┴─▶ ASK_REQUESTER
+  (เบิกต้องได้ชื่ออุปกรณ์จริงอย่างน้อย 1 รายการ — "อุปกรณ์" / "ของ" / ตัวเลขล้วน ถูกถามใหม่ ดู _clean_item_name)
   ASK_REQUESTER ──(ค้นทะเบียนพนักงาน / เลือกจากเมนูฝ่าย)──┬─ ถ้าเป็น "เบิก" ─▶ สร้าง ticket ──▶ IDLE
                                                             └─ ประเภทอื่น ─▶ ASK_DESC
   ASK_DESC ──(พิมพ์รายละเอียด)──▶ สร้าง ticket ──▶ IDLE
@@ -21,17 +22,39 @@ ASK_REQUESTER จะถูก "ข้าม" ทั้งขั้นถ้า�
 ใช่ไหม" ให้กดยืนยันครั้งเดียวแล้วส่งเลย ปุ่ม "ไม่ใช่ เปลี่ยนคน" ย้ายมาอยู่บนการ์ดนั้นแทน
 
 ทุกสถานะรับคำว่า "ยกเลิก" เพื่อล้างทิ้งได้เสมอ และ session หมดอายุเองตาม TTL
+
+ส่งต่อให้เจ้าหน้าที่ (ปุ่ม "คุยกับเจ้าหน้าที่" หรือพิมพ์ขอคุยกับคน) — ดู _handoff_gate
+  บอทจะ "เงียบ" กับคนนั้นชั่วคราว ให้ทีม IT ตอบเองในแอป LINE Official Account
+  แล้วกลับมาทำงานเองเมื่อผู้ใช้กด "กลับไปใช้บอท" / กดเมนู หรือเงียบไปครบ handoff_hours
+  เข้าโหมดนี้เองด้วยเมื่อผู้แจ้งกด "ยังมีปัญหาอยู่" และเมื่อทีม IT กด "รับแชทต่อเอง" ในหน้าแอดมิน
+  (หลังบ้านสั่งผ่าน POST /internal/handoff ใน main.py — LINE ไม่ส่ง webhook ตอนเจ้าหน้าที่ตอบแชท
+  บอทจึงรู้เองไม่ได้ว่ามีคนกำลังคุยอยู่)
+
+ทีม IT ปิด/เปิดบอทเองจากแชท LINE (พิมพ์ "แอดมิน" — ดู _admin_gate / _off_gate)
+  ปิดทั้งระบบ หรือปิดเฉพาะคน (เลือกจากชื่อ LINE ของคนที่ทักมาล่าสุด) — ผู้ใช้ที่โดนปิดได้ข้อความแจ้ง
+  1 ครั้งต่อวันแล้วบอทเงียบ จนกว่าทีม IT จะสั่งเปิด (ผู้ใช้สั่งเปิดเองไม่ได้ ต่างจากคุยกับเจ้าหน้าที่)
+
+หลังทีม IT ปิดงาน ผู้แจ้งได้การ์ดให้คะแนน 1–5 ดาว (สร้างฝั่ง Next.js)
+  กดดาว ──▶ บันทึกคะแนน ──┬─ 4–5 ดาว ─▶ ขอบคุณ จบ
+                           └─ 1–3 ดาว ─▶ RATE_COMMENT ──(พิมพ์ความเห็น / กดข้าม)──▶ IDLE
 """
 
 from __future__ import annotations
 
+import dataclasses
 import logging
+import re
+import time
+import unicodedata
 from dataclasses import dataclass, field
 from urllib.parse import parse_qsl
 
 from . import ai as ai_module
 from . import messages as M
+from . import thai_text
 from .backend import BackendClient, BackendError
+from .flex import PICK_PAGE_SIZE
+from .richmenu import MAIN_BUTTONS as RICH_MENU_BUTTONS
 from .store import ConversationStore, Session
 
 # คะแนน TF-IDF ขั้นต่ำที่ถือว่า FAQ "ตรงมากพอ" จนควรเสนอวิธีแก้ก่อนเปิด ticket
@@ -57,6 +80,8 @@ ASK_DESC = "ASK_DESC"
 RETRY_SUBMIT = "RETRY_SUBMIT"
 # ค้นหาทรัพย์สินแบบลอยๆ (จากเมนู "เช็คข้อมูล") — ไม่ได้อยู่ในขั้นตอนแจ้งเรื่อง
 FIND_ASSET = "FIND_ASSET"
+# เพิ่งให้คะแนนต่ำ (1–3 ดาว) — ข้อความถัดไปคือความเห็นว่าควรปรับปรุงตรงไหน (session.rate_code บอกว่าเรื่องไหน)
+RATE_COMMENT = "RATE_COMMENT"
 
 TYPE_KEYWORDS = {
     "repair": ("ซ่อม", "เสีย", "repair", "พัง"),
@@ -108,7 +133,7 @@ async def _branch_prompt(
 ) -> M.Reply:
     """เมนูเลือกสาขาแบบไล่ทีละชั้น: บริษัท → กลุ่ม → สาขา
 
-    ทำไมต้องไล่ชั้น: กลุ่มบริษัทมีสาขารวมกัน 100 กว่าสาขา (Montipa 30 · Motta 69)
+    ทำไมต้องไล่ชั้น: กลุ่มบริษัทมีสาขารวมกัน 100 กว่าสาขา (Montipa 30 · Motta 71)
     ของเดิมยัดเป็น quick reply ได้แค่ 12 ปุ่ม แล้วบอกว่า "สาขาอื่นพิมพ์ชื่อเอาเอง"
     ซึ่งแปลว่าคนอีกเกือบ 90 สาขาต้องพิมพ์เอง — และสะกดผิดทีเดียวรายงานแยกสาขาก็เพี้ยน
 
@@ -135,7 +160,13 @@ async def _branch_prompt(
                 session.pick_group = None
                 session.pick_group_label = None
         else:
-            options = await backend.branch_options(level, company=company, group=group)
+            # ส่งเฉพาะตัวกรองของชั้นบน — เปิดชั้นเขตจากปุ่มของการ์ดเขตเก่าตอนที่ session ยังจำเขตที่เลือกไว้
+            # ต้องไม่ติดเขตเดิมไปกรองรายชื่อเขตจนว่าง
+            options = await backend.branch_options(
+                level,
+                company=company if level != "company" else None,
+                group=group if level == "branch" else None,
+            )
     except BackendError:
         logger.warning("ดึงตัวเลือกสาขาไม่สำเร็จ level=%s", level)
         if headquarters:
@@ -154,6 +185,10 @@ async def _branch_prompt(
             branches = []
         return M.ask_branch(branches)
 
+    if page * PICK_PAGE_SIZE >= len(options):
+        # หน้าเกินจำนวนที่มีจริง (กดปุ่มจากการ์ดเก่าของอีกชั้น) -> กลับหน้าแรก แทนการ์ดว่างๆ
+        page = 0
+
     if session is not None:
         session.pick_level = level
         session.pick_page = page
@@ -166,8 +201,9 @@ async def _branch_prompt(
         return M.ask_branch_group(
             options,
             (session.pick_company_label if session else None) or "-",
-            _group_label_for(session.pick_company if session else None),
+            _group_label_for(company),
             page,
+            by_area=company in _AREA_COMPANIES,
         )
 
     crumb = " · ".join(
@@ -176,13 +212,97 @@ async def _branch_prompt(
             session.pick_group_label if session else None,
         ] if x
     )
-    return M.ask_branch_list(options, crumb or "-", page, skip_group=headquarters)
+    return M.ask_branch_list(
+        options, crumb or "-", page, skip_group=headquarters,
+        # ป้ายปุ่มย้อนกลับเรียกชั้นตามบริษัท ("◀ เปลี่ยนเขต") ไม่ใช่ "กลุ่ม" กลางๆ
+        group_word=_group_label_for(company).split(" ")[0],
+    )
 
 
 def _group_label_for(company: str | None) -> str:
-    """ชื่อเรียกกลุ่มย่อยต่างกันในแต่ละบริษัท — Montipa แบ่งตามภูมิภาค Motta แบ่งตามทีมขาย
-    ถ้าใช้คำกลาง ๆ ว่า "กลุ่ม" ทั้งคู่ ผู้ใช้จะไม่รู้ว่ากำลังเลือกอะไรอยู่"""
-    return {"montipa": "ภูมิภาค", "motta": "ทีม", "central": "หน่วยงาน"}.get(company or "", "กลุ่ม")
+    """ชื่อเรียกกลุ่มย่อยของบริษัท — Montipa และ Motta แบ่งตามเขตของ Area Manager · ส่วนกลางแบ่งตามหน่วยงาน
+    ถ้าใช้คำกลาง ๆ ว่า "กลุ่ม" ผู้ใช้จะไม่รู้ว่ากำลังเลือกอะไรอยู่
+
+    "เขต (Area Manager)" ตามตารางโครงสร้างของบริษัท (Motta: Sale Manager / Area Manager · Montipa: ROM / Area Manager)
+    พนักงานหน้าร้านรู้ว่าตัวเองอยู่เขตของ AM คนไหน ส่วนแต่ละแถวในเมนูบอกผู้จัดการเหนือ AM กับสาขาตัวอย่างไว้ให้ด้วย
+    (Montipa เดิมแบ่งตามภูมิภาค — เปลี่ยนเป็นเขตของ AM 15 ต.ค. 2026 ตามตารางทีมขาย ต.ค. 2026 ที่ผู้ใช้ส่งมา)
+    """
+    if company in _AREA_COMPANIES:
+        return "เขต (Area Manager)"
+    return {"central": "หน่วยงาน"}.get(company or "", "กลุ่ม")
+
+
+# ชั้นของเมนูสาขา — แยกจากชั้นของเมนูทรัพย์สิน (category | brand | code) ที่ใช้ช่อง pick_level เดียวกัน
+_BRANCH_LEVELS = frozenset({"company", "group", "branch"})
+
+# บริษัทที่ชั้นกลางของเมนูสาขาคือ "เขตของ Area Manager" (ป้ายเขต = "ทีม<ชื่อ AM>" จึงพิมพ์ชื่อ AM หาได้)
+_AREA_COMPANIES = frozenset({"montipa", "motta"})
+
+# คำนำหน้าที่คนพิมพ์ติดมากับชื่อเขต: "ทีมใบตอง" · "เขตใบตอง" · "น้องใบตอง" · "AM ปอ"
+_AREA_PREFIX = re.compile(r"^(?:ทีม|เขต|น้อง|คุณ|พี่|area|am)\s*", re.IGNORECASE)
+
+
+def _area_key(text: str) -> str:
+    """ทำชื่อเขตให้เทียบกันได้: ตัดคำนำหน้า/คำลงท้าย/ช่องว่าง — "ทีม ใบตอง ครับ" กับ "ทีมใบตอง" ได้ค่าเดียวกัน"""
+    word = _command_word(text)
+    prev = None
+    while prev != word:  # คำนำหน้าซ้อนกันได้ ("เขตน้องใบตอง")
+        prev = word
+        word = _AREA_PREFIX.sub("", word).strip()
+    return word.replace(" ", "").lower()
+
+
+def _branch_page_level(session: Session, wanted: str | None) -> str:
+    """ชั้นที่ปุ่ม "ดูเพิ่ม" ของเมนูสาขาจะเปิด
+
+    ปุ่มบอกชั้นของการ์ดมาเอง (l=) จึงกดจากการ์ดเก่าที่เลื่อนขึ้นไปเจอได้ถูกชั้น — แต่ชั้นสาขาต้องรู้ว่าอยู่เขตไหน
+    ถ้าผู้ใช้ย้อนขึ้นไปแล้ว (เขตถูกล้าง) ใช้ชั้นที่ค้างอยู่ใน session แทน ไม่งั้นจะดึงสาขาโดยไม่มีเขต
+    """
+    current = session.pick_level if session.pick_level in _BRANCH_LEVELS else None
+    if wanted == "group" and session.pick_company:
+        return wanted
+    if wanted == "branch" and (session.pick_group or session.pick_company == "central"):
+        return wanted
+    if wanted == "company":
+        return wanted
+    return current or "company"
+
+
+async def _match_area(text: str, session: Session, backend: BackendClient) -> bool:
+    """ข้อความนี้คือชื่อเขต (ชื่อ AM) ของบริษัทไหน — ใช่ = ตั้งบริษัท+เขตลง session แล้วคืน True
+
+    ทำไมต้องมี: พนักงานหน้าร้านจำชื่อหัวหน้าเขต (Area Manager) ได้แม่นกว่าจำว่าเขตตัวเองอยู่หน้าไหนของการ์ด
+    เขตที่อยู่หน้า 2 (ทีมแนน · ทีมใบตอง) จึงหาเจอด้วยการพิมพ์ชื่อได้ทันที (ผู้ใช้แจ้ง 13 ต.ค. 2026 ว่าหาใบตองไม่เจอ)
+    เทียบแบบตรงทั้งคำเท่านั้น ไม่เดาใกล้เคียง — "ปอ" ต้องได้ทีมปอ ไม่ใช่ทีมปอ New และถ้าตรงหลายเขตจะไม่เลือกให้
+    """
+    key = _area_key(text)
+    if len(key) < 2:
+        return False
+    try:
+        company_options = await backend.branch_options("company")
+    except BackendError:
+        return False
+    labels = {str(o.get("value")): str(o.get("label") or o.get("value")) for o in company_options}
+    hits: list[tuple[str, dict]] = []
+    # ส่วนกลางไม่มีชั้นเขต (เมนูข้ามไปรายชื่อสาขาเลย) จึงไม่ต้องค้น
+    for code in (c for c in labels if c != "central"):
+        try:
+            groups = await backend.branch_options("group", company=code)
+        except BackendError:
+            continue
+        hits += [(code, g) for g in groups if _area_key(str(g.get("label") or "")) == key]
+    # ชื่อซ้ำข้ามบริษัท -> เชื่อบริษัทที่เลือกไว้แล้ว · ไม่ได้เลือกไว้และยังซ้ำ -> ไม่เดา
+    mine = [h for h in hits if h[0] == session.pick_company]
+    if len(mine) == 1:
+        hits = mine
+    if len(hits) != 1:
+        return False
+    code, group = hits[0]
+    session.pick_company = code
+    session.pick_company_label = labels.get(code, code)
+    session.pick_group = str(group.get("value") or "")
+    session.pick_group_label = str(group.get("label") or group.get("value") or "")
+    return True
 
 
 def _clear_branch_picker(session: Session) -> None:
@@ -513,6 +633,420 @@ def _guess_type(text: str) -> str | None:
     return None
 
 
+# อักขระล่องหนที่ติดมากับการ copy / คีย์บอร์ดมือถือบางรุ่น — มองไม่เห็นแต่ทำให้ชื่อไม่ตรงกัน
+# (เจอจริงในทะเบียน: ผู้แจ้ง "ธนากร\u200b โฮงทอง\u200b" กลายเป็นคนละชื่อกับ "ธนากร โฮงทอง")
+_ZERO_WIDTH = re.compile("[\u200b\u200c\u200d\u2060\ufeff]")
+
+
+def _clean_typed(text: str) -> str:
+    """ทำความสะอาดข้อความที่พิมพ์มา ก่อนเก็บเป็นชื่อผู้แจ้ง/ชื่ออุปกรณ์/รายละเอียด
+
+    ตัดเฉพาะของที่มองไม่เห็น และเปลี่ยนช่องว่างแบบ no-break เป็นช่องว่างธรรมดา
+    ไม่แตะตัวอักษรที่มองเห็น — สิ่งที่ผู้ใช้พิมพ์ต้องไปถึงทีม IT ตามที่เขาเห็นบนจอ
+    """
+    return _ZERO_WIDTH.sub("", (text or "").replace("\u00a0", " "))
+
+
+async def _remember_user(store: ConversationStore, incoming: Incoming) -> None:
+    """บันทึกว่าใครทักมาล่าสุด — พังได้โดยไม่กระทบการตอบ (เป็นแค่รายชื่อบนการ์ดของทีม IT)"""
+    try:
+        await store.touch_user(incoming.user_id, incoming.display_name)
+    except Exception:  # noqa: BLE001 - ตัวนับพังห้ามทำให้บอทไม่ตอบ
+        logger.warning("บันทึกรายชื่อผู้ใช้ล่าสุดไม่สำเร็จ", exc_info=True)
+
+
+# ---------------------------------------------------------------- ส่งต่อให้เจ้าหน้าที่
+#
+# ลูกค้าถามเรื่องที่บอทตอบไม่ได้ -> ส่งต่อให้คนของทีม IT ตอบเองในแอป LINE Official Account
+# (เปิด Chat ใน OA Manager ไว้คู่กับ webhook) ระหว่างนั้นบอทต้อง "เงียบ" กับคนนั้น
+# ไม่งั้นทุกประโยคที่ลูกค้าพิมพ์คุยกับเจ้าหน้าที่ บอทจะโผล่มาตอบ "ไม่พบสาขา" แทรกตลอด
+#
+# สถานะเก็บไว้ใน session (handoff_until) — ไม่ต้องมีตารางใหม่ฝั่งแอดมิน และหมดอายุเองได้
+# ถ้าลูกค้าหายไปเฉยๆ บอทจะกลับมาทำงานเองเมื่อครบเวลา ไม่ค้างเงียบถาวร
+
+# ข้อความจากปุ่ม rich menu (เป็นปุ่มแบบ message) — กดแล้วแปลว่าอยากใช้บอท จึงจบการส่งต่อทันที
+RICH_MENU_TEXTS = frozenset(
+    str(b.get("text") or "").strip() for b in RICH_MENU_BUTTONS if b.get("type") == "message"
+)
+
+# คำที่แปลว่า "พอแล้ว กลับไปใช้บอท" — รวมคำยกเลิกด้วย เพราะบอทสอนผู้ใช้มาตลอดว่า "ยกเลิก" = ออก
+RESUME_WORDS = frozenset(
+    {"กลับไปใช้บอท", "กลับมาใช้บอท", "ใช้บอท", "บอท", "bot", "เมนู", "menu", "เริ่มใหม่"}
+) | frozenset(M.CANCEL_WORDS)
+
+# ปุ่มบนการ์ดเก่าที่แค่ "ดูข้อมูล/ตอบผลงาน" — กดได้ระหว่างคุยกับเจ้าหน้าที่โดยไม่ตัดการส่งต่อทิ้ง
+# (การให้คะแนนอยู่ในนี้ด้วย: ผู้แจ้งที่กำลังคุยกับเจ้าหน้าที่แล้วกดดาวบนการ์ด ยังต้องคุยกับคนต่อได้)
+# ปุ่มอื่นทั้งหมด (แจ้งเรื่องใหม่ เลือกสาขา ฯลฯ) = ผู้ใช้กลับมาใช้บอทเองแล้ว
+_HANDOFF_PASSTHROUGH = frozenset(
+    {"ticket", "confirm", "confirm_done", "still_broken", "my_assets", "rate", "rate_skip"}
+)
+
+# "ขอคุยกับคน" ต้องขึ้นต้นประโยคด้วยคำขอ และไม่ยาว — ประโยคที่แค่มีคำว่าเจ้าหน้าที่ปนอยู่
+# เช่น "เจ้าหน้าที่บอกให้แจ้งซ่อมจอ" หรือคำอธิบายอาการยาวๆ ต้องเดินตามขั้นตอนปกติ
+# (นับเป็น code point — สระ/วรรณยุกต์ไทยนับแยกตัว 60 จึงราวๆ 40 ตัวที่ตาเห็น)
+_HUMAN_MAX_LEN = 60
+_HUMAN_WHO = r"(?:เจ้าหน้าที่|จนท\.?|แอดมิน|admin|คนจริง|staff|human|agent|operator)"
+_HUMAN_WHO_AFTER_VERB = (
+    rf"(?:{_HUMAN_WHO}|คน|พนักงาน|support|ซัพพอร์ต|(?:ทีม|ฝ่าย|แผนก)?\s*(?:ไอที|it))"
+)
+_HUMAN_VERB = r"(?:ขอสาย|โทรหา|คุย|ติดต่อ|ปรึกษา|สอบถาม|ถาม|พูด|แชท|แชต|chat|talk|contact|speak)"
+_HUMAN_TAIL = (
+    r"(?:\s*(?:หน่อย|ให้|ได้ไหม|ได้มั้ย|ได้มั๊ย|ได้ไม๊|ได้ป่าว|ได้ปะ|ได้เปล่า|ได้|ไหม|มั้ย"
+    r"|ยังไง|ยังงัย|อย่างไร|ทางไหน|ที่ไหน|ครับผม|ครับ|คับ|ค่ะ|คะ|ค่า|นะ|ด้วย|ที|จ้า|จ้ะ|ฮะ"
+    r"|please|pls|plz|[?!.,]))*"
+)
+_WANTS_HUMAN = re.compile(
+    rf"^(?:ขอ|อยาก|ต้องการ|รบกวน|ช่วย|i\s*want\s*to|can\s*i)*\s*"
+    rf"(?:{_HUMAN_VERB}\s*(?:กับ|with|to)?\s*{_HUMAN_WHO_AFTER_VERB}|{_HUMAN_WHO})"
+    # "ขอคุยกับเจ้าหน้าที่เรื่องปริ้นเตอร์" — บอกเรื่องมาด้วยก็ยังเป็นคำขอคุยกับคนอยู่ดี
+    rf"(?:\s*(?:เรื่อง|about)\s*\S.*)?"
+    rf"{_HUMAN_TAIL}$"
+)
+_TRAILING_POLITE = re.compile(r"(?:\s*(?:ครับผม|ครับ|คับ|ค่ะ|คะ|ค่า|จ้า|จ้ะ|นะ|ฮะ|[!.]))+$")
+
+
+def _plain(text: str) -> str:
+    """ทำข้อความให้เทียบได้: ตัดอีโมจิ/สัญลักษณ์ + normalize ภาษาไทย
+
+    ตัดอีโมจิเพราะคนชอบ copy ป้ายปุ่ม เช่น '👤 คุยกับเจ้าหน้าที่' มาพิมพ์เอง ซึ่งต้องจับได้เหมือนกดปุ่ม
+    """
+    no_symbols = "".join(ch for ch in (text or "") if _is_text_char(ch))
+    return thai_text.normalize(no_symbols).strip()
+
+
+def _is_text_char(ch: str) -> bool:
+    if "\u0e00" <= ch <= "\u0e7f":
+        return True  # สระบน/ล่างและวรรณยุกต์ไทยอยู่หมวด Mn เหมือนตัวประกอบอีโมจิ ห้ามตัดทิ้ง
+    # So = อีโมจิ/สัญลักษณ์, Sk = สีผิว, Cf = ตัวเชื่อม (ZWJ), Mn = ตัวเลือกรูปแบบ (U+FE0F)
+    return unicodedata.category(ch) not in ("So", "Sk", "Cf", "Mn")
+
+
+def wants_human(text: str) -> bool:
+    """ข้อความนี้คือ "ขอคุยกับเจ้าหน้าที่" หรือเปล่า (ปุ่มเป็นทางหลัก อันนี้สำหรับคนที่พิมพ์เอง)"""
+    cleaned = _plain(text)
+    if not cleaned or len(cleaned) > _HUMAN_MAX_LEN:
+        return False
+    return bool(_WANTS_HUMAN.match(cleaned))
+
+
+def _is_resume(text: str) -> bool:
+    cleaned = _TRAILING_POLITE.sub("", _plain(text)).strip()
+    return cleaned in RESUME_WORDS
+
+
+def _with_human_button(reply: M.Reply) -> M.Reply:
+    """เติมปุ่ม "คุยกับเจ้าหน้าที่" ให้การ์ดที่ส่งตอนบอทไม่เข้าใจ — ทางออกสำหรับเรื่องนอกขอบเขตบอท"""
+    quick = list(reply.quick)
+    if M.HUMAN_BUTTON in quick:
+        return reply
+    if len(quick) >= M.MAX_QUICK_REPLY_ITEMS:
+        # เต็ม 13 ปุ่มแล้ว (เมนูสาขาแบบแบนตอน backend ล่ม) — สละตัวเลือกท้ายแถว แต่เก็บปุ่มยกเลิกไว้
+        quick = quick[: M.MAX_QUICK_REPLY_ITEMS - 2] + quick[-1:]
+    if quick and quick[-1][1] == "a=cancel":
+        quick.insert(len(quick) - 1, M.HUMAN_BUTTON)  # ปุ่มยกเลิกอยู่ท้ายสุดเสมอ
+    else:
+        quick.append(M.HUMAN_BUTTON)
+    return dataclasses.replace(reply, quick=quick)
+
+
+async def _handoff_gate(
+    incoming: Incoming,
+    store: ConversationStore,
+    *,
+    hours: float,
+    available: bool,
+) -> list[M.Reply] | None:
+    """ด่านแรกของทุก event (ยกเว้น follow) เรื่องส่งต่อให้เจ้าหน้าที่
+
+    คืน None = ไม่เกี่ยวกับการส่งต่อ ให้บอทประมวลผลตามปกติ
+    คืน list = จบที่นี่ — list ว่างคือ "เงียบ" ปล่อยให้เจ้าหน้าที่ตอบเองในแอป LINE OA
+
+    available=False คือ Chat ใน OA Manager ปิดอยู่ (เจ้าหน้าที่มองไม่เห็นแชทเลย)
+    ห้ามส่งต่อเด็ดขาด ไม่งั้นลูกค้าจะพิมพ์ใส่ความว่างเปล่าโดยไม่มีใครตอบ
+    """
+    user_id = incoming.user_id
+    action = incoming.data.get("a", "") if incoming.kind == "postback" else ""
+    typed = (incoming.text or "") if incoming.kind == "text" else ""
+    asked = action == "human" or (incoming.kind == "text" and wants_human(typed))
+
+    session = await store.get(user_id)
+    now = time.time()
+    active = session is not None and session.in_handoff(now)
+
+    if not available:
+        if active:
+            # Chat ถูกปิดระหว่างส่งต่อ — ไม่มีใครเห็นข้อความแล้ว บอทต้องกลับมาตอบเอง
+            await store.clear(user_id)
+        if asked:
+            return [M.handoff_unavailable()]
+        if action == "bot_resume":
+            return [M.handoff_ended()]
+        return None
+
+    until = now + max(hours, 0.1) * 3600
+
+    if asked:
+        if active:
+            session.handoff_until = until
+            await store.set(user_id, session)
+            return [M.handoff_waiting()]
+        # เริ่ม session ใหม่หมด — ขั้นตอนแจ้งเรื่องที่ค้างอยู่ทิ้งไป เพราะผู้ใช้เลือกคุยกับคนแทนแล้ว
+        name = incoming.display_name or (session.line_display_name if session else None)
+        await store.set(
+            user_id, Session(step=IDLE, line_display_name=name, handoff_until=until)
+        )
+        return [M.handoff_started()]
+
+    if action == "bot_resume":
+        # ปุ่มเก่าที่กดหลังหมดเวลาไปแล้วก็ได้คำตอบเดียวกัน — ไม่แตะ session ที่อาจกำลังใช้อยู่
+        if active:
+            await store.clear(user_id)
+        return [M.handoff_ended()]
+
+    if not active:
+        return None
+
+    if incoming.kind == "postback":
+        if action not in _HANDOFF_PASSTHROUGH:
+            # กดปุ่มของบอท (แจ้งเรื่องใหม่ / เลือกสาขา / ...) = กลับมาใช้บอทเองแล้ว
+            await store.clear(user_id)
+        return None
+
+    if incoming.kind == "text":
+        if _is_resume(typed):
+            await store.clear(user_id)
+            return [M.handoff_ended()]
+        if typed.strip() in RICH_MENU_TEXTS:
+            # กด rich menu = อยากใช้บอท ให้ทำงานต่อตามปกติเลย ไม่ต้องให้กดอะไรเพิ่ม
+            await store.clear(user_id)
+            return None
+
+    # ข้อความ / รูป / สติกเกอร์ / ไฟล์ ระหว่างคุยกับเจ้าหน้าที่ -> เงียบ แล้วต่อเวลาออกไป
+    # นับจากข้อความล่าสุด เพื่อไม่ให้บอทโผล่มากลางบทสนทนาที่ยังคุยกันอยู่
+    session.handoff_until = until
+    await store.set(user_id, session)
+    return []
+
+
+# ---------------------------------------------------------------- ทีม IT สั่งเปิด/ปิดบอทจากแชท LINE
+#
+# ทำไมสั่งในแชท ไม่ใช่สวิตช์ในแอป LINE Official Account: แอป OA ไม่มีสวิตช์ปิดบอทรายคน และตอนเจ้าหน้าที่
+# ตอบแชทในแอป LINE ไม่ส่ง webhook มาเลย บอทจึงรู้เองไม่ได้ว่าต้องหลบ — ทางที่ทำได้จริงคือให้ทีม IT
+# พิมพ์ "แอดมิน" หาบอทจาก LINE ของตัวเอง (บัญชีที่แอดมินอนุมัติไว้ในหน้าเว็บ "บอท LINE")
+# แล้วกดปิด/เปิดจากการ์ด ซึ่งแสดง "ชื่อ LINE" ของคนที่ทักมาล่าสุดให้เลือกได้ถูกคน
+#
+# ปิดบอท (ทั้งระบบ / รายคน) ต่างจาก "คุยกับเจ้าหน้าที่" (_handoff_gate) ตรงที่ผู้ใช้กดเมนูหรือพิมพ์
+# "ยกเลิก" เพื่อกลับมาใช้บอทเองไม่ได้ — ต้องให้ทีม IT สั่งเปิด เพราะคนที่สั่งปิดตั้งใจให้คนตอบเอง
+
+ADMIN_WORDS = frozenset({"แอดมิน", "admin", "เมนูแอดมิน", "/admin", "ควบคุมบอท"})
+STAFF_REQUEST_WORDS = frozenset({"ขอสิทธิ์แอดมิน", "ขอสิทธิแอดมิน", "สมัครแอดมิน"})
+_ADMIN_ACTIONS = frozenset({"adm", "adm_all", "adm_u"})
+# แถวต่อหน้าของการ์ด — เท่ากับเมนูเลือกอื่นๆ (ยาวกว่านี้ปุ่มท้ายการ์ดตกขอบจอมือถือ)
+_ADMIN_PAGE_SIZE = 8
+_ADMIN_MAX_PAGES = 5
+# user id ที่รับจากปุ่มบนการ์ด — ตรวจรูปแบบก่อนเอาไปเป็น key ใน Redis (ปุ่มเก่า/ข้อมูลเพี้ยนต้องไม่หลุดไปถึง store)
+_LINE_USER_ID = re.compile(r"^U\w{1,63}$", re.ASCII)
+
+
+def _command_word(text: str) -> str:
+    """ทำข้อความให้เทียบกับคำสั่งได้: ตัดอีโมจิ/คำลงท้าย เช่น "แอดมินครับ" -> "แอดมิน" """
+    return _TRAILING_POLITE.sub("", _plain(text)).strip()
+
+
+async def pause_bot_for(store: ConversationStore, user_id: str, *, by: str) -> None:
+    """ปิดบอทกับคนนี้จนกว่าทีม IT จะสั่งเปิด — ใช้ร่วมกันทั้งการ์ดในแชทและหน้าเว็บ (main.py)"""
+    await store.set_user_off(user_id, {"since": time.time(), "by": by})
+
+
+async def resume_bot_for(store: ConversationStore, user_id: str) -> None:
+    """เปิดบอทกลับ: ล้างทั้งการปิดรายคน และการส่งต่อให้เจ้าหน้าที่ที่ค้างอยู่
+
+    ต้องล้างทั้งคู่ — กด "เปิดบอท" แล้วบอทยังเงียบเพราะติดโหมดคุยกับเจ้าหน้าที่ที่ผู้ใช้กดไว้เอง
+    จะดูเหมือนปุ่มเสีย ทั้งที่ทีม IT ตั้งใจให้บอทกลับมาตอบคนนี้
+    """
+    await store.set_user_off(user_id, None)
+    session = await store.get(user_id)
+    if session is not None and session.in_handoff():
+        await store.clear(user_id)
+
+
+async def _staff_status(incoming: Incoming, backend: BackendClient, *, action: str = "check") -> dict:
+    """ถามหลังบ้านว่าบัญชี LINE นี้เป็นทีม IT ไหม — หลังบ้านล่มถือว่า "ไม่ใช่" (ไม่ให้สิทธิ์เกินจริง)"""
+    try:
+        return await backend.line_staff(
+            line_user_id=incoming.user_id,
+            display_name=incoming.display_name or "",
+            action=action,
+        )
+    except BackendError:
+        return {"status": "error", "name": None}
+
+
+async def _admin_gate(
+    incoming: Incoming,
+    store: ConversationStore,
+    backend: BackendClient,
+    *,
+    available: bool,
+) -> list[M.Reply] | None:
+    """คำสั่งของทีม IT — ด่านแรกสุด ก่อนด่านปิดบอทและด่านส่งต่อ
+
+    ต้องมาก่อนเพราะตอนปิดบอททั้งระบบอยู่ ทีม IT ยังต้องสั่งเปิดกลับจากแชทเดียวกันได้
+    คนที่ไม่ใช่ทีม IT พิมพ์ "แอดมิน" = ขอคุยกับเจ้าหน้าที่ตามความหมายเดิม จึงคืน None ให้ไปด่านถัดไป
+
+    คืน None = ไม่ใช่คำสั่งแอดมิน · คืน list = จบที่นี่
+    """
+    if incoming.kind == "text":
+        word = _command_word(incoming.text)
+        if word in STAFF_REQUEST_WORDS:
+            staff = await _staff_status(incoming, backend, action="request")
+            if staff["status"] == "error":
+                return [M.backend_error()]
+            return [M.staff_request(staff["status"])]
+        if word not in ADMIN_WORDS:
+            return None
+        staff = await _staff_status(incoming, backend)
+        if staff["status"] == "pending":
+            return [M.staff_request("pending")]
+        if staff["status"] != "approved":
+            return None
+        return [await _admin_panel(incoming.user_id, store, available=available)]
+
+    if incoming.kind != "postback":
+        return None
+    action = incoming.data.get("a", "")
+    if action not in _ADMIN_ACTIONS:
+        return None
+
+    # ตรวจสิทธิ์ใหม่ทุกครั้งที่กด — การ์ดที่ส่งไปแล้วค้างอยู่ในแชทตลอดไป คนที่ถูกถอดสิทธิ์ต้องกดไม่ได้
+    staff = await _staff_status(incoming, backend)
+    if staff["status"] == "error":
+        return [M.backend_error()]
+    if staff["status"] != "approved":
+        return [M.admin_denied()]
+    by = staff.get("name") or incoming.display_name or "ทีม IT"
+    page = max(0, min(_to_int(incoming.data.get("p")) or 0, _ADMIN_MAX_PAGES - 1))
+    turn_off = incoming.data.get("v") == "off"
+
+    async def panel() -> M.Reply:
+        return await _admin_panel(incoming.user_id, store, available=available, page=page)
+
+    if action == "adm":
+        return [await panel()]
+
+    if action == "adm_all":
+        if turn_off and not available:
+            return [M.admin_chat_off(), await panel()]
+        if turn_off and incoming.data.get("ok") != "1":
+            # ปิดทั้งระบบกระทบทุกคน — ถามยืนยันก่อน 1 ครั้ง กันนิ้วโดนปุ่ม
+            return [M.admin_confirm_global_off()]
+        await store.set_bot_off({"since": time.time(), "by": by} if turn_off else None)
+        logger.info("ทีม IT %s บอททั้งระบบ", "ปิด" if turn_off else "เปิด")
+        return [M.admin_global_done(turn_off), await panel()]
+
+    # adm_u — ปิด/เปิดรายคน
+    target = incoming.data.get("u", "")
+    if not _LINE_USER_ID.match(target):
+        return [await panel()]
+    name = await store.user_name(target) or "ผู้ใช้คนนี้"
+    if turn_off:
+        if not available:
+            return [M.admin_chat_off(), await panel()]
+        await pause_bot_for(store, target, by=by)
+    else:
+        await resume_bot_for(store, target)
+    # ไม่ log user id — log ของ container ถูกเก็บยาวและหลายคนเปิดดูได้
+    logger.info("ทีม IT %sบอทรายคน", "ปิด" if turn_off else "เปิด")
+    return [M.admin_user_done(name, turn_off), await panel()]
+
+
+async def _admin_panel(
+    self_id: str, store: ConversationStore, *, available: bool, page: int = 0,
+) -> M.Reply:
+    """ประกอบการ์ดควบคุมบอท: คนที่ปิดบอทไว้อยู่ขึ้นก่อน ตามด้วยคนที่ทักมาล่าสุด (ไม่รวมตัวทีม IT เอง)
+
+    คนที่ถูกปิดไว้ต้องอยู่บนสุดเสมอ แม้จะไม่ได้ทักมานานแล้ว — สวิตช์ที่ลืมเปิดคือคนที่บอทเงียบใส่ไปเรื่อยๆ
+    """
+    bot_off = await store.get_bot_off()
+    offs = await store.list_user_off()
+    recent = await store.recent_users(_ADMIN_PAGE_SIZE * _ADMIN_MAX_PAGES + 1)
+
+    entries: list[dict] = []
+    seen = {self_id}
+    for uid, info in sorted(offs.items(), key=lambda kv: -(kv[1].get("since") or 0)):
+        if uid not in seen:
+            seen.add(uid)
+            entries.append({"user_id": uid, "name": await store.user_name(uid), "off": info, "at": None})
+    for r in recent:
+        if r["user_id"] not in seen:
+            seen.add(r["user_id"])
+            entries.append({"user_id": r["user_id"], "name": r.get("name"), "off": None, "at": r.get("at")})
+
+    total = len(entries)
+    pages = max(1, min(_ADMIN_MAX_PAGES, -(-total // _ADMIN_PAGE_SIZE)))
+    page = min(page, pages - 1)
+    now = time.time()
+    rows: list[dict] = []
+    for e in entries[page * _ADMIN_PAGE_SIZE:(page + 1) * _ADMIN_PAGE_SIZE]:
+        uid = e["user_id"]
+        name = (e["name"] or "").strip() or f"ไม่ทราบชื่อ (…{uid[-4:]})"
+        if e["off"]:
+            parts = []
+            if e["off"].get("by"):
+                parts.append(f"โดย {e['off']['by']}")
+            since = M.thai_time(e["off"].get("since"), now)
+            if since != "-":
+                parts.append(f"เมื่อ {since}")
+            row = {"status": "🔴 ปิดบอทอยู่", "detail": " ".join(parts), "action": "on"}
+        else:
+            session = await store.get(uid)
+            if session is not None and session.in_handoff(now):
+                row = {"status": "🟡 คุยกับเจ้าหน้าที่",
+                       "detail": f"ถึง {M.thai_time(session.handoff_until, now)}", "action": "on"}
+            else:
+                row = {"status": "🟢 บอทตอบ", "detail": f"ทักล่าสุด {M.thai_time(e['at'], now)}", "action": "off"}
+        row["name"] = name
+        row["button"] = "เปิดบอท" if row["action"] == "on" else "ปิดบอท"
+        row["data"] = f"a=adm_u&v={row['action']}&u={uid}&p={page}"
+        rows.append(row)
+
+    return M.admin_panel(bot_off=bot_off, rows=rows, page=page, pages=pages, total=total, chat_ok=available)
+
+
+async def _off_gate(
+    incoming: Incoming, store: ConversationStore, *, available: bool,
+) -> list[M.Reply] | None:
+    """ทีม IT ปิดบอทอยู่ (ทั้งระบบ หรือเฉพาะคนนี้) → แจ้งครั้งเดียวต่อวัน แล้วเงียบ ให้เจ้าหน้าที่ตอบเอง
+
+    คืน None = บอทเปิดอยู่ ทำงานตามปกติ · คืน list = จบที่นี่ (list ว่าง = เงียบ)
+
+    available=False (Chat ใน OA ปิด) → ไม่มีผลเลย: ไม่มีใครเห็นแชท ถ้าบอทเงียบด้วยผู้ใช้จะพิมพ์ใส่ความว่างเปล่า
+    """
+    if not available:
+        return None
+    user_id = incoming.user_id
+    if await store.get_bot_off() is None and await store.get_user_off(user_id) is None:
+        return None
+
+    # ปุ่มบนการ์ดเก่า (เช็คสถานะ / ยืนยันผล / ให้ดาว) ไม่ใช่บทสนทนา — กดได้ตามปกติแม้ปิดบอทอยู่
+    # ไม่งั้นคะแนนและการยืนยันผลงานหายเงียบๆ ทั้งที่ผู้ใช้กดไปแล้ว
+    if incoming.kind == "postback" and incoming.data.get("a", "") in _HANDOFF_PASSTHROUGH:
+        return None
+    if incoming.kind == "text":
+        session = await store.get(user_id)
+        if (
+            session is not None
+            and session.step == RATE_COMMENT
+            and (incoming.text or "").strip() not in RICH_MENU_TEXTS
+        ):
+            # ความเห็นหลังให้ดาวต่ำ — ต่อเนื่องจากปุ่มดาวที่ผ่านด่านนี้ไปแล้ว ต้องรับให้จบเรื่อง
+            return None
+
+    if await store.once_per_day(f"off_notice:{user_id}"):
+        return [M.bot_off_notice()]
+    return []
+
+
 async def _asset_picker_prompt(
     session: Session, backend: BackendClient, *, level: str = "category", page: int = 0
 ) -> M.Reply:
@@ -777,7 +1311,8 @@ async def _handle_image(
     session = await store.get(user_id)
 
     # ยังไม่ได้เริ่มแจ้งเรื่อง -> เก็บรูปไว้แล้วเปิด flow ให้เลย ไม่ต้องให้ส่งรูปซ้ำรอบสอง
-    if session is None or session.step == IDLE:
+    # (รอความเห็นหลังให้คะแนนอยู่ก็นับเป็นยังไม่ได้เริ่ม — รูปไม่ใช่ความเห็น ส่วนใหญ่คือปัญหาใหม่)
+    if session is None or session.step in (IDLE, RATE_COMMENT):
         fresh = Session(
             step=ASK_BRANCH,
             line_display_name=incoming.display_name,
@@ -916,7 +1451,11 @@ async def _handle_idle_text(
             line_display_name=incoming.display_name,
             # ประโยคที่ผู้ใช้พิมพ์มาเองมีบริบทครบที่สุด เก็บไว้ทั้งดุ้นแล้วส่งไปกับ ticket
             # ไม่งั้นข้อมูลที่ดีที่สุดที่เคยมีจะหายไปตั้งแต่ข้อความแรก เหลือแค่ค่าที่ AI แกะได้
-            initial_message=text,
+            #
+            # ยกเว้นป้ายปุ่ม rich menu ("แจ้งซ่อม" / "เบิกอุปกรณ์" ...) — ไม่ได้เล่าอะไรเลยนอกจากประเภท
+            # ถ้านับเป็น "เล่ามาแล้ว" ผู้ใช้จะข้ามขั้นรายละเอียดได้ และ ticket ขึ้นแค่ "รายละเอียด: เบิกอุปกรณ์"
+            # (ผู้ใช้แจ้งมา 13 ต.ค. 2026 ว่าไม่รู้ว่าเขาจะเบิกอะไร)
+            initial_message=None if text.strip() in RICH_MENU_TEXTS else text,
         )
         if analysis.item_name:
             # ถ้าไม่ได้บอกจำนวนมา ให้ถือว่า 1 ชิ้น (ค่าที่คนคาดหวังที่สุด)
@@ -1000,6 +1539,116 @@ async def _answer_data_question(analysis, user_id: str, backend: BackendClient):
     return None
 
 
+# ---------------------------------------------------------------- ให้คะแนนหลังปิดงาน
+
+
+def _rate_refused(result: dict, code: str) -> M.Reply:
+    """หลังบ้านไม่รับคะแนน/ความเห็น — บอกเหตุผลที่ผู้ใช้ทำอะไรต่อได้ ไม่ใช่ error ลอยๆ"""
+    reason = result.get("reason")
+    if reason == "not_owner":
+        return M.confirm_not_owner()
+    if reason == "not_completed":
+        return M.rate_not_completed(code, M.TICKET_STATUS_LABEL.get(result.get("status", ""), "-"))
+    return M.backend_error()
+
+
+def _clip_utf16(text: str, limit: int) -> str:
+    """ตัดข้อความให้ยาวไม่เกิน limit "แบบนับของ JavaScript" (UTF-16)
+
+    หลังบ้านเป็น Next.js นับความยาวด้วย string.length ซึ่งอีโมจิหนึ่งตัวนับเป็น 2
+    ถ้าตัดด้วย len() ของ Python (นับอีโมจิเป็น 1) ความเห็นที่มีอีโมจิเยอะจะยาวเกินเพดานฝั่งนั้น
+    แล้วโดนปฏิเสธ 400 วนไปเรื่อยๆ ทั้งที่ผู้ใช้พิมพ์ส่งใหม่กี่รอบก็ไม่ผ่าน
+    """
+    used = 0
+    for index, ch in enumerate(text):
+        used += 2 if ord(ch) > 0xFFFF else 1
+        if used > limit:
+            return text[:index]
+    return text
+
+
+async def _handle_rate(
+    incoming: Incoming,
+    session: Session | None,
+    store: ConversationStore,
+    backend: BackendClient,
+) -> list[M.Reply]:
+    user_id = incoming.user_id
+    code = incoming.data.get("code", "").strip()
+    score = _to_int(incoming.data.get("s"))
+    if not code or score is None or not 1 <= score <= M.RATING_MAX:
+        return [M.menu()]
+
+    try:
+        result = await backend.rate_ticket(
+            ticket_code=code,
+            line_user_id=user_id,
+            score=score,
+            viewer_name=incoming.display_name or "",
+        )
+    except BackendError:
+        return [M.backend_error()]
+    if not result.get("ok"):
+        return [_rate_refused(result, code)]
+
+    waiting_comment = session is not None and session.step == RATE_COMMENT
+    # ผู้ใช้กำลังทำอย่างอื่นค้างอยู่ (แจ้งเรื่องใหม่กลางทาง) หรือกำลังคุยกับเจ้าหน้าที่ — ห้ามยึด session
+    # มาถามความเห็น: แบบแรกทำให้เรื่องที่กรอกค้างหายทั้งชุด แบบหลังข้อความที่พิมพ์ต่อเป็นของเจ้าหน้าที่ บอทอ่านไม่ได้อยู่ดี
+    busy = session is not None and (session.in_handoff() or session.step not in (IDLE, RATE_COMMENT))
+
+    if result.get("ask_comment") and not busy:
+        name = incoming.display_name or (session.line_display_name if session else None)
+        await store.set(user_id, Session(step=RATE_COMMENT, rate_code=code, line_display_name=name))
+        return [M.rate_ask_comment(code, score)]
+
+    if waiting_comment:
+        # เปลี่ยนใจกดดาวสูงขึ้นระหว่างที่บอทรอความเห็นของดาวต่ำ — เลิกรอ ไม่งั้นข้อความถัดไปจะถูกเก็บเป็นข้อติ
+        await store.clear(user_id)
+
+    replies = [M.rate_thanks(score)]
+    if busy and session is not None and not session.in_handoff():
+        # พากลับเข้าเรื่องที่ค้างอยู่ — คำถามเดิมเลื่อนหายขึ้นไปแล้วหลังการ์ดให้คะแนน
+        prompt = await _prompt_for_step(session, backend)
+        await store.set(user_id, session)
+        if prompt is not None:
+            replies.append(prompt)
+    return replies
+
+
+async def _save_rate_comment(
+    session: Session,
+    text: str,
+    incoming: Incoming,
+    store: ConversationStore,
+    backend: BackendClient,
+) -> list[M.Reply]:
+    """ข้อความที่พิมพ์มาหลังบอทขอความเห็น (ให้ 1–3 ดาว) = ความเห็นของเรื่องนั้น"""
+    user_id = incoming.user_id
+    code = (session.rate_code or "").strip()
+    if not code:
+        await store.clear(user_id)
+        return [M.menu()]
+    if text.lower() in M.NO_DETAIL_WORDS or text.lower() in M.RATE_SKIP_WORDS:
+        await store.clear(user_id)
+        return [M.rate_comment_skipped()]
+
+    try:
+        result = await backend.rate_ticket(
+            ticket_code=code,
+            line_user_id=user_id,
+            comment=_clip_utf16(text, M.MAX_RATING_COMMENT),
+            viewer_name=incoming.display_name or session.line_display_name or "",
+        )
+    except BackendError:
+        # ไม่ล้าง session — ผู้ใช้พิมพ์ส่งใหม่ได้ทันทีโดยไม่ต้องย้อนไปกดดาว
+        return [M.rate_comment_failed(code)]
+
+    await store.clear(user_id)
+    if not result.get("ok"):
+        return [_rate_refused(result, code)]
+    return [M.rate_comment_thanks()]
+
+
 async def handle(
     incoming: Incoming,
     store: ConversationStore,
@@ -1010,19 +1659,49 @@ async def handle(
     llm=None,
     max_images: int = 5,
     max_image_mb: int = 10,
+    handoff_hours: float = 24.0,
+    handoff_available: bool = True,
 ) -> list[M.Reply]:
     """ประมวลผล 1 เหตุการณ์ แล้วคืนข้อความที่จะตอบกลับ (สูงสุด 5 บับเบิลตามลิมิตของ LINE)
 
     knowledge : KnowledgeCache สำหรับชั้น AI (ถ้าไม่ใส่ บอทจะทำงานแบบ keyword ล้วน)
     llm       : async callable (question, faq_matches) -> str | None สำหรับเรียบเรียงคำตอบ
+    handoff_hours     : ส่งต่อให้เจ้าหน้าที่แล้วบอทเงียบกี่ชั่วโมง (นับจากข้อความล่าสุดของลูกค้า)
+    handoff_available : Chat ใน OA Manager เปิดอยู่ไหม (ปิด = เจ้าหน้าที่มองไม่เห็นแชท ห้ามส่งต่อ)
+
+    คืน list ว่างได้ = ตั้งใจไม่ตอบ (กำลังคุยกับเจ้าหน้าที่อยู่ / ทีม IT ปิดบอทไว้)
     """
 
     user_id = incoming.user_id
+    if incoming.kind == "text":
+        incoming = dataclasses.replace(incoming, text=_clean_typed(incoming.text))
+
+    # จำว่าใครทักมาล่าสุด (พร้อมชื่อ LINE) — การ์ดควบคุมบอทของทีม IT แสดงจากรายชื่อนี้
+    await _remember_user(store, incoming)
+
+    # ---------- คำสั่งของทีม IT (พิมพ์ "แอดมิน" / ปุ่มบนการ์ดควบคุมบอท) ----------
+    # มาก่อนด่านปิดบอท — ตอนปิดบอททั้งระบบอยู่ ทีม IT ยังต้องสั่งเปิดกลับจากแชทนี้ได้
+    admin = await _admin_gate(incoming, store, backend, available=handoff_available)
+    if admin is not None:
+        return admin
+
+    # ---------- ทีม IT ปิดบอทอยู่ (ทั้งระบบ / เฉพาะคนนี้) ----------
+    off = await _off_gate(incoming, store, available=handoff_available)
+    if off is not None:
+        return off
 
     # ---------- follow: มีคนกดเพิ่มเพื่อน ----------
     if incoming.kind == "follow":
         await store.clear(user_id)
         return [M.welcome(incoming.display_name)]
+
+    # ---------- ส่งต่อให้เจ้าหน้าที่ / กำลังคุยกับเจ้าหน้าที่อยู่ ----------
+    # ต้องมาก่อนทุกอย่าง (รวมถึงรูปและสติกเกอร์) เพราะระหว่างนั้นทุกอย่างที่ลูกค้าส่งเป็นของเจ้าหน้าที่
+    gated = await _handoff_gate(
+        incoming, store, hours=handoff_hours, available=handoff_available
+    )
+    if gated is not None:
+        return gated
 
     # ---------- image: ผู้ใช้ส่งรูป ----------
     if incoming.kind == "image":
@@ -1070,7 +1749,8 @@ async def handle(
             await store.clear(user_id)
             return [M.FAQ_PROMPT]
 
-        # ---------- ผู้แจ้งยืนยันผลการแก้ไข (ปุ่มที่แนบมากับข้อความ "แก้ไขแล้ว") ----------
+        # ---------- ผู้แจ้งตอบผลการแก้ไข ----------
+        # confirm_done = "เรียบร้อยแล้ว" (การ์ดรุ่นเก่า) · still_broken = "ยังไม่หาย" / "ยังมีปัญหาอยู่"
         #
         # ยอมรับได้แม้ session หมดอายุ — ข้อความแจ้งเตือนนี้เด้งมาตอนผู้ใช้ไม่ได้เปิดแชทอยู่
         # กว่าจะมากดอาจผ่านไปหลายชั่วโมง ถ้าตอบ "หมดเวลา" คือปุ่มนี้แทบไม่มีวันใช้ได้เลย
@@ -1089,19 +1769,46 @@ async def handle(
                 return [M.backend_error()]
 
             if not result.get("ok"):
-                if result.get("reason") == "not_owner":
+                reason = result.get("reason")
+                label = M.TICKET_STATUS_LABEL.get(result.get("status", ""), "-")
+                if reason == "not_owner":
                     return [M.confirm_not_owner()]
-                if result.get("reason") == "not_resolved":
-                    return [
-                        M.confirm_not_resolved(
-                            code, M.TICKET_STATUS_LABEL.get(result.get("status", ""), "-")
-                        )
-                    ]
+                if reason == "reopen_expired":
+                    days = result.get("reopen_days")
+                    return [M.reopen_expired(code, days if isinstance(days, int) else None)]
+                if reason == "not_resolved":
+                    if action == "still_broken":
+                        return [M.reopen_not_possible(code, label)]
+                    return [M.confirm_not_resolved(code, label)]
                 return [M.backend_error()]
 
             if action == "confirm_done":
                 return [M.confirm_done_thanks(code)]
+
+            # เปิดเรื่องกลับแล้ว → สลับเป็นโหมดคุยกับเจ้าหน้าที่ให้เลย (บอทเงียบกับคนนี้)
+            # ทีม IT ได้แจ้งเตือนแล้ว (หลังบ้านส่งให้) และจะทักกลับในแชทนี้ ถ้าบอทยังตอบอยู่
+            # อาการที่ผู้แจ้งพิมพ์เล่าจะถูกตีความเป็นเรื่องใหม่ แล้วบอทถามสาขาแทรกกลางบทสนทนาของเจ้าหน้าที่
+            # Chat ใน OA ปิดอยู่ = ไม่มีใครเห็นแชท ห้ามสลับ (เหตุผลเดียวกับ _handoff_gate)
+            if handoff_available:
+                name = incoming.display_name or (session.line_display_name if session else None)
+                await store.set(
+                    user_id,
+                    Session(step=IDLE, line_display_name=name,
+                            handoff_until=time.time() + max(handoff_hours, 0.1) * 3600),
+                )
+                return [M.still_broken_ack(code, handed_off=True)]
             return [M.still_broken_ack(code)]
+
+        # ---------- ผู้แจ้งให้คะแนน (ดาวบนการ์ด "แก้ไขเรียบร้อยแล้ว" / ปุ่มดาวหลังกดยืนยันการ์ดเก่า) ----------
+        #
+        # ยอมรับได้แม้ session หมดอายุ ด้วยเหตุผลเดียวกับปุ่มยืนยันข้างบน
+        if action == "rate":
+            return await _handle_rate(incoming, session, store, backend)
+
+        if action == "rate_skip":
+            if session is not None and session.step == RATE_COMMENT:
+                await store.clear(user_id)
+            return [M.rate_comment_skipped()]
 
         if action == "ticket":
             # ปุ่ม "เช็คสถานะเรื่องนี้" บนการ์ดตอนรับเรื่อง
@@ -1160,7 +1867,7 @@ async def handle(
                 page = _to_int(incoming.data.get("p")) or 0
                 reply = await _branch_prompt(
                     backend, knowledge, session=session,
-                    level=session.pick_level or "company", page=max(0, page),
+                    level=_branch_page_level(session, incoming.data.get("l")), page=max(0, page),
                 )
                 await store.set(user_id, session)
                 return [reply]
@@ -1440,10 +2147,18 @@ async def handle(
             return replies
 
         if action == "pk_page":
-            page = _to_int(incoming.data.get("p")) or 0
-            reply = await _asset_picker_prompt(
-                session, backend, level=session.pick_level or "category", page=max(0, page)
-            )
+            page = max(0, _to_int(incoming.data.get("p")) or 0)
+            if session.pick_level in _BRANCH_LEVELS:
+                # การ์ดเลือกสาขาที่ส่งไปก่อนแก้ (13 ต.ค. 2026) ปุ่ม "ดูเพิ่ม" ส่ง a=pk_page ของเมนูทรัพย์สินมา
+                # (M.BRANCH_PAGE_ACTION) — การ์ดพวกนั้นยังค้างอยู่ในแชทของผู้ใช้ ลบไม่ได้ จึงดูจากชั้นที่ค้างอยู่ใน
+                # session ว่าเป็นเมนูสาขา แล้วพาไปหน้าถัดไปของเมนูสาขาให้ถูก แทนการตอบว่า "ดึงทรัพย์สินไม่ได้"
+                reply = await _branch_prompt(
+                    backend, knowledge, session=session, level=session.pick_level, page=page
+                )
+            else:
+                reply = await _asset_picker_prompt(
+                    session, backend, level=session.pick_level or "category", page=page
+                )
             await store.set(user_id, session)
             return [reply]
 
@@ -1554,6 +2269,15 @@ async def handle(
         await store.clear(user_id)
         return [M.cancelled()]
 
+    if session is not None and session.step == RATE_COMMENT:
+        if text in RICH_MENU_TEXTS:
+            # กดปุ่ม rich menu (ปุ่มแบบส่งข้อความ) = เปลี่ยนไปทำอย่างอื่นแล้ว ไม่ใช่ความเห็น
+            # เลิกรอความเห็นแล้วทำงานตามปุ่มนั้นต่อเลย ไม่งั้นป้ายปุ่มจะถูกบันทึกเป็นข้อติของทีม IT
+            await store.clear(user_id)
+            session = None
+        else:
+            return await _save_rate_comment(session, text, incoming, store, backend)
+
     # ไม่ได้อยู่ระหว่างแจ้งเรื่อง -> ให้ชั้น AI อ่านประโยคก่อนว่าผู้ใช้ต้องการอะไร
     if session is None or session.step == IDLE:
         replies = await _handle_idle_text(
@@ -1570,7 +2294,11 @@ async def handle(
             # แนบเมนูเลือกสาขาไปด้วย ผู้ใช้จะได้ไม่ต้องเดาว่าสะกดยังไงถึงจะถูก
             prompt = await _branch_prompt(backend, knowledge, session=new_session)
             await store.set(user_id, new_session)
-            return [M.branch_not_found(branches), prompt]
+            # ตีความไม่ออกเลย — อาจเป็นเรื่องนอกขอบเขตบอท จึงเปิดทางไปคุยกับเจ้าหน้าที่ไว้ด้วย
+            # (เดิมตอบ "ไม่พบสาขา" ซึ่งคนที่พิมพ์ถามเรื่องอื่นมาอ่านแล้วงงว่าทำไมโดนถามสาขา)
+            if not handoff_available:
+                return [M.branch_not_found(branches), prompt]
+            return [M.not_understood(branches), _with_human_button(prompt)]
 
         new_session = Session(
             step=ASK_TYPE, branch=matched, line_display_name=incoming.display_name
@@ -1595,6 +2323,13 @@ async def handle(
 
     if step == ASK_BRANCH:
         matched, branches = await _resolve_branch(text, backend, knowledge)
+        exact_branch = matched is not None and matched.strip().lower() == text.strip().lower()
+        if not exact_branch and await _match_area(text, session, backend):
+            # พิมพ์ชื่อเขต / Area Manager มา ("ใบตอง", "ทีมใบตอง") — เปิดรายชื่อสาขาของเขตนั้นให้เลย
+            # เช็กก่อนการเดาชื่อสาขาแบบใกล้เคียง: ชื่อเขตที่ตรงทั้งคำชัดกว่าสาขาที่ "สะกดคล้าย"
+            reply = await _branch_prompt(backend, knowledge, session=session, level="branch")
+            await store.set(user_id, session)
+            return [reply]
         if matched is None:
             # ไม่ใช่ชื่อสาขา — ก่อนจะบอกว่าหาไม่เจอ ลองดูว่าเป็นคำถามที่ตอบได้ไหม
             answer = await _try_question_answer(text, user_id, backend, knowledge)
@@ -1605,6 +2340,8 @@ async def handle(
             await store.set(user_id, session)
             if answer is not None:
                 return [answer, prompt]
+            if handoff_available:
+                prompt = _with_human_button(prompt)
             return [M.branch_not_found(branches), prompt]
 
         # สาขาชื่อซ้ำข้ามบริษัทได้จริง (ศาลายา/นครปฐม/มหาชัย มีทั้ง Montipa และ Motta)
@@ -1650,12 +2387,9 @@ async def handle(
         return replies
 
     if step in (ASK_ITEM, ASK_ITEM_NAME):
-        # พิมพ์ชื่อของเองแทนการกดปุ่ม (ของที่ไม่มีในสต็อก)
-        session.pending_item_name = text
-        session.pending_item_unit = "ชิ้น"
-        session.step = ASK_QTY
-        await store.set(user_id, session)
-        return [M.ask_qty(text, session.pending_item_unit)]
+        # พิมพ์ชื่อของเองแทนการกดปุ่ม (ของที่ไม่มีในสต็อก) — ต้องเป็น "ชื่ออุปกรณ์" จริงเท่านั้น
+        # เดิมรับทุกข้อความ ผลคือ ticket เบิกที่บอกแค่ "อุปกรณ์" / "เบิกอุปกรณ์" ทีม IT ไม่รู้ว่าต้องเตรียมอะไร
+        return await _take_item_name(session, text, user_id, backend, store)
 
     if step == ASK_QTY:
         qty = _parse_qty(text)
@@ -1672,12 +2406,13 @@ async def handle(
         return await _items_done(session, user_id, backend, store)
 
     if step == ASK_MORE_ITEMS:
-        # อยู่ระหว่างรอให้กดปุ่ม แต่ผู้ใช้พิมพ์มา — ตีความว่าเป็นของชิ้นใหม่ที่อยากเพิ่ม
-        session.pending_item_name = text
-        session.pending_item_unit = "ชิ้น"
-        session.step = ASK_QTY
-        await store.set(user_id, session)
-        return [M.ask_qty(text, session.pending_item_unit)]
+        # อยู่ระหว่างรอให้กดปุ่ม แต่ผู้ใช้พิมพ์มา — "พอแล้ว" = จบรายการ, ชื่ออุปกรณ์ = ของชิ้นใหม่
+        # เดิมทุกข้อความกลายเป็นของชิ้นใหม่ คนที่พิมพ์ "พอแล้ว" แทนการกดปุ่มจึงได้ของชื่อ "พอแล้ว" x1
+        if _command_word(text) in ITEMS_DONE_WORDS:
+            return await _items_done(session, user_id, backend, store)
+        if _clean_item_name(text) is None:
+            return [M.ask_more_items(session.items, retry=True)]
+        return await _take_item_name(session, text, user_id, backend, store)
 
     if step == ASK_REQUESTER:
         # ค้นจากทะเบียนพนักงานก่อนเสมอ — ผู้แจ้งที่ผูกกับแถวจริงในระบบทำให้ดูประวัติรายคนได้
@@ -1759,3 +2494,73 @@ def _parse_qty(text: str) -> int | None:
     if qty <= 0 or qty > 999:
         return None
     return qty
+
+
+# ---------------------------------------------------------------- ชื่ออุปกรณ์ที่จะเบิก
+#
+# การเบิกต้องบอกให้รู้ว่า "ของอะไร" เสมอ — ticket ที่บอกแค่ "เบิกอุปกรณ์" ทีม IT เตรียมของไม่ได้
+# ต้องทักกลับไปถามเอง (เจอจริง ITRQ2026090012 และผู้ใช้แจ้งมา 13 ต.ค. 2026)
+# ด่านนี้จึงปฏิเสธข้อความที่ "ไม่ใช่ชื่อของ" แล้วถามใหม่พร้อมปุ่มยกเลิก แทนการรับทุกอย่างที่พิมพ์มา
+
+# คำกว้างๆ ที่เจอในขั้นนี้แต่ไม่ได้บอกว่าของอะไร (เทียบหลังตัดคำลงท้าย/อีโมจิแล้ว)
+_VAGUE_ITEM_WORDS = frozenset({
+    "อุปกรณ์", "ของ", "ของใช้", "อุปกรณ์ไอที", "อุปกรณ์ it", "อุปกรณ์คอม", "it", "ไอที",
+    "อื่น", "อื่นๆ", "เบิก", "ขอเบิก", "เบิกของ", "ขอของ", "เบิกอุปกรณ์", "ขอเบิกอุปกรณ์",
+    "ไม่รู้", "ไม่ทราบ", "ไม่แน่ใจ", "ไม่มี", "ไม่", "-", "none", "test", "ทดสอบ", "เทส",
+    "ok", "โอเค", "ได้", "ตกลง", "ใช่", "ขอ", "ช่วยด้วย", "ด่วน", "สวัสดี",
+})
+# พิมพ์แทนปุ่ม "✅ พอแล้ว" ตอนถามว่าจะเบิกเพิ่มไหม
+ITEMS_DONE_WORDS = frozenset({
+    "พอแล้ว", "พอ", "ครบแล้ว", "ครบ", "เสร็จ", "เสร็จแล้ว", "จบ", "ส่ง", "ส่งเลย",
+    "ไม่เพิ่ม", "ไม่มีเพิ่ม", "ไม่เอาเพิ่ม", "ไม่เอาแล้ว", "done",
+})
+# คำนำหน้าที่ไม่ใช่ส่วนของชื่อ: "ขอเบิกเมาส์" -> "เมาส์" ("ขอ" ลอยๆ ตัดเฉพาะเมื่อมีวรรคตามหลัง
+# ไม่งั้นของอย่าง "ขอบยาง" จะเหลือ "บยาง")
+_ITEM_PREFIX = re.compile(r"^(?:ขอ\s*เบิก|ต้องการ\s*เบิก|อยาก\s*เบิก|อยากได้|ต้องการ|เบิก|ขอ\s)\s*")
+# จำนวนล้วน เช่น "2" "3 ชิ้น" — ผู้ใช้ตอบจำนวนก่อนถูกถาม ไม่ใช่ชื่อของ
+_QTY_ONLY = re.compile(
+    r"^[\d\s.,]+(?:ชิ้น|อัน|ตัว|เครื่อง|ชุด|กล่อง|ม้วน|เส้น|ตลับ|แพ็ค|ลูก|ใบ|เล่ม|คู่|แผ่น)?$"
+)
+_TYPE_BUTTON_TEXTS = frozenset(M.TYPE_LABEL.values())
+
+
+def _clean_item_name(text: str) -> str | None:
+    """คืนชื่ออุปกรณ์ที่ใช้ได้ หรือ None ถ้าข้อความนี้ไม่ได้บอกว่าจะเบิกอะไร
+
+    ไม่รับ: คำกว้างๆ ("อุปกรณ์", "ของ"), ตัวเลขล้วน, ป้ายปุ่มเมนู ("เบิกอุปกรณ์" จาก rich menu)
+    รับ: ทุกอย่างที่เหลือ แม้ไม่มีในสต็อก — ของที่ไม่เคยมีในระบบต้องเบิกได้ (เช่น สาย HDMI 10 เมตร)
+    """
+    raw = re.sub(r"\s+", " ", text or "").strip()
+    if not raw or raw in RICH_MENU_TEXTS or raw in _TYPE_BUTTON_TEXTS:
+        return None
+    # ตัดคำนำหน้า ("ขอเบิก") และคำลงท้าย ("ครับ") ออกจากชื่อจริงที่จะไปอยู่ใน ticket
+    name = _TRAILING_POLITE.sub("", _ITEM_PREFIX.sub("", raw)).strip(" .,:;!?-–—•*\"'")
+    word = _command_word(name)
+    if len(word) < 2 or word in _VAGUE_ITEM_WORDS or word in ITEMS_DONE_WORDS:
+        return None
+    if _QTY_ONLY.match(word):
+        return None
+    return name[:100]
+
+
+async def _take_item_name(
+    session: Session, text: str, user_id: str, backend: BackendClient, store: ConversationStore,
+) -> list[M.Reply]:
+    """รับชื่ออุปกรณ์ที่พิมพ์มา (ขั้นเลือกของ / พิมพ์ชื่อเอง / เพิ่มชิ้นถัดไป) แล้วถามจำนวน"""
+    name = _clean_item_name(text)
+    try:
+        stock = await backend.list_stock_items()
+    except BackendError:
+        stock = []
+    if name is None:
+        # ไม่ขยับขั้น — พิมพ์ชื่อใหม่หรือกดปุ่มของในสต็อกได้ทันที
+        return [M.item_required(stock, text, menu_pressed=text.strip() in RICH_MENU_TEXTS)]
+
+    # พิมพ์ชื่อตรงกับของในสต็อกพอดี — ใช้ชื่อกับหน่วยนับของจริง (เช่น "สมุดเคลมสินค้า" นับเป็นเล่ม)
+    key = _command_word(name)
+    hit = next((s for s in stock if _command_word(str(s.get("name") or "")) == key), None)
+    session.pending_item_name = hit["name"] if hit else name
+    session.pending_item_unit = (hit.get("unit") if hit else None) or "ชิ้น"
+    session.step = ASK_QTY
+    await store.set(user_id, session)
+    return [M.ask_qty(session.pending_item_name, session.pending_item_unit)]

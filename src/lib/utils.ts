@@ -86,9 +86,15 @@ export function toCsv<T extends Record<string, unknown>>(
     }
     return s;
   };
+  // กันสูตร Excel ที่ฝังมากับข้อความ (CSV/formula injection) — อาการที่แจ้งและความเห็นหลังให้คะแนน
+  // มาจากข้อความที่ใครก็ได้พิมพ์ในแชท LINE ถ้าขึ้นต้นด้วย = + - @ Excel จะรันเป็นสูตรตอนแอดมินเปิดไฟล์
+  // ใส่ ' นำหน้าให้เป็นข้อความธรรมดา · ตรวจเฉพาะ string (จำนวนติดลบอย่างการปรับสต็อกต้องคงเป็นตัวเลข)
+  // และไม่แตะ "-" ตัวเดียวที่ทุกหน้าใช้แทนค่าว่าง
+  const neutralize = (v: unknown) =>
+    typeof v === "string" && v.length > 1 && /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
   const header = columns.map((c) => escape(c.header)).join(",");
   const body = rows
-    .map((r) => columns.map((c) => escape(r[c.key])).join(","))
+    .map((r) => columns.map((c) => escape(neutralize(r[c.key]))).join(","))
     .join("\n");
   return `﻿${header}\n${body}`; // BOM นำหน้าให้ Excel เปิดภาษาไทยไม่เพี้ยน
 }

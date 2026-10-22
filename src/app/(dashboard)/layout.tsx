@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 import { AUTH_DISABLED, requireSession } from "@/lib/auth";
 import { TopNav } from "@/components/nav/TopNav";
+import { CurrentEditorProvider } from "@/components/auth/CurrentEditor";
+import { accountEditorName } from "@/lib/editor-name";
 import { BlockDevTools } from "@/components/security/BlockDevTools";
 import { SECURITY_FLAGS } from "@/lib/security";
 import { DashboardRefresh } from "@/components/dashboard/DashboardRefresh";
+import { ThemeLauncher } from "@/components/theme/ThemeLauncher";
 
 /** ห้าม Next prerender หน้าพวกนี้ตอน build เด็ดขาด
  *
@@ -34,15 +37,20 @@ export default async function DashboardLayout({
           detectOpen={SECURITY_FLAGS.detectDevToolsOpen}
         />
       )}
-      <TopNav displayName={session.displayName} showLogout={!AUTH_DISABLED} />
-      {/* ระยะขอบไล่ตามจอ: มือถือชิดขอบมากขึ้นเพื่อให้ตารางได้พื้นที่ ส่วนจอใหญ่คุมความกว้างไว้ที่ 7xl */}
-      <main className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-4 sm:py-6 lg:px-6">
-        <DashboardRefresh
-          updatedAt={updatedAt.toISOString()}
-          updatedTime={updatedAt.toLocaleTimeString("th-TH", { timeZone: "Asia/Bangkok", hour12: false })}
-        />
-        {children}
-      </main>
+      <TopNav displayName={session.displayName} pages={session.pages} showLogout={!AUTH_DISABLED} />
+      {/* ระยะขอบไล่ตามจอ: มือถือชิดขอบมากขึ้นเพื่อให้ตารางได้พื้นที่ ส่วนจอใหญ่คุมความกว้างไว้ที่ 7xl
+          ขอบล่าง pb-24 = ที่ว่างให้ปุ่มลอย (ThemeLauncher) — เลื่อนสุดหน้าแล้วปุ่มเปลี่ยนหน้า/แถวสุดท้ายไม่โดนบัง */}
+      {/* ชื่อผู้แก้ไขในฟอร์ม = บัญชีที่ล็อกอินอยู่ (ไม่ต้องพิมพ์เอง) · ปิดล็อกอิน = null → ฟอร์มกลับไปให้พิมพ์ชื่อแบบเดิม */}
+      <CurrentEditorProvider name={AUTH_DISABLED ? null : accountEditorName(session)}>
+        <main className="mx-auto w-full max-w-7xl px-3 pb-24 pt-5 sm:px-4 sm:pt-6 lg:px-6 print:pb-0">
+          <DashboardRefresh
+            updatedAt={updatedAt.toISOString()}
+            updatedTime={updatedAt.toLocaleTimeString("th-TH", { timeZone: "Asia/Bangkok", hour12: false })}
+          />
+          {children}
+        </main>
+      </CurrentEditorProvider>
+      <ThemeLauncher />
     </div>
   );
 }

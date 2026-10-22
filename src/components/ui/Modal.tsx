@@ -114,7 +114,7 @@ export function Modal({
       >
         {/* ขีดจับด้านบน — สัญญาณว่า "นี่คือแผ่นที่เลื่อนขึ้นมา ปิดได้" ตามที่คนคุ้นบนมือถือ */}
         <div className="flex justify-center pt-2 sm:hidden" aria-hidden>
-          <span className="h-1 w-10 rounded-full bg-white/15" />
+          <span className="h-1 w-10 rounded-full bg-ink/15" />
         </div>
 
         <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-3 sm:px-5 sm:py-4">
@@ -131,7 +131,7 @@ export function Modal({
             onClick={onClose}
             data-modal-close
             aria-label="ปิด"
-            className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-white/[0.06] hover:text-ink"
+            className="-mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-ink/[0.06] hover:text-ink"
           >
             ✕
           </button>

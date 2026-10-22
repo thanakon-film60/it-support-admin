@@ -75,12 +75,18 @@ override `Module._load` ให้ mock `next/cache` + map `@/` → `src/`, ล�
 **ตรวจ UI ด้วยตาจริง**: `react-dom/server` → คอมไพล์ Tailwind กับ `globals.css` ตัวจริง →
 Playwright วัด `scrollWidth` vs `clientWidth` + ถ่ายภาพที่ 390 / 768 / 1440
 
+**ทดสอบดาวน์โหลดใน Chromium บน Linux ต้องตั้ง `LC_ALL=C.UTF-8`** — locale `C` ทำให้ Chromium
+ตั้งชื่อไฟล์ที่ไม่ใช่ ASCII เป็น `download` ทั้งที่ header ถูกต้อง (หลอกให้คิดว่าเว็บส่งชื่อไทยผิด)
+
 ### เทสต์ที่มีอยู่
 
-`tests/` (68 เคส): `line-intake` · `employees` · `employees-board` · `client-bundle` ·
-`date-th` · `status-editor` · `ticket-confirm`
-`line-bot-python/tests/` (261 เคส): `test_flow` · `test_ai` · `test_requester` · `test_intake` ·
-`test_richmenu` · `test_flex` · `test_main` · `test_thai_text` · `e2e/`
+`tests/` (211 เคส): `line-intake` · `line-bot-admin` · `employees` · `employees-board` · `employees-import` · `client-bundle` ·
+`date-th` · `status-editor` · `editor-account` (ชื่อผู้แก้ไข = บัญชีที่ล็อกอิน) · `ticket-confirm` · `ticket-rating` · `chat-takeover` · `notes` · `drive` · `access` (สิทธิ์รายหน้า) ·
+`vault` (หน้ารหัสผ่าน — ข้อมูลปลอมเท่านั้น **ห้ามใช้ไฟล์จริงใน `Password-story/` ในเทสต์หรือพิมพ์ค่าออกจอ**)
+`tools/tests/` (44 เคส · `py -m pytest tools/tests`): `test_staff_admin` (รวมเคสล็อกอินผ่านโค้ดเว็บจริงด้วย node) ·
+`test_staff_admin_gui` (กดปุ่มจริง ต้องมีจอ — Linux ใช้ `xvfb-run`)
+`line-bot-python/tests/` (453 เคส): `test_flow` · `test_handoff` · `test_takeover` · `test_bot_control` · `test_withdraw_items` · `test_branch_paging` · `test_rating` · `test_ai` · `test_requester` ·
+`test_intake` · `test_richmenu` · `test_flex` · `test_main` · `test_thai_text` · `e2e/`
 
 ## เอกสาร
 
@@ -99,10 +105,21 @@ Playwright วัด `scrollWidth` vs `clientWidth` + ถ่ายภาพท�
 ## UI
 
 Tailwind CSS v4 แบบ CSS-first (`@theme inline` ใน `src/app/globals.css`)
-โทเคนสี: `page` · `surface` · `surface-2` · `line` · `ink` · `muted` · `accent` · `accent-bg`
+โทเคนสี: `page` · `surface` · `surface-2` · `line` · `ink` · `muted` · `accent` · `accent-2` · `on-accent` · `accent-bg`
 คลาสช่วย: `glass` · `edge-glow` · `font-num` (ตัวเลขความกว้างเท่ากัน ใช้ในตาราง)
 
-- ธีมมืดอย่างเดียว ไม่มีโหมดสว่าง
+- **ธีมสว่าง/มืด + สีหลัก 4 สี เลือกได้ต่อเครื่อง** (ปุ่มลอย `components/theme/ThemeLauncher.tsx` · ค่าคงที่ `lib/theme.ts`)
+  → `<html data-theme="light">` / `data-accent="indigo|emerald|amber"` · ไม่มี attribute = มืด + ฟ้า (หน้าตาเดิม)
+  · สคริปต์ใน `<head>` ตั้งก่อนวาดจอ — **ห้ามใส่ `data-theme` ตั้งต้นที่ `<html>` ฝั่ง server**
+- เขียนคลาสให้ตามธีม (`tests/theme.test.cjs` ตรวจ 2 ข้อแรก):
+  - สีหลักใช้ `accent` ไม่ใช่ `cyan-400`/`indigo-400` (`border-accent/40` · `ring-accent/30` · `from-accent to-accent-2`)
+    — ฟ้าที่เหลือได้คือ**สีสถานะ**เท่านั้น (`Badge.tsx` · `VaultAuditList.tsx`) ซึ่งต้องคงความหมายไม่ว่าเลือกสีอะไร
+  - พื้นโปร่งแสงใช้ `bg-ink/[0.04]` ไม่ใช่ `bg-white/[0.04]` (ขาวโปร่งบนพื้นขาวหายไปเลย)
+  - ตัวหนังสือบนพื้นสีหลักใช้ `text-on-accent` (ธีมมืด = เข้ม · ธีมสว่าง = ขาว)
+  - สีตัวหนังสือโทนอ่อนเฉดใหม่ (เช่น `text-sky-300`) ต้องเพิ่มตัวแปรเฉดเข้มใน**ทั้ง**บล็อก `[data-theme="light"]`
+    และบล็อก `@media print` (เทสต์ตรวจว่าสองชุดตรงกัน แต่ตรวจไม่ได้ว่าคุณลืมทั้งคู่)
+- **ตอนสั่งพิมพ์สลับเป็นกระดาษขาวทุกธีม** (`@media print` ท้าย `globals.css`) · ของที่ไม่ควรขึ้นกระดาษ
+  (เมนู ปุ่มรีเฟรช ปุ่มลอย) ใส่ `print:hidden`
 - ปุ่มในแถวตารางสูงอย่างน้อย `2.25rem` — เล็กกว่านี้กดพลาดบนมือถือเมื่อมีปุ่มติดกัน 3–4 ปุ่ม
 - ช่องกรอกในโมดัลใช้ `MODAL_INPUT` (`text-base` บนมือถือเพื่อไม่ให้ iOS ซูมเข้าอัตโนมัติ)
 - ตารางบนจอใหญ่: กำหนด `min-w` ต่อคอลัมน์ อย่าใช้ `whitespace-nowrap` พร่ำเพรื่อ

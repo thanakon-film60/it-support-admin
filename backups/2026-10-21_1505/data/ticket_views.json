@@ -1,0 +1,86 @@
+[
+  {
+    "id": "7d56bf8c-2887-4629-b7bb-a061a63de231",
+    "ticket_id": "8615bb30-623d-45cf-b131-f81c7b2e5397",
+    "ticket_code": "ITRQ2026100005",
+    "source": "line-bot",
+    "line_user_id": "U4e2cd2159aa06450fc7fed622caad873",
+    "viewer_name": "ชื่อเล่นชื่อเอ็ม",
+    "ip": "147.92.150.198",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-11T06:51:23.522Z"
+  },
+  {
+    "id": "64c46355-676a-4b6e-8f8c-b01a6a4133c2",
+    "ticket_id": "c66072bf-bbb9-4b26-b363-5414d24feacd",
+    "ticket_code": "ITSR2026100005",
+    "source": "line-bot",
+    "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+    "viewer_name": "Beaming_Ray🌹",
+    "ip": "147.92.149.167",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-11T12:20:21.650Z"
+  },
+  {
+    "id": "f380ed3d-f848-498d-9654-53dab5436a2b",
+    "ticket_id": "6c37ed52-c0e1-4ae6-bb37-373e262fe4db",
+    "ticket_code": "ITSR2026100007",
+    "source": "line-bot",
+    "line_user_id": "U13dfeadfcd873ceca4e63ae9949206f5",
+    "viewer_name": "NUN",
+    "ip": "147.92.149.165",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-12T07:27:05.436Z"
+  },
+  {
+    "id": "e1789894-f781-4656-8f56-429bac0a31ff",
+    "ticket_id": "de8495f9-8210-483b-87e7-68d1d93cb6a7",
+    "ticket_code": "ITSR2026100006",
+    "source": "line-bot",
+    "line_user_id": "U9f22c06a7bc2076478999e817b239f25",
+    "viewer_name": "Ann6162",
+    "ip": "147.92.149.170",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-12T07:29:29.539Z"
+  },
+  {
+    "id": "17d1e4b5-9e3e-432d-8bd0-4cd40d50ec92",
+    "ticket_id": "de8495f9-8210-483b-87e7-68d1d93cb6a7",
+    "ticket_code": "ITSR2026100006",
+    "source": "line-bot",
+    "line_user_id": "U9f22c06a7bc2076478999e817b239f25",
+    "viewer_name": "Ann6162",
+    "ip": "147.92.149.170",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-12T07:29:31.098Z"
+  },
+  {
+    "id": "6ae05e11-0794-4cc2-a433-12cf5fa5a532",
+    "ticket_id": "eb40e4ba-128c-4fc0-a910-beec8560f0d6",
+    "ticket_code": "ITSV2026100006",
+    "source": "line-bot",
+    "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+    "viewer_name": "ป๊อป.",
+    "ip": "147.92.150.194",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-12T13:42:53.344Z"
+  },
+  {
+    "id": "83b104a3-cccb-41af-bfea-217ca27276d9",
+    "ticket_id": "27d5e281-25f9-4238-8d3e-6c81cf31c9b9",
+    "ticket_code": "ITSV2026100012",
+    "source": "line-bot",
+    "line_user_id": "Ube3859901783b40c1208e54db6bd2995",
+    "viewer_name": "JUNE",
+    "ip": "147.92.150.194",
+    "ip_note": "IP ของเซิร์ฟเวอร์ LINE/พร็อกซี ไม่ใช่เครื่องของผู้กด (LINE ไม่ส่ง IP ผู้ใช้มาให้)",
+    "user_agent": "LineBotWebhook/2.0",
+    "created_at": "2026-10-14T10:15:20.320Z"
+  }
+]

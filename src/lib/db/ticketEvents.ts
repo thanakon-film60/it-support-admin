@@ -1,7 +1,7 @@
 import { newId } from "../utils";
 import { readCollection, upsertOne, writeCollection } from "./store";
 import { byNewestFirst } from "../sorting";
-import type { TicketEvent, TicketStatus } from "../types";
+import type { AnyTicketStatus, TicketEvent } from "../types";
 
 const COLLECTION = "ticket_events";
 
@@ -38,8 +38,8 @@ export interface RecordEventInput {
   ticket_id: string;
   ticket_code: string;
   type: TicketEvent["type"];
-  from_status?: TicketStatus | null;
-  to_status?: TicketStatus | null;
+  from_status?: AnyTicketStatus | null;
+  to_status?: AnyTicketStatus | null;
   /** ใครเป็นคนทำ — ชื่อแอดมิน หรือชื่อผู้แจ้งตอนกดตกลงในแชท */
   actor: string;
   actor_role: TicketEvent["actor_role"];

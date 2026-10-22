@@ -109,7 +109,7 @@ export function TicketCalendar({
         <button
           type="button"
           onClick={goToday}
-          className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-cyan-400/40 hover:text-accent"
+          className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent/40 hover:text-accent"
         >
           วันนี้
         </button>
@@ -127,7 +127,7 @@ export function TicketCalendar({
               type="button"
               onClick={() => setMonthKey(shiftMonth(monthKey, -1))}
               aria-label="เดือนก่อนหน้า"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-cyan-400/40 hover:text-accent"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-accent/40 hover:text-accent"
             >
               ‹
             </button>
@@ -136,7 +136,7 @@ export function TicketCalendar({
               type="button"
               onClick={() => setMonthKey(shiftMonth(monthKey, 1))}
               aria-label="เดือนถัดไป"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-cyan-400/40 hover:text-accent"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition hover:border-accent/40 hover:text-accent"
             >
               ›
             </button>
@@ -173,10 +173,10 @@ export function TicketCalendar({
                   }`}
                   className={`flex h-11 flex-col items-center justify-center gap-0.5 rounded-lg border text-xs transition sm:h-12 lg:h-14 ${
                     isSelected
-                      ? "border-cyan-400/50 bg-accent-bg text-accent"
+                      ? "border-accent/50 bg-accent-bg text-accent"
                       : isToday
-                        ? "border-cyan-400/30 text-ink"
-                        : "border-transparent text-muted hover:border-line hover:bg-white/[0.04]"
+                        ? "border-accent/30 text-ink"
+                        : "border-transparent text-muted hover:border-line hover:bg-ink/[0.04]"
                   }`}
                 >
                   <span className={`font-num ${isToday ? "font-bold text-accent" : ""}`}>
@@ -210,7 +210,7 @@ export function TicketCalendar({
               <span className="h-2 w-2 rounded-full bg-emerald-300/80" aria-hidden /> ปิดงานครบแล้ว
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full ring-1 ring-cyan-400/60" aria-hidden /> วันนี้
+              <span className="h-2 w-2 rounded-full ring-1 ring-accent/60" aria-hidden /> วันนี้
             </span>
           </div>
         </div>
@@ -264,7 +264,7 @@ function Tab({
       aria-pressed={active}
       className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
         active
-          ? "bg-accent-bg text-accent ring-1 ring-inset ring-cyan-400/30"
+          ? "bg-accent-bg text-accent ring-1 ring-inset ring-accent/30"
           : "border border-line text-muted hover:text-ink"
       }`}
     >
@@ -289,7 +289,7 @@ function TicketRow({
     <Link
       // เปิดหน้า Tickets พร้อมกางแผงรายละเอียดของเรื่องนี้ให้เลย ไม่ต้องไปไล่หาในตารางเอง
       href={`/tickets?code=${encodeURIComponent(ticket.ticket_code)}`}
-      className="group rounded-xl border border-line bg-white/[0.02] p-3 transition hover:border-cyan-400/30 hover:bg-accent-bg/20"
+      className="group rounded-xl border border-line bg-ink/[0.02] p-3 transition hover:border-accent/30 hover:bg-accent-bg/20"
     >
       <div className="flex items-start justify-between gap-2">
         <span className="font-num text-sm font-semibold text-accent">{ticket.ticket_code}</span>

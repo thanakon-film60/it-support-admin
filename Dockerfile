@@ -49,6 +49,10 @@ RUN mkdir -p ./public/uploads/faq ./public/uploads/tickets && chown -R nextjs:no
 # (ดู docker-compose.yml ตัวแปร app_data) ไม่งั้นข้อมูลทั้งหมดหายทุกครั้งที่ build image ใหม่
 RUN mkdir -p ./data && chown -R nextjs:nodejs ./data
 
+# คลังไฟล์ (/files) — ตัวไฟล์ที่ผู้ใช้อัปโหลดอยู่ที่นี่ (ข้อมูลกำกับอยู่ใน /app/data) เหตุผลเรื่องสิทธิ์เหมือนสองบรรทัดบน
+# แยกจาก /app/data เพราะ backup.bat คัดลอก /app/data เข้าโฟลเดอร์โปรเจกต์ทุกครั้ง ไฟล์หลายร้อย MB ห้ามไปอยู่ในนั้น
+RUN mkdir -p ./drive && chown -R nextjs:nodejs ./drive
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000

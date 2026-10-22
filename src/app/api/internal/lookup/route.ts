@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
   if (kind === "branch_options") {
     // ตัวเลือกสำหรับเมนูเลือกสาขาทีละชั้นในแชท LINE
     //   level=company                      -> Montipa / Motta / ส่วนกลาง
-    //   level=group&company=montipa        -> ภูมิภาค (Montipa) หรือ ทีม Area Manager (Motta)
+    //   level=group&company=montipa        -> เขตของ Area Manager (ทั้ง Montipa และ Motta)
     //   level=branch&company=..&group=..   -> สาขาในกลุ่มนั้น
     const level = searchParams.get("level") ?? "company";
     if (!["company", "group", "branch"].includes(level)) {

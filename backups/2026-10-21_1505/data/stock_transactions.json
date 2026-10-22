@@ -1,0 +1,142 @@
+[
+  {
+    "id": "421a9b92-c88b-4dc8-82b3-fa4c939a3105",
+    "stock_item_id": "1839431b-da5f-4008-a125-a560688f399e",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ธีรภัทร it)",
+    "reference_no": "ITRQ2026090011",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-25T15:58:44.233Z"
+  },
+  {
+    "id": "637c797e-42f5-4cc0-84a0-de914b01c5b2",
+    "stock_item_id": "019fddce-e97c-4bee-bc23-5cffd5756f79",
+    "type": "out",
+    "quantity": 3,
+    "staff_name": "LINE Bot (ธีรภัทร บัวหอม)",
+    "reference_no": "ITRQ2026090012",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-09-28T09:21:44.934Z"
+  },
+  {
+    "id": "0eca4137-8845-44a8-8a11-28e03480efb8",
+    "stock_item_id": "1839431b-da5f-4008-a125-a560688f399e",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ชฎาพร  • ป๊อป • M67035)",
+    "reference_no": "ITRQ2026100001",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-08T12:07:30.679Z"
+  },
+  {
+    "id": "211de676-a692-4134-9de9-1547541ffe05",
+    "stock_item_id": "bcb2ba3c-e796-4e6b-827f-b9876a1d7a4b",
+    "type": "out",
+    "quantity": 2,
+    "staff_name": "LINE Bot (ชฎาพร ป๊อป M67035)",
+    "reference_no": "ITRQ2026100002",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-10T09:03:43.573Z"
+  },
+  {
+    "id": "fc6d7a88-0d0c-4ad9-95e8-c4b202d9ff89",
+    "stock_item_id": "bcb2ba3c-e796-4e6b-827f-b9876a1d7a4b",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ชฎาพร ตนศิริ)",
+    "reference_no": "ITRQ2026100003",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-10T09:06:14.391Z"
+  },
+  {
+    "id": "19ca80e0-76f2-4625-8591-e5b07c0c9adb",
+    "stock_item_id": "44f371c5-b1cf-4084-9fae-4c76b2c6a26a",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ชฎาพร ตนศิริ)",
+    "reference_no": "ITRQ2026100003",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-10T09:06:14.391Z"
+  },
+  {
+    "id": "c852e040-d049-41bf-86f9-6f351c9daa16",
+    "stock_item_id": "bcb2ba3c-e796-4e6b-827f-b9876a1d7a4b",
+    "type": "out",
+    "quantity": 3,
+    "staff_name": "LINE Bot (บุศรา ศรีบ้าน)",
+    "reference_no": "ITRQ2026100008",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-15T09:06:07.678Z"
+  },
+  {
+    "id": "e1224e4d-a2d5-42b0-99ef-ed1a11ba0e9c",
+    "stock_item_id": "31cc994a-1d01-4dc4-aecf-966a540b7f95",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ภณิดา ร่มพุฒตาล)",
+    "reference_no": "ITRQ2026100009",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-16T05:47:14.470Z"
+  },
+  {
+    "id": "5a4bf2ee-155f-4279-9eff-ba42f0acfcd1",
+    "stock_item_id": "6251cef6-875a-40b7-b749-c6453417cbcd",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ภณิดา ร่มพุฒตาล)",
+    "reference_no": "ITRQ2026100010",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-16T05:48:35.723Z"
+  },
+  {
+    "id": "d0e0fd93-9205-4fe2-af21-3cbe6def2d1d",
+    "stock_item_id": "d9f059c7-1301-4526-b0d0-d6cfbdd80229",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (บีม A68043)",
+    "reference_no": "ITRQ2026100011",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-16T07:59:05.753Z"
+  },
+  {
+    "id": "da9ea634-57f0-4320-b4ee-35b3087d7462",
+    "stock_item_id": "2be34038-c349-4e37-8af3-ed892962b05f",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (บีม A68043)",
+    "reference_no": "ITRQ2026100011",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-16T07:59:05.753Z"
+  },
+  {
+    "id": "e9b5781a-78c6-4049-b113-339ad8e7346c",
+    "stock_item_id": "d9f059c7-1301-4526-b0d0-d6cfbdd80229",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (อัญธิญาน์ ชมพักตร์)",
+    "reference_no": "ITRQ2026100013",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-16T10:05:15.912Z"
+  },
+  {
+    "id": "736f62d4-4d3f-499f-8021-db8b1a83c820",
+    "stock_item_id": "bcb2ba3c-e796-4e6b-827f-b9876a1d7a4b",
+    "type": "out",
+    "quantity": 3,
+    "staff_name": "LINE Bot (ปอ A65010)",
+    "reference_no": "ITRQ2026100014",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-17T09:18:24.841Z"
+  },
+  {
+    "id": "6abc7a62-e8ff-486c-93a0-8e10757fe065",
+    "stock_item_id": "d9f059c7-1301-4526-b0d0-d6cfbdd80229",
+    "type": "out",
+    "quantity": 1,
+    "staff_name": "LINE Bot (ใช่ค่ะ)",
+    "reference_no": "ITRQ2026100015",
+    "note": "หักสต็อกอัตโนมัติจาก ticket เบิกอุปกรณ์",
+    "created_at": "2026-10-21T05:52:34.362Z"
+  }
+]

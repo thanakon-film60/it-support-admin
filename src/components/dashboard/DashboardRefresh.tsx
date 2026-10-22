@@ -58,7 +58,8 @@ export function DashboardRefresh({ updatedAt, updatedTime }: { updatedAt: string
           <>ข้อมูล ณ <time dateTime={updatedAt}>{updatedTime}</time> น.</>
         )}
       </p>
-      <label className="flex items-center gap-2 text-xs text-muted">
+      {/* บนกระดาษเหลือแค่ "ข้อมูล ณ เวลา" ไว้บอกว่าพิมพ์ตอนไหน — ปุ่มกับตัวเลือกรีเฟรชกดไม่ได้อยู่แล้ว */}
+      <label className="flex items-center gap-2 text-xs text-muted print:hidden">
         <span>อัตโนมัติ</span>
         <select
           aria-label="ความถี่รีเฟรชอัตโนมัติ"
@@ -72,7 +73,7 @@ export function DashboardRefresh({ updatedAt, updatedTime }: { updatedAt: string
           <option value={60}>ทุก 1 นาที</option>
         </select>
       </label>
-      <Button type="button" variant="outline" onClick={refresh} disabled={pending || !online} aria-busy={pending}>
+      <Button type="button" variant="outline" onClick={refresh} disabled={pending || !online} aria-busy={pending} className="print:hidden">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
           className={pending ? "motion-safe:animate-spin" : ""} aria-hidden="true">
           <path d="M20 7v5h-5M4 17v-5h5" strokeLinecap="round" strokeLinejoin="round" />

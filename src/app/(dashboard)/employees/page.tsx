@@ -3,11 +3,13 @@ import { DEPARTMENTS, listEmployees, OTHER_DEPARTMENT } from "@/lib/db/employees
 import { listEquipment } from "@/lib/db/equipment";
 import { listTickets } from "@/lib/db/tickets";
 import { EmployeesBoard } from "@/components/employees/EmployeesBoard";
+import { requireSession } from "@/lib/auth";
 
 // อ่านทะเบียนที่แอดมินแก้ได้ตลอด -> ห้าม prerender เป็น static
 export const dynamic = "force-dynamic";
 
-export default function EmployeesPage() {
+export default async function EmployeesPage() {
+  await requireSession("employees");
   const employees = listEmployees(true);
 
   // นับประวัติต่อคนไว้ล่วงหน้าฝั่งเซิร์ฟเวอร์ครั้งเดียว (พนักงาน 326 คน × ticket ทั้งหมด

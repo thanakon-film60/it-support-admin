@@ -26,7 +26,7 @@ description: ใช้เมื่อทำงานกับโปรเจก�
 ```
 src/                    Next.js 16 (App Router) — เว็บแอดมิน + API ภายใน
   app/(dashboard)/      หน้าเว็บทีม IT
-  app/actions/          Server Action ("use server") — ขึ้นต้นด้วย requireSession() เสมอ
+  app/actions/          Server Action ("use server") — ขึ้นต้นด้วย requireSession("<หน้า>") เสมอ
   app/api/internal/     API ที่บอทเรียก — ป้องกันด้วย header x-internal-key
   lib/db/               ชั้นข้อมูล — ทุกไฟล์ผ่าน store.ts เท่านั้น ห้ามแตะ fs ตรงๆ
   components/ui/        Modal / Pagination / Button / Card ใช้ร่วมกันทุกหน้า
@@ -34,19 +34,22 @@ line-bot-python/app/    FastAPI + state machine
   flow.py               หัวใจ — รับ event คืนข้อความ ไม่เรียก LINE API เลย
   ai.py                 TF-IDF + rapidfuzz + pythainlp · Knowledge cache 5 นาที
 line-oa/                สคริปต์สร้างรูป rich menu / โปรไฟล์ / หน้าปก
-scripts/                deploy / backup / ตั้ง Tailscale Funnel / ตั้ง autostart (Windows)
+scripts/                deploy / backup / use-cloudflare (ทางเข้า) / ตั้ง autostart (Windows)
+tools/staff_admin.py    โปรแกรมจัดการผู้ใช้ + สิทธิ์รายหน้า (tkinter) — เปิดด้วย staff-admin.bat
+src/lib/vault/          หน้ารหัสผ่าน: เข้ารหัสด้วย VAULT_KEY · ปลดล็อก 15 นาที (ห้าม log/พิมพ์ค่ารหัสผ่านออกมาเด็ดขาด)
 data/*.json             ที่เก็บข้อมูลจริงตอนนี้ (Postgres เตรียมไว้แล้วแต่ยังไม่ได้ใช้)
 ```
 
-ระบบรันบน **เครื่อง Windows ในออฟฟิศ** เปิดสู่อินเทอร์เน็ตด้วย **Tailscale Funnel**
-(`https://<ชื่อเครื่อง>.<tailnet>.ts.net/webhook` → `127.0.0.1:8000`) ไม่ได้อยู่บนคลาวด์
+ระบบรันบน **เครื่อง Windows ในออฟฟิศ** เปิดสู่อินเทอร์เน็ตด้วย **Cloudflare Tunnel** ตั้งแต่ 7 ต.ค. 2026
+(`https://it.thanakronpart-time.com` → `app:3000` · `/webhook` → `bot:8000`) ไม่ได้อยู่บนคลาวด์ — เดิมใช้ Tailscale Funnel
 
 ## กฎเหล็ก 8 ข้อ
 
 1. **Client component ห้าม import อะไรที่เรียกถึง `src/lib/db/`** — `store.ts` import `node:fs`
    bundler จะลากเข้า bundle เบราว์เซอร์แล้ว `next build` ล้ม ใช้ `lib/companies.ts` หรือรับเป็น prop แทน
    (`import type` ปลอดภัย · มี `tests/client-bundle.test.cjs` กันไว้)
-2. **Server Action ทุกตัวขึ้นต้นด้วย `await requireSession()`**
+2. **Server Action ทุกตัวขึ้นต้นด้วย `await requireSession("<หน้า>")`** และทุก `page.tsx` เรียกของหน้าตัวเอง
+   ซ่อนเมนูไม่ใช่ด่านความปลอดภัย · หน้าใหม่ = เพิ่มใน `lib/pages.json` + `PAGE_KEYS` (`tests/access.test.cjs` สแกนให้)
 3. **API ภายในทุกเส้นตรวจ `x-internal-key` ก่อนทำอะไร**
 4. **ข้อมูลจริงมีค่าซ้ำ** — รหัสทรัพย์สินซ้ำ 28 แถว · ชื่อสาขาซ้ำข้ามบริษัท · ชื่อพนักงานคล้ายกัน
    ทุกจุดที่แปลงสิ่งที่ผู้ใช้พิมพ์เป็นแถวในฐานข้อมูล **ต้องถามเมื่อกำกวม ห้ามหยิบตัวแรก**
@@ -60,8 +63,8 @@ data/*.json             ที่เก็บข้อมูลจริงต�
 ```bash
 npx tsc --noEmit                      # เร็วกว่า next build มาก ใช้ตรวจ type ระหว่างแก้
 npx eslint src
-node --test tests/*.test.cjs          # 68 เคส
-cd line-bot-python && python -m pytest -q   # 261 เคส
+node --test tests/*.test.cjs          # 100 เคส
+cd line-bot-python && python -m pytest -q   # 325 เคส
 ```
 
 สถานะที่ควรเป็น: **เขียวทั้งหมด** ถ้าเจอแดงตั้งแต่ก่อนแก้ ให้บอกผู้ใช้ก่อนว่าแดงอยู่แล้ว

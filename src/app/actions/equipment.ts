@@ -30,7 +30,7 @@ export async function createEquipmentAction(
   _prev: EquipmentFormState,
   formData: FormData
 ): Promise<EquipmentFormState> {
-  await requireSession();
+  await requireSession("assets");
 
   const asset_code = String(formData.get("asset_code") ?? "").trim();
   if (!asset_code) {
@@ -83,7 +83,7 @@ export async function updateEquipmentAction(
   _prev: EquipmentFormState,
   formData: FormData
 ): Promise<EquipmentFormState> {
-  await requireSession();
+  await requireSession("assets");
 
   const existing = getEquipmentById(id);
   if (!existing) return { error: "ไม่พบทรัพย์สินชิ้นนี้" };
@@ -149,7 +149,7 @@ export async function updateEquipmentAction(
  *  อีกต่อไป — ตารางประวัติจะมีแถวที่บอกไม่ได้ว่าซ่อมเครื่องไหน ซึ่งกู้คืนไม่ได้เลย
  *  กรณีนั้นให้เปลี่ยนสถานะเป็น "เลิกใช้งาน" แทน ของยังอยู่ในระบบแต่ไม่ถูกหยิบมาใช้ */
 export async function deleteEquipmentAction(id: string): Promise<EquipmentFormState> {
-  await requireSession();
+  await requireSession("assets");
 
   const existing = getEquipmentById(id);
   if (!existing) return { error: "ไม่พบทรัพย์สินชิ้นนี้" };
@@ -180,7 +180,7 @@ export async function updateCustodianAction(
   _prev: EquipmentFormState,
   formData: FormData
 ): Promise<EquipmentFormState> {
-  await requireSession();
+  await requireSession("custodian");
 
   const existing = getEquipmentById(id);
   if (!existing) return { error: "ไม่พบทรัพย์สินชิ้นนี้" };
@@ -273,7 +273,7 @@ type ImportableEquipment = Omit<
 export async function bulkImportEquipmentAction(
   rows: ImportableEquipment[]
 ): Promise<BulkImportState> {
-  await requireSession();
+  await requireSession("assets");
   let imported = 0;
   let skipped = 0;
 

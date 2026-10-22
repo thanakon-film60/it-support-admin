@@ -19,6 +19,69 @@ IDLE ─▶ ASK_BRANCH   บริษัท → [กลุ่ม/หน่วย
 ทุกสถานะรับ "ยกเลิก" · session หมดอายุ 30 นาที · `Session.from_json` ทิ้งคีย์ที่ไม่รู้จัก
 (เพื่อให้ deploy/rollback ระหว่างที่มีคนคุยค้างอยู่ไม่ทำให้บอทเงียบ)
 
+## คุยกับเจ้าหน้าที่ — `flow._handoff_gate` (8 ต.ค. 2026)
+
+ลูกค้ากด `a=human` หรือพิมพ์ขอคุยกับคน (`wants_human()` — ต้องขึ้นต้นด้วยคำขอและไม่ยาว ประโยคที่แค่มีคำว่า
+"เจ้าหน้าที่" ปนอยู่ไม่นับ) → `Session.handoff_until = now + HANDOFF_HOURS` แล้วบอท **เงียบ** (คืน `[]`)
+กับทุกข้อความ/รูป/สติกเกอร์ของคนนั้น ให้ทีม IT ตอบในแอป LINE Official Account
+
+| เหตุการณ์ระหว่างคุยกับเจ้าหน้าที่ | ผล |
+| --- | --- |
+| ข้อความ / รูป / สติกเกอร์ | เงียบ + ต่อเวลา (นับจากข้อความล่าสุด) |
+| `a=bot_resume` · พิมพ์ "เมนู" "ยกเลิก" "บอท" | ล้าง session + ตอบ `handoff_ended()` |
+| ข้อความจาก rich menu (`RICH_MENU_TEXTS` สร้างจาก `richmenu.MAIN_BUTTONS`) · postback อื่นของบอท | ล้าง session แล้วทำงานต่อตามปกติ |
+| `ticket` · `confirm*` · `still_broken` · `my_assets` · `rate` · `rate_skip` (ดูข้อมูล/ตอบผลงาน) | ตอบตามปกติ ไม่ตัดการคุย |
+| Chat ใน OA ปิด (`handoff_available=False`) | ไม่ส่งต่อ — ตอบ `handoff_unavailable()` และล้าง handoff ที่ค้าง |
+
+- ด่านนี้อยู่ **ก่อน** image/unsupported เพราะระหว่างคุยทุกอย่างเป็นของเจ้าหน้าที่ · `main.py` ไม่โหลดรูปเข้าระบบด้วย
+- store ยืดอายุ session ให้ถึง `handoff_until` (ปกติ 30 นาที) — ไม่งั้นบอทลืมว่าต้องเงียบ
+- `main._mark_read` สั่งอ่านแล้วด้วย `markAsReadToken` เฉพาะเมื่อบอทจัดการจบเอง: ไม่สั่งตอนเงียบ · ตอน `Reply.keep_unread`
+  (ขอคุยกับคน / ตีความไม่ออก) · ตอนก่อน/หลังข้อความนั้นอยู่ในช่วงคุย — **LINE นับอ่านแล้วย้อนหลังทั้งห้อง**
+- ข้อความแรกที่ตีความไม่ออก (IDLE) ตอบ `not_understood()` + การ์ดเลือกสาขาที่เติม `HUMAN_BUTTON` แทน "ไม่พบสาขา"
+- เทสต์: `tests/test_handoff.py` (flow + TTL ของ store + webhook จริงผ่าน TestClient)
+
+### เจ้าหน้าที่รับแชทต่อเอง — หลังบ้านสั่ง (12 ต.ค. 2026)
+
+LINE ไม่ส่ง webhook ตอนเจ้าหน้าที่ตอบในแอป LINE OA → บอทรู้เองไม่ได้ หน้าแอดมินจึงสั่งผ่าน `main.py`:
+`POST /internal/handoff` `{line_user_id, hours?}` · `/internal/handoff/end` · `/internal/handoff/status` (POST + body ทุกเส้น
+— access log ของ uvicorn พิมพ์ query string) · ตรวจ `x-internal-key` (`hmac.compare_digest`, ไม่ตั้ง key = 401) ·
+Chat ใน OA ปิด = 409 `chat_off` · ตั้ง `handoff_until` ชุดเดียวกับ `a=human` (เริ่ม Session ใหม่ step IDLE) ·
+`/end` ล้าง session เฉพาะตอนอยู่ในโหมดนี้ — ไม่แตะเรื่องที่ลูกค้ากรอกค้าง
+ทริกเกอร์: ปุ่ม "รับแชทต่อเอง" บน ticket (`ChatTakeoverCard`) · ผู้แจ้งกด "ยังมีปัญหาอยู่" (`flow.py` ตั้งเองหลัง reject สำเร็จ)
+— เทสต์ `tests/test_takeover.py` · `tests/test_rating.py` · (สถานะ waiting_info ที่เคยสั่งอัตโนมัติหายไปพร้อมการยุบเหลือ 2 สถานะ 21 ต.ค. 2026
+— การเปลี่ยนสถานะไม่สั่งบอทเอง `tests/chat-takeover.test.cjs` ตรวจ)
+· หลังบ้านส่งสถานะมาแค่ `pending` / `resolved` — ป้ายของสถานะเดิมใน `messages.TICKET_STATUS_LABEL` / `flex.py` เหลือไว้เฉยๆ ไม่ต้องลบ
+
+## ทีม IT เปิด/ปิดบอทจากแชท — `flow._admin_gate` · `_off_gate` (13 ต.ค. 2026)
+
+ลำดับด่านของทุก event: `_admin_gate` → `_off_gate` → `_handoff_gate` (follow ผ่านแค่ `_off_gate`)
+- พิมพ์ "แอดมิน" (`ADMIN_WORDS`) → `backend.line_staff(check)` → approved = การ์ด `M.admin_panel` · pending = บอกให้รออนุมัติ ·
+  none/หลังบ้านล่ม = คืน None ให้ `_handoff_gate` ตีความเป็นขอคุยกับคน (ความหมายเดิม) · "ขอสิทธิ์แอดมิน" = `line_staff(request)`
+- ปุ่ม `a=adm` (`p=` หน้า) · `a=adm_all&v=off|on` (off ต้องมี `ok=1` = ยืนยัน) · `a=adm_u&v=off|on&u=<uid>` — **ถามสิทธิ์ใหม่ทุกครั้งที่กด** ·
+  `u` ต้องตรง `^U\w{1,63}$` · Chat ใน OA ปิด = ปิดไม่ได้ (`admin_chat_off`)
+- `_off_gate`: `store.get_bot_off()` / `get_user_off(uid)` → passthrough `_HANDOFF_PASSTHROUGH` + ข้อความใน `RATE_COMMENT` ·
+  ที่เหลือ `once_per_day("off_notice:<uid>")` ได้ `bot_off_notice()` (keep_unread) ไม่งั้น `[]` · ผู้ใช้เปิดเองไม่ได้
+- `pause_bot_for` / `resume_bot_for` (ล้าง handoff ด้วย) ใช้ร่วมกับ `main.py` `/internal/bot/*` และ `/internal/handoff/end`
+- store แยกจาก session: `linebot:ctl:bot_off` · `user_off` (hash) · `recent` (zset 200) + `names` · `once:*` (SET NX EX 2 วัน)
+- เทสต์ `tests/test_bot_control.py` (มี FakeRedis ของตัวเอง ไม่ต้องติดตั้ง fakeredis)
+
+## เบิกต้องระบุอุปกรณ์ (13 ต.ค. 2026)
+
+`flow._clean_item_name` ไม่รับคำกว้างๆ (`_VAGUE_ITEM_WORDS`) · ตัวเลขล้วน · ป้ายปุ่มเมนู · ตัด "ขอเบิก"/"ครับ" ออก ·
+ชื่อตรงของในสต็อกใช้ชื่อ/หน่วยนับจริง (`_take_item_name`) · `ASK_MORE_ITEMS` รับ `ITEMS_DONE_WORDS` แทนปุ่มพอแล้ว ·
+ทุกข้อความของการเบิกมี `M.CANCEL_BUTTON` ท้ายสุด · ป้ายปุ่ม rich menu ไม่ถูกเก็บเป็น `initial_message` ·
+`handle()` ตัดอักขระล่องหน (`_clean_typed`) ก่อนทุกอย่าง — เทสต์ `tests/test_withdraw_items.py`
+
+## ให้คะแนนหลังปิดงาน (12 ต.ค. 2026)
+
+การ์ดปิดงานสร้างฝั่ง Next.js (`lib/line/rating-card.ts`): ดาว `a=rate&code=&s=1..5` + "ยังมีปัญหาอยู่" `a=confirm&code=&v=0`
+- `a=rate` → `backend.rate_ticket(score)` → หลังบ้านตอบ `ask_comment` (1–3 ดาว) → ขั้น `RATE_COMMENT` (`Session.rate_code`)
+  ข้อความถัดไป = ความเห็น (`comment` อย่างเดียว · ตัด 500 แบบ UTF-16) · "ข้าม"/`a=rate_skip` = เลิกรอ
+- ไม่ถามความเห็นถ้ากำลังกรอกเรื่องอื่นค้าง (ไม่ยึด session — ขอบคุณแล้ว `_prompt_for_step`) หรือกำลังคุยกับเจ้าหน้าที่
+- `RATE_COMMENT` + ข้อความจาก rich menu = เปลี่ยนเรื่อง (ล้างแล้วทำงานตามปุ่ม) · + รูป = เริ่มแจ้งเรื่องใหม่
+- reject สำเร็จ → `still_broken_ack(handed_off=True)` + เข้าโหมดเจ้าหน้าที่ · `reopen_expired` (เกิน 14 วัน) → ให้แจ้งใหม่
+- การ์ดยืนยันรุ่นเก่า `v=1` ยังกดได้ → `confirm_done_thanks()` แนบปุ่มดาว (quick reply) ให้คะแนนต่อ
+
 ## เมนูไล่ชั้น — ทำไมต้องมี
 
 LINE ให้ quick reply 13 ปุ่ม / carousel 12 ใบ แต่ข้อมูลจริงมีสาขา 102 แห่ง ทรัพย์สิน 200+ ชิ้น
@@ -118,5 +181,6 @@ LINE รับแค่ 2 ขนาด: 2500×1686 (2 แถว) กับ 2500�
 
 `LINE_CHANNEL_SECRET` · `LINE_CHANNEL_ACCESS_TOKEN` · `BACKEND_BASE_URL` · `INTERNAL_API_KEY` ·
 `REDIS_URL` (ว่าง = ใช้ memory, เหมาะกับ dev เท่านั้น) · `RATE_LIMIT_PER_MINUTE` ·
-`ACCEPT_IMAGES` · `RICHMENU_AUTO_INSTALL` · `RICHMENU_IMAGE_PATH` · `RICHMENU_FORCE_REINSTALL`
+`ACCEPT_IMAGES` · `RICHMENU_AUTO_INSTALL` · `RICHMENU_IMAGE_PATH` · `RICHMENU_FORCE_REINSTALL` ·
+`HANDOFF_HOURS` (24) · `MARK_AS_READ` (true)
 ดู `line-bot-python/.env.example`

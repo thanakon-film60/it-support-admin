@@ -23,9 +23,11 @@ export default async function LoginPage({
           </div>
         </div>
         <LoginForm redirectTo={from ?? "/"} />
-        <p className="mt-6 text-center text-xs text-muted">
-          บัญชีทดสอบ: admin / ITadmin@2026 (ดูใน README.md)
-        </p>
+        {/* ❌ ห้ามเอาชื่อผู้ใช้/รหัสผ่านมาโชว์ตรงนี้อีก
+            หน้านี้เปิดออกอินเทอร์เน็ตผ่าน Tailscale Funnel ใครก็เปิดดูได้โดยไม่ต้องล็อกอิน
+            การพิมพ์บัญชีทดสอบไว้บนหน้า login เท่ากับแปะรหัสผ่านไว้หน้าประตู
+            รหัสตั้งต้นอยู่ใน README.md และต้องเปลี่ยนทันทีหลังล็อกอินครั้งแรก
+            (scripts/set-admin-password.ps1) */}
       </div>
     </div>
   );

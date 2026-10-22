@@ -1,9 +1,15 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   ธีม "ไฮเทค" — พื้นดำน้ำเงินเข้ม + แผงกระจก (glass) + แสงฟ้า/ม่วงเรืองอ่อนๆ
+   ธีม "ไฮเทค" — พื้นดำน้ำเงินเข้ม + แผงกระจก (glass) + แสงสีหลักเรืองอ่อนๆ
    ชื่อตัวแปรสีทั้งหมดใช้ชื่อเดิมทุกตัว (page / surface / line / ink / muted /
    accent / accent-bg) จึงไม่ต้องไปแก้ className ในหน้าใดๆ ที่เขียนไว้แล้ว
+
+   ผู้ใช้เลือกได้เองจากปุ่มลอยมุมขวาล่าง (components/theme/ThemeLauncher.tsx):
+   - ธีม   → <html data-theme="light">  (ไม่มี attribute = มืด หน้าตาเดิม)
+   - สีหลัก → <html data-accent="indigo|emerald|amber">  (ไม่มี = ฟ้า)
+   สคริปต์ใน <head> ตั้งให้ก่อนวาดจอ (lib/theme.ts) — กฎการเขียนคลาสให้ตามธีมได้อยู่ใน
+   skill/it-support-admin/references/conventions.md หัวข้อ UI
    ────────────────────────────────────────────────────────────────────────── */
 :root {
   --color-page: #060910;
@@ -12,13 +18,90 @@
   --color-line: #1d2a40;
   --color-ink: #e8eefb;
   --color-muted: #8b9cb6;
-  --color-accent: #22d3ee;         /* cyan — สีหลักของระบบ */
-  --color-accent-2: #7c8cff;       /* indigo — ใช้คู่กันในไล่เฉด */
-  --color-accent-bg: rgba(34, 211, 238, 0.1);
+
+  /* สีหลักที่เลือก — แต่ละสีมีสองค่า: -d ใช้บนพื้นมืด (สว่างจัด) · -l ใช้บนพื้นสว่างและกระดาษ (เข้ม)
+     สีเดียวใช้ทั้งสองธีมไม่ได้: ฟ้า #22d3ee บนพื้นขาวคอนทราสต์แค่ ~1.8:1 ตัวหนังสือสีหลักอ่านไม่ออก
+     ค่าตั้งต้น = ฟ้า (cyan) + คราม (accent-2 คู่ไล่เฉด) · ต้องตรงกับ ACCENTS ใน lib/theme.ts */
+  --accent-d: #22d3ee;
+  --accent-l: #0e7490;
+  --accent2-d: #7c8cff;
+  --accent2-l: #4338ca;
+
+  --color-accent: var(--accent-d);
+  --color-accent-2: var(--accent2-d);
+  --color-on-accent: #050b14;      /* ตัวหนังสือบนพื้นสีหลัก (ปุ่มหลัก) */
+  --color-accent-bg: color-mix(in oklab, var(--color-accent) 10%, transparent);
+
+  --shadow-panel: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 18px 40px -28px rgba(0, 0, 0, 0.9);
+  --row-stripe: rgba(148, 176, 214, 0.022);
+  --grid-line: rgba(148, 176, 214, 0.05);
 
   --radius-panel: 18px;
-  --ring-accent: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 0 22px -6px rgba(34, 211, 238, 0.55);
+  --ring-accent:
+    0 0 0 1px color-mix(in oklab, var(--color-accent) 35%, transparent),
+    0 0 22px -6px color-mix(in oklab, var(--color-accent) 55%, transparent);
   color-scheme: dark;
+}
+
+/* ตั้งแค่ -d/-l ไม่แตะ --color-accent ตรงๆ — ธีม (ข้างล่าง) และตอนพิมพ์เป็นคนเลือกว่าจะใช้ค่าไหน
+   ถ้าตั้ง --color-accent ในนี้ จะชนความเฉพาะเจาะจงกับ [data-theme] แล้วธีมสว่างได้สีสว่างจัดของพื้นมืด */
+:root[data-accent="indigo"] {
+  --accent-d: #7c8cff;
+  --accent-l: #4338ca;
+  --accent2-d: #c084fc;
+  --accent2-l: #7e22ce;
+}
+:root[data-accent="emerald"] {
+  --accent-d: #34d399;
+  --accent-l: #047857;
+  --accent2-d: #22d3ee;
+  --accent2-l: #0e7490;
+}
+:root[data-accent="amber"] {
+  --accent-d: #fbbf24;
+  --accent-l: #b45309;
+  --accent2-d: #fb7185;
+  --accent2-l: #be123c;
+}
+
+/* ธีมสว่าง — พื้นเทาอมฟ้าอ่อน + แผงขาว ให้แผงยังแยกจากพื้นได้ (ขาวล้วนทั้งจอแผงจะกลืนหายหมด) */
+:root[data-theme="light"] {
+  --color-page: #f4f6fa;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef2f7;
+  --color-line: #d9e0ea;
+  --color-ink: #0f172a;
+  --color-muted: #526077;
+  --color-accent: var(--accent-l);
+  --color-accent-2: var(--accent2-l);
+  --color-on-accent: #ffffff;
+  --shadow-panel: 0 1px 2px rgba(15, 23, 42, 0.05), 0 14px 30px -22px rgba(15, 23, 42, 0.35);
+  --row-stripe: rgba(15, 23, 42, 0.025);
+  --grid-line: rgba(15, 23, 42, 0.045);
+  color-scheme: light;
+
+  /* ตัวหนังสือโทนอ่อน (100–300) ที่ป้ายสถานะ/ข้อความเตือนใช้ อ่านชัดบนพื้นมืดแต่จางหายบนพื้นขาว
+     → โทนเข้ม (700–800) ของสีเดิม · พื้นกล่องแจ้งเตือนโทนเข้มจัด (950) → โทนอ่อนสุด
+     ชุดเดียวกับบล็อกตอนพิมพ์ท้ายไฟล์เป๊ะ (tests/theme.test.cjs ตรวจ) — เพิ่มสีใหม่ต้องเพิ่มทั้งสองที่ */
+  --color-rose-200: oklch(51.4% 0.222 16.935);
+  --color-rose-300: oklch(51.4% 0.222 16.935);
+  --color-red-400: oklch(50.5% 0.213 27.518);
+  --color-emerald-200: oklch(43.2% 0.095 166.913);
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-amber-100: oklch(47.3% 0.137 46.201);
+  --color-amber-200: oklch(47.3% 0.137 46.201);
+  --color-amber-300: oklch(47.3% 0.137 46.201);
+  --color-orange-300: oklch(55.3% 0.195 38.402);
+  --color-cyan-300: oklch(52% 0.105 223.128);
+  --color-violet-300: oklch(49.1% 0.27 292.581);
+  --color-teal-300: oklch(51.1% 0.096 186.391);
+  --color-fuchsia-300: oklch(51.8% 0.253 323.949);
+  --color-indigo-300: oklch(45.7% 0.24 277.023);
+  --color-slate-200: oklch(37.2% 0.044 257.287);
+  --color-slate-300: oklch(37.2% 0.044 257.287);
+  --color-rose-950: oklch(96.9% 0.015 12.422);
+  --color-red-950: oklch(97.1% 0.013 17.38);
+  --color-emerald-950: oklch(97.9% 0.021 166.113);
 }
 
 @theme inline {
@@ -30,6 +113,7 @@
   --color-muted: var(--color-muted);
   --color-accent: var(--color-accent);
   --color-accent-2: var(--color-accent-2);
+  --color-on-accent: var(--color-on-accent);
   --color-accent-bg: var(--color-accent-bg);
 
   /* Inter = ละติน/ตัวเลข · IBM Plex Sans Thai = ไทย (Inter ไม่มีสระ-วรรณยุกต์ไทย
@@ -60,9 +144,13 @@
     z-index: -2;
     pointer-events: none;
     background:
-      radial-gradient(56rem 34rem at 12% -12%, rgba(34, 211, 238, 0.13), transparent 62%),
-      radial-gradient(48rem 30rem at 100% -6%, rgba(124, 140, 255, 0.13), transparent 58%),
-      radial-gradient(40rem 40rem at 50% 118%, rgba(34, 211, 238, 0.06), transparent 60%);
+      radial-gradient(56rem 34rem at 12% -12%, color-mix(in oklab, var(--color-accent) 13%, transparent), transparent 62%),
+      radial-gradient(48rem 30rem at 100% -6%, color-mix(in oklab, var(--color-accent-2) 13%, transparent), transparent 58%),
+      radial-gradient(40rem 40rem at 50% 118%, color-mix(in oklab, var(--color-accent) 6%, transparent), transparent 60%);
+  }
+  /* สีหลักของธีมสว่างเป็นโทนเข้ม เรืองเท่าธีมมืดแล้วหัวหน้าจอดูหมองเป็นคราบ */
+  :root[data-theme="light"] body::before {
+    opacity: 0.55;
   }
 
   /* ชั้นตารางเส้น (HUD grid) จางๆ ให้ความรู้สึกเป็นแดชบอร์ดเทคนิค */
@@ -74,15 +162,15 @@
     pointer-events: none;
     opacity: 0.45;
     background-image:
-      linear-gradient(to right, rgba(148, 176, 214, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(148, 176, 214, 0.05) 1px, transparent 1px);
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
     background-size: 44px 44px;
     mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 85%);
   }
 
   ::selection {
-    background: rgba(34, 211, 238, 0.28);
-    color: #fff;
+    background: color-mix(in oklab, var(--color-accent) 28%, transparent);
+    color: var(--color-ink);
   }
 
   :focus-visible {
@@ -124,6 +212,10 @@
     filter: invert(0.75) sepia(1) saturate(4) hue-rotate(150deg);
     cursor: pointer;
   }
+  /* ไอคอนปฏิทินของเบราว์เซอร์เป็นสีดำอยู่แล้ว — กลับสีแบบธีมมืดบนพื้นขาวจะกลายเป็นสีจางมองไม่เห็น */
+  :root[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none;
+  }
 
   /* ตารางข้อมูล — หัวตารางแบบ HUD, แถวสลับเฉด, ชี้แล้วเรืองฟ้าจาง */
   table thead tr {
@@ -140,10 +232,10 @@
     transition: background 0.12s ease, box-shadow 0.12s ease;
   }
   table tbody tr:nth-child(even) {
-    background: rgba(148, 176, 214, 0.022);
+    background: var(--row-stripe);
   }
   table tbody tr:hover {
-    background: rgba(34, 211, 238, 0.06);
+    background: color-mix(in oklab, var(--color-accent) 6%, transparent);
     box-shadow: inset 2px 0 0 var(--color-accent);
   }
 
@@ -174,9 +266,7 @@
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     border: 1px solid var(--color-line);
-    box-shadow:
-      0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
-      0 18px 40px -28px rgba(0, 0, 0, 0.9);
+    box-shadow: var(--shadow-panel);
   }
 
   /* เส้นขอบบนเรืองแสง ใช้กับการ์ดสถิติ/แถบหัวข้อ */
@@ -208,12 +298,98 @@
     letter-spacing: -0.01em;
   }
 
+  /* หน้าต่างตั้งค่าการแสดงผลเด้งขึ้นจากปุ่มลอย (ThemeLauncher) */
+  @keyframes launcher-pop {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   /* ซ่อนแถบเลื่อนของแถวเมนู/ตัวกรองบนมือถือ แต่ยังปัดได้ */
   .no-scrollbar {
     scrollbar-width: none;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ตอนสั่งพิมพ์ (Ctrl+P) — กระดาษขาว ตัวหนังสือเข้ม · บนจอยังเป็นธีมมืดเหมือนเดิม
+   ทีมพิมพ์หน้าเว็บไปแนบเอกสารส่ง: ติ๊ก "กราฟิกพื้นหลัง" = หมึกดำเต็มแผ่น
+   ไม่ติ๊ก = เบราว์เซอร์ตัดพื้นดำทิ้ง แต่ตัวหนังสือยังเป็นสีอ่อนของธีมมืด → สีอ่อนบนกระดาษขาว อ่านแทบไม่ออก
+   จึงสลับ "ชุดสี" ทั้งชุดเป็นโทนสว่าง ไม่ใช่แค่ทาพื้นขาวทับ ได้ผลเหมือนกันไม่ว่าจะติ๊กหรือไม่
+   ใช้กับทุกธีม: ธีมสว่างบนจอยังมีพื้นเทาอ่อน แต่กระดาษต้องขาวล้วน
+   ────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* :root[data-theme] ให้ความเฉพาะเจาะจงเท่ากับบล็อกธีมสว่างแล้วอยู่ทีหลัง จึงชนะเสมอ
+     ส่วน :root เฉยๆ ครอบกรณีที่ยังไม่เคยเลือกธีม (ไม่มี attribute) */
+  :root,
+  :root[data-theme] {
+    --color-page: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-2: #f3f4f6;
+    --color-line: #d1d5db;
+    --color-ink: #111827;
+    --color-muted: #4b5563;
+    /* สีหลักที่เลือกไว้ แต่เป็นค่าโทนเข้ม (-l) — สีสว่างจัดของธีมมืดบนกระดาษขาวอ่านไม่ออก */
+    --color-accent: var(--accent-l);
+    --color-accent-2: var(--accent2-l);
+    --color-on-accent: #ffffff;
+    --shadow-panel: none;
+    color-scheme: light;
+
+    /* ป้ายสถานะ/ข้อความเตือนใช้ตัวหนังสือโทนอ่อน (100–300) ที่อ่านชัดบนจอดำ แต่จางหายบนกระดาษขาว
+       → โทนเข้ม (700–800) ของสีเดิม ป้ายยังแยกสถานะด้วยสีได้เหมือนบนจอ
+       แก้ที่ตัวแปรสีของ Tailwind ทีเดียว แทนการไล่ใส่ print:text-* กว่า 30 ไฟล์ซึ่งลืมได้ทุกครั้งที่เพิ่มหน้าใหม่
+       ชุดเดียวกับธีมสว่างเป๊ะ (tests/theme.test.cjs ตรวจ) */
+    --color-rose-200: oklch(51.4% 0.222 16.935);
+    --color-rose-300: oklch(51.4% 0.222 16.935);
+    --color-red-400: oklch(50.5% 0.213 27.518);
+    --color-emerald-200: oklch(43.2% 0.095 166.913);
+    --color-emerald-300: oklch(50.8% 0.118 165.612);
+    --color-amber-100: oklch(47.3% 0.137 46.201);
+    --color-amber-200: oklch(47.3% 0.137 46.201);
+    --color-amber-300: oklch(47.3% 0.137 46.201);
+    --color-orange-300: oklch(55.3% 0.195 38.402);
+    --color-cyan-300: oklch(52% 0.105 223.128);
+    --color-violet-300: oklch(49.1% 0.27 292.581);
+    --color-teal-300: oklch(51.1% 0.096 186.391);
+    --color-fuchsia-300: oklch(51.8% 0.253 323.949);
+    --color-indigo-300: oklch(45.7% 0.24 277.023);
+    --color-slate-200: oklch(37.2% 0.044 257.287);
+    --color-slate-300: oklch(37.2% 0.044 257.287);
+
+    /* พื้นกล่องแจ้งเตือนโทนเข้มจัด (950) → โทนอ่อนสุดของสีเดิม */
+    --color-rose-950: oklch(96.9% 0.015 12.422);
+    --color-red-950: oklch(97.1% 0.013 17.38);
+    --color-emerald-950: oklch(97.9% 0.021 166.113);
+  }
+
+  /* แสงเรือง + ตารางเส้นหลังหน้า เป็นของตกแต่งจอล้วนๆ */
+  body::before,
+  body::after {
+    display: none;
+  }
+
+  /* เงาดำใต้แผงกับ blur ไม่มีความหมายบนกระดาษ เหลือแค่เส้นขอบเทาบางๆ */
+  .glass {
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  /* หัวข้อหน้าเป็นตัวอักษรที่วาดด้วย "พื้นหลัง" (background-clip: text) + color: transparent
+     ไม่ติ๊กกราฟิกพื้นหลังเมื่อไหร่ หัวข้อหายทั้งบรรทัด — กระดาษที่ไม่มีชื่อรายงานเอาไปส่งไม่ได้ */
+  .text-gradient {
+    background: none;
+    color: var(--color-ink);
   }
 }
 

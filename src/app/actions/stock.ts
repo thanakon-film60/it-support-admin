@@ -22,7 +22,7 @@ export async function createStockItemAction(
   _prev: StockFormState,
   formData: FormData
 ): Promise<StockFormState> {
-  await requireSession();
+  await requireSession("stock");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "กรุณากรอกชื่อรายการ" };
 
@@ -49,7 +49,7 @@ export async function updateStockItemAction(
   _prev: StockFormState,
   formData: FormData
 ): Promise<StockFormState> {
-  await requireSession();
+  await requireSession("stock");
 
   const existing = getStockItemById(id);
   if (!existing) return { error: "ไม่พบรายการนี้" };
@@ -78,7 +78,7 @@ export async function updateStockItemAction(
  *  ถ้ามี transaction แล้วลบทิ้ง หน้าประวัติ transaction จะมีแถวที่บอกไม่ได้ว่าของชิ้นไหน
  *  และยอดรับเข้า/จ่ายออกย้อนหลังจะกระทบกันทั้งชุด */
 export async function deleteStockItemAction(id: string): Promise<StockFormState> {
-  await requireSession();
+  await requireSession("stock");
 
   const existing = getStockItemById(id);
   if (!existing) return { error: "ไม่พบรายการนี้" };
@@ -101,7 +101,7 @@ export async function stockInAction(
   note: string,
   staffName: string
 ) {
-  await requireSession();
+  await requireSession("stock");
   recordStockTransaction({
     stock_item_id: itemId,
     type: "in",
@@ -121,7 +121,7 @@ export async function adjustStockQuantityAction(
   note: string,
   staffName: string
 ) {
-  await requireSession();
+  await requireSession("stock");
   recordStockTransaction({
     stock_item_id: itemId,
     type: "adjust",
@@ -135,7 +135,7 @@ export async function adjustStockQuantityAction(
 }
 
 export async function updateSafetyStockAction(itemId: string, safetyStock: number) {
-  await requireSession();
+  await requireSession("stock");
   updateSafetyStock(itemId, safetyStock);
   revalidatePath("/stock");
   revalidatePath("/");

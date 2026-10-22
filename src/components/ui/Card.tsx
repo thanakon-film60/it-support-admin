@@ -18,13 +18,13 @@ type Tone = "default" | "accent" | "warning" | "danger" | "success";
 const TONE: Record<Tone, { value: string; chip: string; bar: string }> = {
   default: {
     value: "text-ink",
-    chip: "bg-accent-bg text-accent ring-1 ring-inset ring-cyan-400/25",
-    bar: "from-cyan-400/70 to-indigo-400/40",
+    chip: "bg-accent-bg text-accent ring-1 ring-inset ring-accent/25",
+    bar: "from-accent/70 to-accent-2/40",
   },
   accent: {
     value: "text-accent",
-    chip: "bg-accent-bg text-accent ring-1 ring-inset ring-cyan-400/30",
-    bar: "from-cyan-400 to-indigo-400/50",
+    chip: "bg-accent-bg text-accent ring-1 ring-inset ring-accent/30",
+    bar: "from-accent to-accent-2/50",
   },
   warning: {
     value: "text-amber-300",
@@ -109,7 +109,7 @@ export function StatCard({
   );
 
   const shell =
-    "edge-glow glass group relative block rounded-2xl p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/30 sm:p-5";
+    "edge-glow glass group relative block rounded-2xl p-4 transition duration-200 hover:-translate-y-0.5 hover:border-accent/30 sm:p-5";
 
   if (!href) return <div className={shell}>{body}</div>;
 
@@ -117,7 +117,7 @@ export function StatCard({
     <Link
       href={href}
       aria-label={linkHint ? `${label}: ${value} — ${linkHint}` : `${label}: ${value}`}
-      className={`${shell} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
+      className={`${shell} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent`}
     >
       {body}
     </Link>

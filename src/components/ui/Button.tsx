@@ -3,15 +3,16 @@ import type { ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "ghost" | "danger" | "outline";
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  // ปุ่มหลัก — ไล่เฉด cyan→indigo + เงาเรืองใต้ปุ่ม ให้เด่นชัดว่าคือปุ่มที่ควรกด
+  // ปุ่มหลัก — ไล่เฉดสีหลัก→สีคู่ + เงาเรืองใต้ปุ่ม ให้เด่นชัดว่าคือปุ่มที่ควรกด
+  // text-on-accent: ธีมมืดสีหลักสว่างจัด ต้องใช้ตัวหนังสือเข้ม · ธีมสว่างสีหลักเข้ม ต้องใช้ตัวหนังสือขาว
   primary:
-    "bg-gradient-to-r from-cyan-400 to-indigo-400 text-slate-950 shadow-[0_8px_24px_-12px_rgba(34,211,238,0.9)] hover:brightness-110 active:brightness-95",
+    "bg-gradient-to-r from-accent to-accent-2 text-on-accent shadow-[0_8px_24px_-12px_var(--color-accent)] hover:brightness-110 active:brightness-95",
   ghost:
-    "bg-accent-bg text-accent ring-1 ring-inset ring-cyan-400/25 hover:bg-cyan-400/15 hover:ring-cyan-400/40",
+    "bg-accent-bg text-accent ring-1 ring-inset ring-accent/25 hover:bg-accent/15 hover:ring-accent/40",
   danger:
     "bg-rose-500/10 text-rose-300 ring-1 ring-inset ring-rose-400/25 hover:bg-rose-500/20 hover:ring-rose-400/40",
   outline:
-    "border border-line bg-white/[0.02] text-ink hover:border-cyan-400/45 hover:text-accent",
+    "border border-line bg-ink/[0.02] text-ink hover:border-accent/45 hover:text-accent",
 };
 
 export function Button({

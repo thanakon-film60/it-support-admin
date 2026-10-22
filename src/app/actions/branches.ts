@@ -31,7 +31,7 @@ export async function createBranchAction(
   _prev: BranchFormState,
   formData: FormData
 ): Promise<BranchFormState> {
-  await requireSession();
+  await requireSession("branches");
 
   const company = String(formData.get("company") ?? "").trim();
   if (!isCompanyCode(company)) return { error: "กรุณาเลือกบริษัท" };
@@ -69,7 +69,7 @@ export async function updateBranchAction(
     area_manager?: string;
   }
 ): Promise<BranchFormState> {
-  await requireSession();
+  await requireSession("branches");
 
   const branch = getBranchById(id);
   if (!branch) return { error: "ไม่พบสาขานี้" };
@@ -100,7 +100,7 @@ export async function updateBranchAction(
 /** เปิด/ปิดการใช้งานสาขา — ปิดแล้วจะหายจากปุ่มในบอทและ dropdown ในฟอร์ม
  *  แต่ ticket เก่าที่อ้างถึงสาขานี้ยังอ่านได้ตามปกติ */
 export async function toggleBranchAction(id: string, active: boolean): Promise<BranchFormState> {
-  await requireSession();
+  await requireSession("branches");
   const result = active ? activateBranch(id) : deactivateBranch(id);
   if (!result) return { error: "ไม่พบสาขานี้" };
   revalidateAll();
@@ -112,7 +112,7 @@ export async function toggleBranchAction(id: string, active: boolean): Promise<B
  *  ถ้ามี ticket อยู่แล้วต้องใช้ "ปิดการใช้งาน" แทน ไม่งั้นประวัติจะอ้างถึงสาขาที่ไม่มีข้อมูล
  *  บริษัท/ทีมกำกับอีกต่อไป และรายงานย้อนหลังจะอธิบายไม่ได้ว่าแถวนั้นมาจากไหน */
 export async function deleteBranchAction(id: string): Promise<BranchFormState> {
-  await requireSession();
+  await requireSession("branches");
 
   const branch = getBranchById(id);
   if (!branch) return { error: "ไม่พบสาขานี้" };

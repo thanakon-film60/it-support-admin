@@ -49,7 +49,9 @@ for (const type of ['repair', 'withdraw', 'return', 'it_service']) {
     assert.equal(response.status, 200);
     const result = await response.json();
     const ticket = listTickets().find(t => t.id === result.id);
-    assert.equal(ticket.description, 'Original issue\n\nAdditional detail');
+    // เบิก/คืน: รายการของขึ้นบรรทัดแรกเสมอ ทีม IT เห็นทันทีว่าต้องเตรียม/รับอะไร
+    const lead = { withdraw: `ขอเบิก ${stock.name} x1\n\n`, return: `ขอคืน ${stock.name} x1\n\n` }[type] ?? '';
+    assert.equal(ticket.description, `${lead}Original issue\n\nAdditional detail`);
     assert.equal(ticket.meta.requester_department, 'IT');
     assert.deepEqual(ticket.meta.image_urls, ['/uploads/tickets/test.jpg']);
     const count = listTickets().length;
@@ -165,4 +167,28 @@ test('branch edits persist and disabled branches disappear from intake menus wit
   assert.ok(db.listBranches().some(b => b.id === branch.id));
   assert.equal(db.deleteBranch(branch.id), true);
   assert.equal(db.getBranchById(branch.id), null);
+});
+
+test('withdraw without any item is rejected and creates nothing', async () => {
+  // ผู้ใช้แจ้ง 13 ต.ค. 2026: เรื่องเบิกขึ้นแค่ "เบิกอุปกรณ์" ไม่รู้ว่าจะเบิกอะไร — หลังบ้านต้องไม่รับเรื่องแบบนี้อีก
+  const before = listTickets().length;
+  for (const extra of [{}, { items: [] }]) {
+    const res = await send({ type: 'withdraw', requester_name: 'Tester', location: 'HQ', initial_message: 'เบิกอุปกรณ์', ...extra });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).reason, 'items_required');
+  }
+  assert.equal(listTickets().length, before);
+});
+
+test('rich menu labels are not repeated as the description and items lead withdraw tickets', async () => {
+  const stock = listStockItems()[0];
+  const withdraw = await (await send({ type: 'withdraw', requester_name: 'Tester', initial_message: 'เบิกอุปกรณ์',
+    items: [{ name: stock.name, qty: 2 }, { name: 'สาย HDMI 10 เมตร', qty: 1 }] })).json();
+  assert.equal(listTickets().find(t => t.id === withdraw.id).description, `ขอเบิก ${stock.name} x2, สาย HDMI 10 เมตร x1`);
+
+  const repair = await (await send({ type: 'repair', requester_name: 'Tester', initial_message: 'แจ้งซ่อม', description: 'จอดับ' })).json();
+  assert.equal(listTickets().find(t => t.id === repair.id).description, 'จอดับ');
+
+  const bare = await (await send({ type: 'repair', requester_name: 'Tester', initial_message: 'แจ้งซ่อม' })).json();
+  assert.equal(listTickets().find(t => t.id === bare.id).description, '(ไม่ได้ระบุรายละเอียด — แจ้งผ่าน LINE Bot)');
 });

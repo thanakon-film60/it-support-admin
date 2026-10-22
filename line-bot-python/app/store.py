@@ -104,7 +104,22 @@ class Session:
     # คนที่ค้นเจอแล้วรอให้กดยืนยัน — เก็บทั้ง dict เพราะต้องใช้ชื่อ/ฝ่ายไปแสดงตอนยืนยัน
     rq_pending: dict[str, Any] | None = None
 
+    # ---- รอความเห็นหลังให้คะแนนต่ำ (step = RATE_COMMENT) ----
+    # เลขที่เรื่องที่เพิ่งให้คะแนน — ข้อความถัดไปที่พิมพ์มาคือความเห็นของเรื่องนี้
+    # เก็บใน session ไม่ใช่ใส่ใน postback เพราะความเห็นมาเป็น "ข้อความพิมพ์" ซึ่งไม่มีเลขที่ติดมาด้วย
+    rate_code: str | None = None
+
+    # ---- ส่งต่อให้เจ้าหน้าที่ ----
+    # เวลา (epoch) ที่บอทจะกลับมาตอบคนนี้เอง — 0 = บอทตอบตามปกติ
+    # อยู่ใน session เดียวกับบทสนทนา แต่ต้องอยู่ได้นานกว่า session ปกติ (30 นาที) มาก เพราะ
+    # เจ้าหน้าที่อาจตอบช้าเป็นชั่วโมง — store ทั้งสองแบบจึงยืดอายุ session ให้ถึงเวลานี้เสมอ
+    handoff_until: float = 0.0
+
     updated_at: float = field(default_factory=time.time)
+
+    def in_handoff(self, now: float | None = None) -> bool:
+        """กำลังให้เจ้าหน้าที่คุยอยู่ไหม (บอทต้องเงียบกับคนนี้)"""
+        return self.handoff_until > (time.time() if now is None else now)
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
@@ -121,10 +136,40 @@ class Session:
         return cls(**{k: v for k, v in data.items() if k in known})
 
 
+# ---------------------------------------------------------------- ทีม IT สั่งเปิด/ปิดบอท
+#
+# เก็บแยกจาก session โดยตั้งใจ: session หมดอายุใน 30 นาที และถูกล้างทิ้งได้หลายทาง (พิมพ์ "ยกเลิก"
+# / กดเพิ่มเพื่อนใหม่ / ส่งเรื่องเสร็จ) แต่ "ปิดบอทกับคนนี้" ต้องอยู่จนกว่าทีม IT จะสั่งเปิดเอง
+# ถ้าฝากไว้ใน session ผู้ใช้พิมพ์ "ยกเลิก" ครั้งเดียว บอทก็กลับมาตอบแทรกเจ้าหน้าที่ทั้งที่ไม่มีใครสั่ง
+#
+# ค่าที่เก็บ (info) เป็น dict เล็กๆ {"since": epoch, "by": ชื่อคนสั่ง} — ไว้แสดงบนการ์ด/หน้าเว็บว่าใครปิดไว้ตั้งแต่เมื่อไหร่
+
+# จำผู้ใช้ล่าสุดไว้กี่คน — การ์ดควบคุมบอทแสดงจากรายชื่อนี้ (ทีม IT ต้องเห็นชื่อ LINE ถึงจะเลือกปิดถูกคน)
+RECENT_USERS_MAX = 200
+
+# "ครั้งเดียวต่อวัน" นับตามวันที่ของไทย ไม่ใช่ UTC — ไม่งั้นข้อความแจ้งจะรีเซ็ตตอน 7 โมงเช้า
+_BANGKOK_OFFSET = 7 * 3600
+
+
+def bangkok_day(now: float | None = None) -> str:
+    return time.strftime("%Y-%m-%d", time.gmtime((time.time() if now is None else now) + _BANGKOK_OFFSET))
+
+
 class ConversationStore(Protocol):
     async def get(self, user_id: str) -> Session | None: ...
     async def set(self, user_id: str, session: Session) -> None: ...
     async def clear(self, user_id: str) -> None: ...
+
+    # ---- ทีม IT สั่งเปิด/ปิดบอท ----
+    async def get_bot_off(self) -> dict | None: ...
+    async def set_bot_off(self, info: dict | None) -> None: ...
+    async def get_user_off(self, user_id: str) -> dict | None: ...
+    async def set_user_off(self, user_id: str, info: dict | None) -> None: ...
+    async def list_user_off(self) -> dict[str, dict]: ...
+    async def touch_user(self, user_id: str, name: str | None) -> None: ...
+    async def recent_users(self, limit: int) -> list[dict]: ...
+    async def user_name(self, user_id: str) -> str | None: ...
+    async def once_per_day(self, key: str) -> bool: ...
 
 
 class MemoryStore:
@@ -133,12 +178,18 @@ class MemoryStore:
     def __init__(self, ttl_seconds: int) -> None:
         self._ttl = ttl_seconds
         self._data: dict[str, Session] = {}
+        self._bot_off: dict | None = None
+        self._user_off: dict[str, dict] = {}
+        self._recent: dict[str, float] = {}
+        self._names: dict[str, str] = {}
+        self._once: set[str] = set()
 
     async def get(self, user_id: str) -> Session | None:
         session = self._data.get(user_id)
         if session is None:
             return None
-        if time.time() - session.updated_at > self._ttl:
+        now = time.time()
+        if now - session.updated_at > self._ttl and not session.in_handoff(now):
             # หมดอายุแล้ว — ลบทิ้งและถือว่าไม่มี เพื่อให้ผู้ใช้เริ่มใหม่แทนที่จะคุยต่อจากเมื่อวาน
             self._data.pop(user_id, None)
             return None
@@ -156,9 +207,59 @@ class MemoryStore:
         """กวาด session ที่หมดอายุทิ้ง — กัน memory โตขึ้นเรื่อยๆ จากคนที่คุยค้างแล้วหายไป
         (Redis ไม่ต้องทำเพราะมี TTL ในตัว)"""
         now = time.time()
-        expired = [k for k, v in self._data.items() if now - v.updated_at > self._ttl]
+        expired = [
+            k for k, v in self._data.items()
+            if now - v.updated_at > self._ttl and not v.in_handoff(now)
+        ]
         for k in expired:
             self._data.pop(k, None)
+
+    # ---- ทีม IT สั่งเปิด/ปิดบอท ----
+
+    async def get_bot_off(self) -> dict | None:
+        return dict(self._bot_off) if self._bot_off else None
+
+    async def set_bot_off(self, info: dict | None) -> None:
+        self._bot_off = dict(info) if info else None
+
+    async def get_user_off(self, user_id: str) -> dict | None:
+        info = self._user_off.get(user_id)
+        return dict(info) if info else None
+
+    async def set_user_off(self, user_id: str, info: dict | None) -> None:
+        if info:
+            self._user_off[user_id] = dict(info)
+        else:
+            self._user_off.pop(user_id, None)
+
+    async def list_user_off(self) -> dict[str, dict]:
+        return {uid: dict(info) for uid, info in self._user_off.items()}
+
+    async def touch_user(self, user_id: str, name: str | None) -> None:
+        self._recent[user_id] = time.time()
+        if name:
+            self._names[user_id] = name
+        if len(self._recent) > RECENT_USERS_MAX:
+            keep = sorted(self._recent.items(), key=lambda kv: kv[1], reverse=True)[:RECENT_USERS_MAX]
+            self._recent = dict(keep)
+
+    async def recent_users(self, limit: int) -> list[dict]:
+        rows = sorted(self._recent.items(), key=lambda kv: kv[1], reverse=True)[: max(0, limit)]
+        return [{"user_id": uid, "name": self._names.get(uid), "at": at} for uid, at in rows]
+
+    async def user_name(self, user_id: str) -> str | None:
+        return self._names.get(user_id)
+
+    async def once_per_day(self, key: str) -> bool:
+        day = bangkok_day()
+        token = f"{key}:{day}"
+        if token in self._once:
+            return False
+        if len(self._once) > 5000:
+            # ทิ้งของวันก่อนๆ — ไม่งั้นชุดนี้โตไปเรื่อยๆ ตามจำนวนคนที่เคยทักมา
+            self._once = {t for t in self._once if t.endswith(day)}
+        self._once.add(token)
+        return True
 
 
 class RedisStore:
@@ -180,11 +281,94 @@ class RedisStore:
 
     async def set(self, user_id: str, session: Session) -> None:
         session.updated_at = time.time()
+        # ระหว่างส่งต่อให้เจ้าหน้าที่ key ต้องอยู่ถึงเวลาที่กำหนด ไม่ใช่ 30 นาทีแบบบทสนทนาปกติ
+        # ไม่งั้นพอ key หมดอายุ บอทจะลืมว่าต้องเงียบแล้วโผล่มาตอบแทรกเจ้าหน้าที่
+        ttl = max(self._ttl, int(session.handoff_until - session.updated_at) + 60)
         # setex = set + หมดอายุอัตโนมัติ ไม่ต้องเขียน cleanup job เอง
-        await self._redis.setex(self._key(user_id), self._ttl, session.to_json())
+        await self._redis.setex(self._key(user_id), ttl, session.to_json())
 
     async def clear(self, user_id: str) -> None:
         await self._redis.delete(self._key(user_id))
+
+    # ---- ทีม IT สั่งเปิด/ปิดบอท ----
+    #
+    # key ชุดนี้ไม่มีวันหมดอายุ (ยกเว้น once) — การปิดบอทต้องอยู่รอด restart และ deploy ใหม่
+    # Redis ของระบบนี้เก็บลง volume redis_data อยู่แล้ว จึงไม่หายตอนรีสตาร์ทเครื่อง
+
+    _CTL = "linebot:ctl:"
+
+    async def get_bot_off(self) -> dict | None:
+        return _load_info(await self._redis.get(f"{self._CTL}bot_off"))
+
+    async def set_bot_off(self, info: dict | None) -> None:
+        key = f"{self._CTL}bot_off"
+        if info:
+            await self._redis.set(key, json.dumps(info, ensure_ascii=False))
+        else:
+            await self._redis.delete(key)
+
+    async def get_user_off(self, user_id: str) -> dict | None:
+        return _load_info(await self._redis.hget(f"{self._CTL}user_off", user_id))
+
+    async def set_user_off(self, user_id: str, info: dict | None) -> None:
+        key = f"{self._CTL}user_off"
+        if info:
+            await self._redis.hset(key, user_id, json.dumps(info, ensure_ascii=False))
+        else:
+            await self._redis.hdel(key, user_id)
+
+    async def list_user_off(self) -> dict[str, dict]:
+        raw = await self._redis.hgetall(f"{self._CTL}user_off") or {}
+        out: dict[str, dict] = {}
+        for uid, value in raw.items():
+            info = _load_info(value)
+            if info is not None:
+                out[uid] = info
+        return out
+
+    async def touch_user(self, user_id: str, name: str | None) -> None:
+        pipe = self._redis.pipeline()
+        pipe.zadd(f"{self._CTL}recent", {user_id: time.time()})
+        if name:
+            pipe.hset(f"{self._CTL}names", user_id, name)
+        # เก็บแค่ล่าสุด RECENT_USERS_MAX คน — อันดับ 0 คือเก่าสุด ลบตั้งแต่ตัวแรกจนเหลือตามจำนวน
+        pipe.zremrangebyrank(f"{self._CTL}recent", 0, -(RECENT_USERS_MAX + 1))
+        await pipe.execute()
+
+    async def recent_users(self, limit: int) -> list[dict]:
+        if limit <= 0:
+            return []
+        rows = await self._redis.zrevrange(f"{self._CTL}recent", 0, limit - 1, withscores=True)
+        if not rows:
+            return []
+        uids = [uid for uid, _ in rows]
+        names = await self._redis.hmget(f"{self._CTL}names", uids)
+        return [
+            {"user_id": uid, "name": name, "at": float(at)}
+            for (uid, at), name in zip(rows, names)
+        ]
+
+    async def user_name(self, user_id: str) -> str | None:
+        return await self._redis.hget(f"{self._CTL}names", user_id)
+
+    async def once_per_day(self, key: str) -> bool:
+        # SET NX = เขียนได้เฉพาะคนแรกของวัน · หมดอายุเองใน 2 วัน ไม่ต้องมีงานกวาดทิ้ง
+        ok = await self._redis.set(
+            f"{self._CTL}once:{key}:{bangkok_day()}", "1", nx=True, ex=2 * 24 * 3600
+        )
+        return bool(ok)
+
+
+def _load_info(raw: str | None) -> dict | None:
+    """อ่านค่าที่เก็บไว้กลับมา — ค่าเพี้ยน (แก้มือใน Redis ผิด) ถือว่า "ปิดอยู่แต่ไม่รู้รายละเอียด"
+    ไม่ใช่ "เปิด" เพราะคนที่ตั้งค่านี้ตั้งใจให้บอทเงียบ การเดาว่าเปิดคือทำให้บอทตอบแทรกเจ้าหน้าที่"""
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except (TypeError, ValueError):
+        return {"since": None, "by": None}
+    return data if isinstance(data, dict) else {"since": None, "by": None}
 
 
 def build_store(redis_url: str, ttl_seconds: int) -> ConversationStore:

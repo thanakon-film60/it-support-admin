@@ -39,6 +39,9 @@ yarn-error.log*
 # mock data store (สร้างอัตโนมัติตอนรันครั้งแรก — ดู src/lib/db/store.ts)
 /data/
 
+# ไฟล์ที่อัปโหลดเข้าคลังไฟล์ตอนรัน npm run dev (ใน docker อยู่ที่ volume "drive") — ห้ามขึ้น git เด็ดขาด
+/drive/
+
 # ไฟล์รูปที่อัปโหลดผ่านฟอร์ม FAQ (runtime only, ไม่ใช่ source)
 /public/uploads/
 
@@ -52,3 +55,10 @@ line-bot-python/.env
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# log ของ enable-funnel.ps1 -Unattended (รันทุกครั้งที่ล็อกอิน)
+/logs/
+
+# รหัสผ่านจริงของบริษัท (ไฟล์ CSV/Excel ต้นฉบับ) — ห้ามขึ้น git เด็ดขาด แม้ repo จะเป็น private
+# git จำทุกอย่างที่เคย commit ตลอดไป ลบทีหลังก็ยังอยู่ในประวัติ ต้องเปลี่ยนรหัสผ่านทุกตัวอย่างเดียว
+/Password-story/

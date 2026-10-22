@@ -108,6 +108,15 @@ export function thaiDayLabel(dayKey: string): string {
   return `${day} ${THAI_MONTHS_SHORT[month - 1]}`;
 }
 
+/** "7 ต.ค. 2569 · 10:45" — วันที่ (ปี พ.ศ.) + เวลาไทย สำหรับรายการที่ต้องบอกทั้งวันและเวลา
+ *  เช่น ข้อความที่ฝากไว้ หรือไฟล์ในคลังไฟล์ · ค่าว่าง/อ่านไม่ออก = "-" */
+export function stampTH(iso: string | null | undefined): string {
+  if (!iso) return "-";
+  const day = dayKeyTH(iso);
+  if (!day) return "-";
+  return `${thaiDayLabel(day)} ${partsOfKey(day).year + 543} · ${timeKeyTH(iso)}`;
+}
+
 /** จำนวนวันระหว่าง 2 key (b - a) — เทียบเป็นวันเต็ม ไม่สนเวลาในวัน */
 export function daysBetween(a: string, b: string): number {
   const pa = partsOfKey(a);

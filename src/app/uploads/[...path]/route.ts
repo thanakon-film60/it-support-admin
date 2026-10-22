@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { NextRequest } from "next/server";
+import { getSession } from "@/lib/auth";
+import { canAccess, uploadAreaPages } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,14 @@ export async function GET(
 ) {
   const { path: segments } = await context.params;
 
+  // ด่านที่สอง (ด่านแรกอยู่ใน proxy.ts) — ไฟล์ที่อัปโหลดหลังเซิร์ฟเวอร์เริ่มมาถึง route นี้
+  // ตอบ 404 เหมือนไฟล์ไม่มีอยู่ ไม่บอกว่า "มีแต่ไม่ให้ดู" — ไม่ต้องยืนยันให้คนนอกรู้ว่าชื่อไฟล์ไหนมีจริง
+  const session = await getSession();
+  const need = uploadAreaPages(segments?.[0]);
+  if (!session || !need || !canAccess(session.pages, need)) {
+    return new Response("not found", { status: 404 });
+  }
+
   // กัน path traversal 2 ชั้น:
   //   ชั้นแรก ปฏิเสธ segment ที่น่าสงสัยตรงๆ (".." หรือมีตัวคั่น path ปนมา)
   //   ชั้นสอง เทียบ path ที่ resolve แล้วว่ายังอยู่ใต้ UPLOAD_ROOT จริง (กันเคสที่ decode แล้วเปลี่ยนรูป)
@@ -73,7 +83,9 @@ export async function GET(
       "Content-Type": contentType,
       "Content-Length": String(file.length),
       // ชื่อไฟล์เป็น UUID ไม่มีวันถูกใช้ซ้ำกับเนื้อหาอื่น จึง cache ยาวได้อย่างปลอดภัย
-      "Cache-Control": "public, max-age=31536000, immutable",
+      // แต่ต้องเป็น private: ถ้าเป็น public, Cloudflare (tunnel) เก็บไฟล์ .jpg/.png ไว้ที่ขอบเครือข่าย
+      // ได้ตามค่าตั้งต้นของมัน แล้วเสิร์ฟให้คนที่ไม่ได้ล็อกอินโดยไม่ผ่านการตรวจข้างบนเลย
+      "Cache-Control": "private, max-age=31536000, immutable",
       // กันเบราว์เซอร์เดาชนิดไฟล์เอง (ถ้ามีไฟล์แปลกปลอมหลุดเข้ามาจะได้ไม่ถูกรันเป็น HTML/สคริปต์)
       "X-Content-Type-Options": "nosniff",
     },

@@ -138,14 +138,14 @@ function CustodianFormBody({
   return (
     <form id="custodian-form" action={onSubmit} className="flex flex-col gap-4">
       {/* ── ส่วนที่แก้ได้ ── */}
-      <div className="flex flex-col gap-4 rounded-xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4">
-        <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-line bg-white/[0.02] px-3 py-2.5 text-sm text-ink transition hover:border-cyan-400/40">
+      <div className="flex flex-col gap-4 rounded-xl border border-accent/20 bg-accent/[0.04] p-4">
+        <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-line bg-ink/[0.02] px-3 py-2.5 text-sm text-ink transition hover:border-accent/40">
           <input
             type="checkbox"
             name="release"
             checked={released}
             onChange={(e) => handleRelease(e.target.checked)}
-            className="h-4 w-4 accent-cyan-400"
+            className="h-4 w-4 accent-accent"
           />
           คืนเครื่อง — ไม่มีผู้ครอบครองแล้ว
         </label>

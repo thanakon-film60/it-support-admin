@@ -7,7 +7,7 @@ import { ensureLineUser } from "@/lib/line/sync-user";
 import type { LineWebhookBody } from "@/lib/line/types";
 
 // Webhook ของ LINE Messaging API — endpoint นี้ต้องเป็น public (ไม่ผ่าน auth ของแอดมิน)
-// ดู proxy.ts: PUBLIC_PATHS มี "/api/line/webhook" อยู่แล้ว
+// src/proxy.ts ไม่ครอบ /api/* เลย (ดู matcher) — route นี้ตรวจลายเซ็น LINE เอง
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-line-signature");

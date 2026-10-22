@@ -3,9 +3,10 @@
     ตั้งค่าครั้งเดียว ให้ระบบดูแลตัวเองได้โดยไม่ต้องมีคนคอยรันคำสั่ง
 
     ทำ 2 อย่าง:
-      1. เปิด Tailscale Funnel อัตโนมัติหลังล็อกอิน Windows
-         (Funnel ไม่จำค่าข้ามการรีบูต — เครื่องรีสตาร์ทแล้วไม่มีใครรันคำสั่ง = LINE ยิง webhook
-          เข้ามาไม่ได้ และบอทจะ "เงียบ" โดยไม่มี error ให้เห็นที่ไหนเลย ซึ่งหายากมาก)
+      1. เอาตัวเปิด Tailscale Funnel เดิมออกจาก Startup (ถ้ายังมี)
+         ตั้งแต่ 7 ต.ค. 2026 ทางเข้าจากอินเทอร์เน็ตคือ Cloudflare Tunnel ซึ่งเป็น container
+         (restart: unless-stopped) ขึ้นเองพร้อม Docker Desktop จึงไม่ต้องมีตัวเรียกใน Startup อีก
+         แต่ Docker Desktop ต้องตั้งให้เปิดเองตอนล็อกอิน ไม่งั้นรีบูตแล้วบอทเงียบเหมือนเดิม
       2. สำรองข้อมูลอัตโนมัติทุกวัน
          (ข้อมูลจริงเป็นไฟล์ JSON ใน docker volume ไม่ใช่ Postgres — เคยหายถาวรมาแล้วครั้งหนึ่ง)
 
@@ -24,23 +25,23 @@ Write-Host ""
 Write-Host "  ตั้งค่าให้ระบบดูแลตัวเอง" -ForegroundColor White
 Write-Host ""
 
-# ---- 1. Tailscale Funnel หลังล็อกอิน ----
+# ---- 1. ทางเข้าจากอินเทอร์เน็ต ----
+# ตัวเรียก Funnel ของเดิมต้องเอาออก ไม่งั้นทุกครั้งที่ล็อกอิน Funnel จะเปิดกลับมาเป็นทางเข้าที่สอง
+# โดยไม่มีใครรู้ (use-cloudflare.ps1 ก็เอาออกให้ ที่นี่ทำซ้ำเผื่อเครื่องที่ตั้งใหม่จาก backup)
 
 $startup = [Environment]::GetFolderPath('Startup')
-$src     = Join-Path $PSScriptRoot 'startup-funnel.bat'
-$dstName = 'it-support-funnel.bat'
-
-if (Test-Path $src) {
+$oldLauncher = $null
+if ($startup) { $oldLauncher = Join-Path $startup 'it-support-funnel.bat' }
+if ($oldLauncher -and (Test-Path $oldLauncher)) {
     try {
-        Copy-Item $src (Join-Path $startup $dstName) -Force
-        Write-Host "  [ผ่าน] Tailscale Funnel จะเปิดเองทุกครั้งที่ล็อกอิน Windows" -ForegroundColor Green
-        Write-Host "         ไฟล์อยู่ที่: $startup\$dstName" -ForegroundColor DarkGray
+        Remove-Item $oldLauncher -Force
+        Write-Host "  [ผ่าน] เอาตัวเปิด Tailscale Funnel เดิมออกจาก Startup แล้ว" -ForegroundColor Green
     } catch {
-        Write-Host "  [ไม่ผ่าน] คัดลอกไฟล์ไป Startup ไม่ได้: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  [ไม่ผ่าน] ลบ $oldLauncher ไม่ได้: $($_.Exception.Message) — ลบเองด้วยมือ" -ForegroundColor Red
     }
-} else {
-    Write-Host "  [ไม่ผ่าน] ไม่พบ $src" -ForegroundColor Red
 }
+Write-Host "  [ผ่าน] ทางเข้าจากอินเทอร์เน็ตคือ Cloudflare Tunnel (container ขึ้นเองพร้อม Docker Desktop)" -ForegroundColor Green
+Write-Host "         ตรวจว่า Docker Desktop เปิดเองตอนล็อกอิน: Settings > General > Start Docker Desktop when you sign in" -ForegroundColor DarkGray
 
 # ---- 2. สำรองข้อมูลทุกวัน ----
 

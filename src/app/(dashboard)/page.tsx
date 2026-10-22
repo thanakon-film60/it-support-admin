@@ -5,22 +5,22 @@ import { listStockItemsWithStatus } from "@/lib/db/stock";
 import { dayKeyTH, timeKeyTH, todayKeyTH } from "@/lib/date-th";
 import { TicketCalendar, type CalendarTicket } from "@/components/overview/TicketCalendar";
 import type { TicketStatus } from "@/lib/types";
+import { redirect } from "next/navigation";
+import { requireSession } from "@/lib/auth";
+import { canAccess, landingPath } from "@/lib/access";
 
 // อ่านข้อมูลที่เปลี่ยนตลอด + ต้องรู้ "วันนี้" ตอนเปิดหน้า -> ห้าม prerender เป็น static
 export const dynamic = "force-dynamic";
 
 /** สถานะที่ถือว่า "ยังไม่จบเรื่อง" = ทีม IT ยังต้องทำอะไรบางอย่างกับมัน
- *
- *  cancelled ไม่นับเป็นค้าง เพราะเรื่องถูกปิดไปแล้ว (แค่ปิดแบบไม่ได้ซ่อม)
- *  ถ้านับรวม รายการ "ค้างอยู่" จะมีเรื่องที่ไม่มีใครต้องทำอะไรปนอยู่เต็มไปหมด */
-const OPEN_STATUSES: TicketStatus[] = [
-  "pending",
-  "in_progress",
-  "waiting_info",
-  "waiting_delivery",
-];
+ *  ยกเลิกไม่นับเป็นค้าง เพราะเรื่องถูกปิดไปแล้ว (แค่ปิดแบบไม่ได้แก้) */
+const OPEN_STATUSES: TicketStatus[] = ["pending"];
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  // หน้านี้คือปลายทางตั้งต้นของทุกลิงก์ (โลโก้ / หลังล็อกอิน) — เจ้าหน้าที่ที่ไม่ได้รับสิทธิ์หน้าภาพรวม
+  // พาไปหน้าแรกที่มีสิทธิ์แทน ไม่ใช่โชว์ "ไม่มีสิทธิ์" ทั้งที่เขาไม่ได้ตั้งใจเปิดหน้านี้เอง
+  const session = await requireSession();
+  if (!canAccess(session.pages, "overview")) redirect(landingPath(session.pages));
   const ticketCounts = ticketCountsByStatus();
   const equipment = listEquipment();
   const stockItems = listStockItemsWithStatus();
@@ -52,7 +52,7 @@ export default function OverviewPage() {
         title="ภาพรวม"
         description="สรุปสถานะระบบ IT Support ทั้งหมด — กดที่การ์ดเพื่อดูรายการของตัวเลขนั้น"
         actions={
-          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3 py-1.5 text-xs text-muted">
+          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-ink/[0.03] px-3 py-1.5 text-xs text-muted">
             <span className="relative flex h-2 w-2" aria-hidden>
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />

@@ -11,11 +11,14 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from linebot.v3 import WebhookParser
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.webhooks import FollowEvent, MessageEvent, PostbackEvent
@@ -24,7 +27,16 @@ from . import messages as M
 from .ai import KnowledgeCache, compose_answer_with_llm
 from .backend import BackendClient, BackendError
 from .config import settings
-from .flow import ASK_BRANCH, BRANCH_START_LEVEL, Incoming, handle, parse_postback
+from .flow import (
+    ASK_BRANCH,
+    BRANCH_START_LEVEL,
+    IDLE,
+    Incoming,
+    handle,
+    parse_postback,
+    pause_bot_for,
+    resume_bot_for,
+)
 from .line_api import ImageTooLarge, LineApi
 from .richmenu import (
     STATE_DISABLED,
@@ -34,7 +46,7 @@ from .richmenu import (
     RichMenuError,
     ensure_rich_menu,
 )
-from .store import build_rate_limiter, build_store
+from .store import Session, build_rate_limiter, build_store
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -99,9 +111,18 @@ async def lifespan(app: FastAPI):
     else:
         app.state.richmenu_state, app.state.richmenu_status = STATE_DISABLED, "ปิดการติดตั้งอัตโนมัติ"
 
+    # เปิด Chat ใน OA Manager อยู่ไหม — ถามแบบ background เหตุผลเดียวกับ rich menu ข้างบน
+    app.state.chat_mode = None
+    app.state.bot_info_checked_at = 0.0
+    app.state.bot_info_task = None
+    _refresh_bot_info_soon(app)
+
     try:
         yield
     finally:
+        task = getattr(app.state, "bot_info_task", None)
+        if task is not None and not task.done():
+            task.cancel()
         await app.state.line.aclose()
         await app.state.backend.aclose()
 
@@ -139,6 +160,53 @@ async def _install_rich_menu(app: FastAPI) -> None:
         logger.exception("ติดตั้ง rich menu ไม่สำเร็จ (ข้อผิดพลาดที่ไม่คาดคิด)")
 
 
+# ถามสถานะ Chat ใหม่ทุก 5 นาที — แอดมินเปิด/ปิด Chat ใน OA Manager ได้ทุกเมื่อโดยไม่ต้อง restart บอท
+# ถามไม่สำเร็จให้ลองใหม่เร็วกว่า (1 นาที) จะได้ไม่ค้างค่า "ไม่ทราบ" นาน
+BOT_INFO_TTL_SECONDS = 300
+BOT_INFO_RETRY_SECONDS = 60
+
+
+async def _refresh_bot_info(app: FastAPI) -> None:
+    try:
+        info = await asyncio.wait_for(app.state.line.get_bot_info(), timeout=10)
+    except Exception:  # noqa: BLE001 - รวม timeout: ไม่รู้ก็ใช้ค่าเดิมไปก่อน
+        info = None
+    now = time.monotonic()
+    if info and info.get("chat_mode"):
+        if info["chat_mode"] != app.state.chat_mode:
+            logger.info(
+                "LINE OA: Chat %s (chat_mode=%s)",
+                "เปิด — ส่งต่อให้เจ้าหน้าที่ได้" if info["chat_mode"] == "chat" else "ปิด — ส่งต่อให้เจ้าหน้าที่ไม่ได้",
+                info["chat_mode"],
+            )
+        app.state.chat_mode = info["chat_mode"]
+        app.state.bot_info_checked_at = now
+    else:
+        # ยังไม่สำเร็จ — ให้รอบหน้ามาถึงเร็วกว่าปกติ
+        app.state.bot_info_checked_at = now - BOT_INFO_TTL_SECONDS + BOT_INFO_RETRY_SECONDS
+
+
+def _refresh_bot_info_soon(app: FastAPI) -> None:
+    """สั่งถามสถานะ Chat ใหม่ถ้าข้อมูลเก่าเกินกำหนด — ไม่รอผล (ห้ามทำให้การตอบลูกค้าช้าลง)"""
+    task = getattr(app.state, "bot_info_task", None)
+    if task is not None and not task.done():
+        return
+    checked = getattr(app.state, "bot_info_checked_at", 0.0)
+    if checked and time.monotonic() - checked < BOT_INFO_TTL_SECONDS:
+        return
+    app.state.bot_info_task = asyncio.create_task(_refresh_bot_info(app))
+
+
+def _handoff_available(app: FastAPI) -> bool:
+    """ส่งต่อให้เจ้าหน้าที่ได้ไหม = Chat ใน OA Manager ไม่ได้ปิดอยู่
+
+    ยังไม่รู้ (เพิ่งสตาร์ท / ถาม LINE ไม่สำเร็จ) ให้ถือว่าได้ — ถ้าเน็ตไป LINE พังจริง
+    บอทก็ตอบใครไม่ได้อยู่ดี แต่ถ้าเดาว่า "ไม่ได้" จะปิดฟีเจอร์ทิ้งทั้งที่อาจเปิดอยู่
+    """
+    _refresh_bot_info_soon(app)
+    return getattr(app.state, "chat_mode", None) != "bot"
+
+
 @app.get("/health")
 async def health():
     body = {
@@ -158,12 +226,189 @@ async def health():
         # ทักต้อนรับกลับหลังหายไปกี่วัน (0 = ปิด) — อยู่ใน /health เพราะดูจากอาการไม่ได้เลย
         # ต้องรอให้มีคนหายไปครบตามกำหนดแล้วกลับมาถึงจะรู้ว่าโค้ดชุดใหม่ขึ้นแล้วหรือยัง
         "welcome_back_days": settings.welcome_back_days,
+        # Chat ใน OA Manager: "chat" = เปิด (ทีม IT ตอบในแอป LINE OA ได้) / "bot" = ปิด / "unknown"
+        # deploy.ps1 ใช้เตือนถ้าปิดอยู่ เพราะปุ่ม "คุยกับเจ้าหน้าที่" จะตอบว่ายังไม่เปิดให้คุย
+        "chat_mode": _chat_mode_for_health(),
+        "handoff_hours": settings.handoff_hours,
+        "mark_as_read": settings.mark_as_read,
+        # ทีม IT ปิดบอทอยู่ไหม (ทั้งระบบ / กี่คน) — deploy.ps1 เตือนได้ว่าบอทไม่ได้ตอบใครอยู่
+        # ห่อ try ไว้เพราะ /health ต้องตอบได้แม้ Redis มีปัญหา (นั่นคือเวลาที่ต้องดู /health ที่สุด)
+        **(await _off_summary()),
     }
     # ระบุ charset ให้ชัด: Starlette เติม "; charset=utf-8" ให้เฉพาะ media type ที่ขึ้นต้น
     # ด้วย text/ เท่านั้น application/json จึงออกไปแบบไม่มี charset — แล้ว
     # Invoke-WebRequest ของ Windows PowerShell 5.1 จะเดาเป็น ISO-8859-1 ทำให้ภาษาไทย
     # ที่คนอ่านกลายเป็นอักษรขยะบนหน้าจอคนที่ deploy (เจอจริง 2026-09-26)
     return JSONResponse(body, media_type="application/json; charset=utf-8")
+
+
+def _chat_mode_for_health() -> str:
+    _refresh_bot_info_soon(app)
+    return getattr(app.state, "chat_mode", None) or "unknown"
+
+
+async def _off_summary() -> dict:
+    try:
+        store = app.state.store
+        return {
+            "bot_off": (await store.get_bot_off()) is not None,
+            "users_off": len(await store.list_user_off()),
+        }
+    except Exception:  # noqa: BLE001 - ดูเหตุผลที่จุดเรียก
+        logger.warning("อ่านสถานะปิดบอทไม่สำเร็จ", exc_info=True)
+        return {"bot_off": None, "users_off": None}
+
+
+# ---------------------------------------------------------------- API ภายใน: เจ้าหน้าที่รับแชทต่อเอง
+#
+# ทำไมต้องมี: LINE ไม่ส่ง webhook ตอนเจ้าหน้าที่ตอบแชทในแอป LINE Official Account บอทจึงรู้เองไม่ได้
+# ว่ามีคนกำลังคุยกับผู้ใช้อยู่ แล้วโผล่มาตอบแทรก (เช่นตีความคำตอบของผู้ใช้เป็นเรื่องใหม่แล้วถามสาขา)
+# หน้าแอดมินจึงสั่งผ่านทางนี้แทน: กด "รับแชทต่อเอง" บน ticket / ส่งสถานะ "รอข้อมูล" ทาง LINE
+#
+# ใช้ POST + body ทุกเส้น (ไม่ใส่ line_user_id ใน query) — access log ของ uvicorn พิมพ์ query string
+# ออกมาเต็มๆ ทุก request ซึ่งจะทำให้ user id ของพนักงานไปกองอยู่ใน log
+# ทางเข้าจากอินเทอร์เน็ต (Cloudflare Tunnel) ส่งเข้าบอทเฉพาะ ^/webhook — เส้นนี้จึงเรียกได้จากใน compose
+# เท่านั้น แต่ยังตรวจ key ทุกครั้ง เพราะวันที่ย้าย proxy แล้วเปิด path กว้างกว่าเดิม ด่านนี้ต้องยังอยู่
+
+
+class HandoffRequest(BaseModel):
+    # LINE user id จริงยาว 33 ตัว (U + hex 32) — เผื่อไว้นิดหน่อยแต่ไม่ปล่อยให้ยัดของยาวๆ เข้า Redis key
+    line_user_id: str = Field(min_length=1, max_length=64)
+    # ไม่ส่ง = ใช้ HANDOFF_HOURS ชุดเดียวกับปุ่ม "คุยกับเจ้าหน้าที่" · เพดาน 7 วันกันพิมพ์ผิดจนบอทเงียบยาว
+    hours: float | None = Field(default=None, gt=0, le=168)
+
+
+def _require_internal_key(value: str) -> None:
+    expected = settings.internal_api_key
+    # ยังไม่ตั้ง key = ปฏิเสธทุก request (fail closed) เหมือน verifyInternalKey ฝั่ง Next.js
+    if not expected or not value or not hmac.compare_digest(expected.encode(), value.encode()):
+        raise HTTPException(status_code=401, detail="unauthorized")
+
+
+async def _handoff_state(user_id: str, session: Session | None) -> dict:
+    """สถานะ "บอทเงียบกับคนนี้ไหม" รวมทุกสาเหตุ — หน้า ticket แสดงจากตรงนี้ที่เดียว
+
+    active = เงียบอยู่ ไม่ว่าจะเพราะคุยกับเจ้าหน้าที่ (มีเวลาสิ้นสุด: until) หรือทีม IT ปิดบอทกับคนนี้
+    ไว้จากการ์ดในแชท (bot_off_user — ไม่มีเวลาสิ้นสุด จนกว่าจะสั่งเปิด)
+    ถ้าแยกถามคนละเส้น หน้าเว็บจะโชว์ว่า "บอทตอบตามปกติ" ทั้งที่บอทเงียบอยู่เพราะอีกสาเหตุหนึ่ง
+    """
+    store = app.state.store
+    in_handoff = session is not None and session.in_handoff()
+    user_off = await store.get_user_off(user_id)
+    return {
+        "ok": True,
+        "active": in_handoff or user_off is not None,
+        "until": session.handoff_until if in_handoff else None,
+        "bot_off_user": user_off is not None,
+        "bot_off_all": (await store.get_bot_off()) is not None,
+        "chat_mode": _chat_mode_for_health(),
+    }
+
+
+@app.post("/internal/handoff/status")
+async def handoff_status(body: HandoffRequest, x_internal_key: str = Header(default="")):
+    _require_internal_key(x_internal_key)
+    return await _handoff_state(body.line_user_id, await app.state.store.get(body.line_user_id))
+
+
+@app.post("/internal/handoff")
+async def handoff_start(body: HandoffRequest, x_internal_key: str = Header(default="")):
+    _require_internal_key(x_internal_key)
+    if not _handoff_available(app):
+        # Chat ใน OA Manager ปิดอยู่ = ไม่มีใครเห็นแชท ถ้าให้บอทเงียบ ผู้ใช้จะพิมพ์ใส่ความว่างเปล่า
+        return JSONResponse({"ok": False, "reason": "chat_off"}, status_code=409)
+
+    store = app.state.store
+    session = await store.get(body.line_user_id)
+    until = time.time() + (body.hours or max(settings.handoff_hours, 0.1)) * 3600
+    if session is not None and session.in_handoff():
+        # กดซ้ำ / ผู้ใช้กดคุยกับเจ้าหน้าที่ไว้แล้ว — ต่อเวลาออกไป ไม่หดให้สั้นลง
+        session.handoff_until = max(session.handoff_until, until)
+    else:
+        # เริ่ม session ใหม่หมดเหมือนตอนผู้ใช้กด "คุยกับเจ้าหน้าที่" เอง — ขั้นตอนแจ้งเรื่องที่ค้างอยู่
+        # ถูกพักไว้ไม่ได้อยู่แล้ว (ระหว่างนี้ข้อความทุกอันเป็นของเจ้าหน้าที่) ปล่อยค้างไว้จะกลายเป็นข้อมูลเก่า
+        name = session.line_display_name if session else None
+        session = Session(step=IDLE, line_display_name=name, handoff_until=until)
+    await store.set(body.line_user_id, session)
+    # ไม่ log user id — log ของ container ถูกเก็บยาวและหลายคนเปิดดูได้
+    logger.info("เจ้าหน้าที่รับแชทต่อเอง: บอทเงียบอีก %.1f ชม.", (session.handoff_until - time.time()) / 3600)
+    return await _handoff_state(body.line_user_id, session)
+
+
+@app.post("/internal/handoff/end")
+async def handoff_end(body: HandoffRequest, x_internal_key: str = Header(default="")):
+    _require_internal_key(x_internal_key)
+    # "คืนให้บอทตอบ" = เปิดบอทกับคนนี้จริงๆ ไม่ว่าจะเงียบเพราะสาเหตุไหน (คุยกับเจ้าหน้าที่ / ทีม IT ปิดไว้)
+    # ล้าง session เฉพาะตอนอยู่ในโหมดคุยกับเจ้าหน้าที่ — กดพลาดคนต้องไม่ทำให้เรื่องที่เขากรอกค้างหาย
+    await resume_bot_for(app.state.store, body.line_user_id)
+    return await _handoff_state(body.line_user_id, None)
+
+
+# ---------------------------------------------------------------- API ภายใน: เปิด/ปิดบอท (หน้าเว็บ "บอท LINE")
+#
+# ทางหลักของการเปิด/ปิดบอทคือการ์ดในแชท LINE (พิมพ์ "แอดมิน") — เส้นนี้มีไว้ให้หน้าเว็บแสดงสถานะ
+# และเป็นทางสำรองตอนมือถือไม่อยู่ใกล้ตัว ใช้ store ชุดเดียวกับการ์ด จึงเห็นค่าตรงกันเสมอ
+
+
+class BotSwitchRequest(BaseModel):
+    off: bool
+    # ชื่อคนสั่ง (แสดงบนการ์ด/หน้าเว็บว่าใครปิดไว้) — ตัดความยาวกันข้อความยาวๆ ถูกยัดลง Redis
+    by: str = Field(default="", max_length=80)
+
+
+class BotUserSwitchRequest(BotSwitchRequest):
+    line_user_id: str = Field(min_length=1, max_length=64)
+
+
+async def _bot_status() -> dict:
+    store = app.state.store
+    offs = await store.list_user_off()
+    users = []
+    for uid, info in sorted(offs.items(), key=lambda kv: -(kv[1].get("since") or 0)):
+        users.append({
+            "line_user_id": uid,
+            "name": await store.user_name(uid),
+            "since": info.get("since"),
+            "by": info.get("by"),
+        })
+    return {
+        "ok": True,
+        "bot_off": await store.get_bot_off(),
+        "users_off": users,
+        "chat_mode": _chat_mode_for_health(),
+    }
+
+
+@app.post("/internal/bot/status")
+async def bot_status(x_internal_key: str = Header(default="")):
+    _require_internal_key(x_internal_key)
+    return await _bot_status()
+
+
+@app.post("/internal/bot/global")
+async def bot_global(body: BotSwitchRequest, x_internal_key: str = Header(default="")):
+    _require_internal_key(x_internal_key)
+    if body.off and not _handoff_available(app):
+        # Chat ใน OA ปิดอยู่ = ไม่มีใครเห็นแชท ถ้าปิดบอทด้วย ผู้ใช้ทุกคนจะพิมพ์ใส่ความว่างเปล่า
+        return JSONResponse({"ok": False, "reason": "chat_off"}, status_code=409)
+    await app.state.store.set_bot_off(
+        {"since": time.time(), "by": body.by.strip() or "หน้าเว็บ"} if body.off else None
+    )
+    logger.info("หน้าเว็บสั่ง%sบอททั้งระบบ", "ปิด" if body.off else "เปิด")
+    return await _bot_status()
+
+
+@app.post("/internal/bot/user")
+async def bot_user(body: BotUserSwitchRequest, x_internal_key: str = Header(default="")):
+    _require_internal_key(x_internal_key)
+    store = app.state.store
+    if body.off:
+        if not _handoff_available(app):
+            return JSONResponse({"ok": False, "reason": "chat_off"}, status_code=409)
+        await pause_bot_for(store, body.line_user_id, by=body.by.strip() or "หน้าเว็บ")
+    else:
+        await resume_bot_for(store, body.line_user_id)
+    return await _bot_status()
 
 
 # ทำไมต้องรับที่ "/" ด้วย: reverse proxy หลายตัว (รวมถึง `tailscale funnel --set-path=/webhook`
@@ -245,7 +490,14 @@ async def _handle_event(app: FastAPI, event, net: tuple[str | None, str | None])
         if verdict == "drop":
             return
 
-    incoming = await _to_incoming(app, event, net)
+    # สถานะ "บอทเงียบกับคนนี้" ก่อนประมวลผล (คุยกับเจ้าหน้าที่ / ทีม IT ปิดบอทไว้)
+    # ใช้ทั้งข้ามการโหลดรูป และตัดสินเรื่องสั่งอ่านแล้ว
+    handoff_available = _handoff_available(app)
+    was_handoff = bool(user_id) and await _bot_silent_for(app, user_id)
+
+    incoming = await _to_incoming(
+        app, event, net, skip_image_download=was_handoff and handoff_available
+    )
     if incoming is None:
         return
 
@@ -257,9 +509,57 @@ async def _handle_event(app: FastAPI, event, net: tuple[str | None, str | None])
         llm=app.state.llm,
         max_images=settings.max_images_per_ticket,
         max_image_mb=max(1, settings.max_image_bytes // (1024 * 1024)),
+        handoff_hours=settings.handoff_hours,
+        handoff_available=handoff_available,
     )
     if reply_token and replies:
         await app.state.line.reply(reply_token, replies)
+
+    await _mark_read(app, event, user_id, replies, was_handoff=was_handoff)
+
+
+async def _in_handoff(app: FastAPI, user_id: str) -> bool:
+    session = await app.state.store.get(user_id)
+    return bool(session is not None and session.in_handoff())
+
+
+async def _bot_silent_for(app: FastAPI, user_id: str) -> bool:
+    """บอทเงียบกับคนนี้อยู่ไหม — คุยกับเจ้าหน้าที่ หรือทีม IT ปิดบอท (ทั้งระบบ/เฉพาะคนนี้)
+
+    ข้อความของคนที่บอทเงียบใส่เป็นของเจ้าหน้าที่ทั้งหมด: ห้ามสั่ง "อ่านแล้ว" (จะหลุดจากสายตาทีม IT)
+    และไม่ต้องโหลดรูปเข้าระบบ (เจ้าหน้าที่ดูในแอป LINE OA เอง)
+    """
+    store = app.state.store
+    if await store.get_bot_off() is not None or await store.get_user_off(user_id) is not None:
+        return True
+    return await _in_handoff(app, user_id)
+
+
+async def _mark_read(app: FastAPI, event, user_id: str | None, replies, *, was_handoff: bool) -> None:
+    """สั่ง "อ่านแล้ว" ให้ข้อความที่บอทจัดการให้เรียบร้อยแล้ว
+
+    เป้าหมาย: แชทที่ขึ้น "ยังไม่อ่าน" ในแอป LINE Official Account ต้องเหลือเฉพาะคนที่รอคน
+    ทีม IT จะได้ไล่ตอบจากตรงนั้นได้เลย ไม่ต้องเปิดดูทุกห้องที่บอทคุยจบไปแล้ว
+
+    ไม่สั่งอ่านเมื่อ:
+      - บอทไม่ได้ตอบ (เงียบเพราะกำลังคุยกับเจ้าหน้าที่) หรือคำตอบขอให้คงไว้ (keep_unread)
+      - ก่อนหรือหลังข้อความนี้บอทเงียบกับคนนี้อยู่ (คุยกับเจ้าหน้าที่ / ทีม IT ปิดบอท)
+        — LINE นับ "อ่านแล้ว" ย้อนหลังทุกข้อความ
+        ในห้อง ถ้าสั่งตอนผู้ใช้กดกลับมาใช้บอท ข้อความที่พิมพ์ถึงเจ้าหน้าที่แต่ยังไม่มีใครเปิดดู
+        จะกลายเป็นอ่านแล้วไปด้วย แล้วหลุดจากสายตาทีม IT
+      - Chat ปิดอยู่ (LINE ขึ้นอ่านแล้วให้เองทุกข้อความ และ API นี้จะตอบ error)
+    postback ไม่มี token ให้สั่ง — ปุ่มที่กดจึงไม่เกี่ยว
+    """
+    if not settings.mark_as_read or not replies or was_handoff or not user_id:
+        return
+    token = getattr(getattr(event, "message", None), "mark_as_read_token", None)
+    if not token or any(getattr(r, "keep_unread", False) for r in replies):
+        return
+    if getattr(app.state, "chat_mode", None) == "bot":
+        return
+    if await _bot_silent_for(app, user_id):
+        return
+    await app.state.line.mark_as_read(token)
 
 
 async def _rate_limit_check(app: FastAPI, user_id: str) -> str:
@@ -289,8 +589,18 @@ async def _rate_limit_check(app: FastAPI, user_id: str) -> str:
     return "warn" if count == limit + 1 else "drop"
 
 
-async def _to_incoming(app: FastAPI, event, net: tuple[str | None, str | None] = (None, None)) -> Incoming | None:
-    """แปลง event ของ SDK เป็นโครงสร้างกลาง — ตัดชนิดที่บอทไม่สนใจทิ้งตรงนี้"""
+async def _to_incoming(
+    app: FastAPI,
+    event,
+    net: tuple[str | None, str | None] = (None, None),
+    *,
+    skip_image_download: bool = False,
+) -> Incoming | None:
+    """แปลง event ของ SDK เป็นโครงสร้างกลาง — ตัดชนิดที่บอทไม่สนใจทิ้งตรงนี้
+
+    skip_image_download: ผู้ใช้กำลังคุยกับเจ้าหน้าที่ — รูปเป็นของเจ้าหน้าที่ดูในแอป LINE OA
+    ไม่ต้องโหลดมาอัปโหลดเข้าระบบ (flow จะเงียบใส่รูปนั้นอยู่แล้ว)
+    """
     user_id = getattr(getattr(event, "source", None), "user_id", None)
     if not user_id:
         # เช่น event จากห้องกลุ่มที่ไม่มี userId — บอทนี้ออกแบบมาสำหรับแชท 1:1
@@ -326,6 +636,8 @@ async def _to_incoming(app: FastAPI, event, net: tuple[str | None, str | None] =
             )
 
         if message_type == "image" and settings.accept_images:
+            if skip_image_download:
+                return Incoming(kind="image", user_id=user_id)
             return await _to_image_incoming(app, user_id, getattr(message, "id", ""))
 
         # สติกเกอร์ / วิดีโอ / เสียง / ไฟล์ / ตำแหน่ง — ตอบว่าอ่านไม่ได้ ดีกว่าเงียบ

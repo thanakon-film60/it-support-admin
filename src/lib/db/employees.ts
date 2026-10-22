@@ -24,6 +24,15 @@ import { patchOne, readCollection, upsertOne, writeCollection } from "./store";
 import { newId } from "../utils";
 import registry from "./employees.seed.json";
 import type { CompanyCode, User } from "../types";
+import {
+  codePrefix,
+  companyForSheet,
+  isMassDeactivation,
+  normalizeCode,
+  parsePrefixes,
+  resolveDepartment,
+  type RegistryRow,
+} from "../employee-import";
 
 const COLLECTION = "users";
 const META_COLLECTION = "registry_meta";
@@ -349,4 +358,196 @@ export function deleteEmployee(id: string): boolean {
   if (!rows.some((u) => u.id === id)) return false;
   writeCollection(COLLECTION, rows.filter((u) => u.id !== id));
   return true;
+}
+
+// ---------------------------------------------------------------- นำเข้าทะเบียนล่าสุดจากไฟล์ของ HR (020)
+//
+// ต่างจาก syncEmployeeRegistry() ด้านบน: ตัวนั้นซิงก์ seed ที่ติดมากับโค้ด (ครั้งเดียวต่อเวอร์ชัน)
+// ตัวนี้คือ "ไฟล์ล่าสุดที่ HR ส่งมา" ผ่านหน้า /employees — ใครไม่อยู่ในไฟล์ถือว่าพ้นสภาพ (สถานะ 0)
+// กติกาทั้งหมดอยู่หัวไฟล์ lib/employee-import.ts (ชุดเดียวกับระบบจองห้องประชุมและระบบนวด)
+
+export interface RegistryPerson {
+  employee_id: string;
+  name: string;
+  department: string | null;
+}
+
+export interface RegistryPlan {
+  in_file: number;
+  inserted: RegistryPerson[];
+  updated: RegistryPerson[];
+  reactivated: RegistryPerson[];
+  unchanged: number;
+  /** สถานะ 1 → 0: ไม่อยู่ในไฟล์ + อยู่ในขอบเขต */
+  deactivate: RegistryPerson[];
+  /** ไม่อยู่ในไฟล์แต่เป็นกลุ่มยกเว้น → คงสถานะเดิม */
+  kept_missing_by_prefix: Record<string, number>;
+  kept_missing: number;
+  /** รหัสที่มีมากกว่า 1 แถวในระบบ — ไม่เดาว่าคนไหน (กฎเหล็กข้อ 4) ข้ามไว้ให้แอดมินแก้ก่อน */
+  ambiguous: string[];
+  /** แถวในระบบที่ไม่มีรหัสพนักงาน (เพิ่มเองจากหน้าแอดมิน) — จับคู่กับไฟล์ไม่ได้ จึงไม่แตะ */
+  without_code: number;
+  active_in_scope: number;
+  mass: boolean;
+  keep_prefixes: string[];
+  departments: { unknown: { value: string; count: number }[]; guess_kept: number; guess_used: number };
+}
+
+export interface RegistryImportResult {
+  in_file: number;
+  inserted: number;
+  updated: number;
+  reactivated: number;
+  unchanged: number;
+  deactivated: number;
+  kept_missing: number;
+  ambiguous: number;
+}
+
+/** กลุ่มรหัสที่ไม่ปิดเมื่อไม่อยู่ในไฟล์ — ตั้งใน .env (EMPLOYEE_SYNC_KEEP_PREFIXES) ค่าเดียวกับอีก 2 ระบบ */
+export function keepPrefixes(): Set<string> {
+  return parsePrefixes(process.env.EMPLOYEE_SYNC_KEEP_PREFIXES);
+}
+
+const person = (u: Pick<User, "employee_id" | "display_name" | "department">): RegistryPerson => ({
+  employee_id: u.employee_id ?? "",
+  name: u.display_name,
+  department: u.department ?? null,
+});
+
+interface Change {
+  user: User | null;
+  row: RegistryRow;
+  patch: Partial<User>;
+}
+
+/** คำนวณสิ่งที่จะเปลี่ยน (ไม่เขียนไฟล์) — preview และการนำเข้าจริงใช้ตัวเดียวกัน ผลจึงตรงกันเสมอ */
+function computePlan(users: User[], rows: RegistryRow[], keep: Set<string>): { plan: RegistryPlan; changes: Change[] } {
+  const byCode = new Map<string, User[]>();
+  let withoutCode = 0;
+  for (const u of users) {
+    const code = normalizeCode(u.employee_id);
+    if (!code) {
+      withoutCode += 1;
+      continue;
+    }
+    byCode.set(code, [...(byCode.get(code) ?? []), u]);
+  }
+
+  const plan: RegistryPlan = {
+    in_file: rows.length, inserted: [], updated: [], reactivated: [], unchanged: 0, deactivate: [],
+    kept_missing_by_prefix: {}, kept_missing: 0, ambiguous: [], without_code: withoutCode,
+    active_in_scope: 0, mass: false, keep_prefixes: [...keep].sort(),
+    departments: { unknown: [], guess_kept: 0, guess_used: 0 },
+  };
+  const unknown = new Map<string, number>();
+  const changes: Change[] = [];
+  const inFile = new Set<string>();
+
+  for (const row of rows) {
+    inFile.add(row.code);
+    const matches = byCode.get(row.code) ?? [];
+    if (matches.length > 1) {
+      plan.ambiguous.push(row.code);
+      continue;
+    }
+    const old = matches[0] ?? null;
+    const dept = resolveDepartment(row.department, old?.department?.trim() || null, DEPARTMENTS);
+    if (dept.how === "unknown" && row.department) unknown.set(row.department, (unknown.get(row.department) ?? 0) + 1);
+    if (dept.how === "guess_kept") plan.departments.guess_kept += 1;
+    if (dept.how === "guess_used") plan.departments.guess_used += 1;
+    const company = companyForSheet(row.sheet);
+
+    if (!old) {
+      changes.push({ user: null, row, patch: { department: dept.value, company } });
+      plan.inserted.push({ employee_id: row.code, name: row.name, department: dept.value });
+      continue;
+    }
+    // ช่องว่างในไฟล์ = ไม่แตะ · line_user_id / email / position / level เป็นของฝั่งระบบ ไม่ใช่ของทะเบียนนี้
+    const patch: Partial<User> = {};
+    if (old.display_name !== row.name) patch.display_name = row.name;
+    if (row.title && old.title !== row.title) patch.title = row.title;
+    if (row.nickname && old.nickname !== row.nickname) patch.nickname = row.nickname;
+    if (dept.value !== (old.department?.trim() || null)) patch.department = dept.value;
+    if (company && old.company !== company) patch.company = company;
+    if (old.active === false) patch.active = true;
+    if (Object.keys(patch).length === 0) {
+      plan.unchanged += 1;
+      continue;
+    }
+    changes.push({ user: old, row, patch });
+    plan.updated.push(person({ ...old, ...patch }));
+    if (old.active === false) plan.reactivated.push(person({ ...old, ...patch }));
+  }
+
+  for (const [code, list] of byCode) {
+    for (const u of list) {
+      if (u.active === false) continue;
+      const protectedCode = keep.has(codePrefix(code));
+      if (!protectedCode) plan.active_in_scope += 1;
+      if (inFile.has(code)) continue;
+      if (protectedCode) {
+        plan.kept_missing += 1;
+        const p = codePrefix(code) || "-";
+        plan.kept_missing_by_prefix[p] = (plan.kept_missing_by_prefix[p] ?? 0) + 1;
+      } else {
+        plan.deactivate.push(person(u));
+        changes.push({ user: u, row: { code, name: u.display_name, title: null, nickname: null, department: null, sheet: "", row: 0 }, patch: { active: false } });
+      }
+    }
+  }
+  plan.deactivate.sort((a, b) => a.employee_id.localeCompare(b.employee_id));
+  plan.mass = isMassDeactivation(plan.deactivate.length, plan.active_in_scope);
+  plan.departments.unknown = [...unknown].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
+  return { plan, changes };
+}
+
+export function planRegistryImport(rows: RegistryRow[], keep: Set<string> = keepPrefixes()): RegistryPlan {
+  ensureEmployeeRegistry(); // seed เวอร์ชันใหม่ที่ยังไม่ซิงก์ต้องลงก่อน ไม่งั้นมันจะมาทับผลนำเข้าทีหลัง
+  return computePlan(readCollection<User>(COLLECTION, seedUsersFromRegistry), rows, keep).plan;
+}
+
+export class MassDeactivationError extends Error {}
+
+/** นำเข้าจริง — คำนวณใหม่จากข้อมูลล่าสุด (ไม่เชื่อผล preview ที่อาจเก่าแล้ว) แล้วเขียนไฟล์ครั้งเดียว
+ *  ทั้งก้อนเป็นโค้ด sync ไม่มี await คั่น — คำขออื่นแทรกกลางระหว่างอ่านกับเขียนไม่ได้ */
+export function applyRegistryImport(
+  rows: RegistryRow[],
+  { confirmMass, keep = keepPrefixes() }: { confirmMass: boolean; keep?: Set<string> }
+): RegistryImportResult {
+  ensureEmployeeRegistry();
+  const users = readCollection<User>(COLLECTION, seedUsersFromRegistry);
+  const { plan, changes } = computePlan(users, rows, keep);
+  if (plan.mass && !confirmMass) {
+    throw new MassDeactivationError(
+      `ไฟล์นี้จะเปลี่ยนพนักงาน ${plan.deactivate.length} คนเป็นสถานะ 0 (จาก ${plan.active_in_scope} คนที่ใช้งานอยู่) ` +
+        "— ตรวจว่าไม่ได้เลือกไฟล์ผิด (ไฟล์บริษัทเดียว/ไฟล์เก่า) แล้วยืนยันอีกครั้ง"
+    );
+  }
+  const now = new Date().toISOString();
+  for (const c of changes) {
+    if (c.user) {
+      Object.assign(c.user, c.patch);
+      continue;
+    }
+    users.push({
+      ...toUser(
+        { code: c.row.code, title: c.row.title, name: c.row.name, nickname: c.row.nickname, department: null,
+          position: null, level: null, company: null },
+        now
+      ),
+      ...c.patch,
+    });
+  }
+  if (changes.length > 0) writeCollection(COLLECTION, users);
+  return {
+    in_file: plan.in_file,
+    inserted: plan.inserted.length,
+    updated: plan.updated.length,
+    reactivated: plan.reactivated.length,
+    unchanged: plan.unchanged,
+    deactivated: plan.deactivate.length,
+    kept_missing: plan.kept_missing,
+    ambiguous: plan.ambiguous.length,
+  };
 }

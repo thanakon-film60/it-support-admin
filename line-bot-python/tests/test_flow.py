@@ -85,10 +85,11 @@ BRANCH_OPTIONS = {
         {"value": "central", "label": "สำนักงานใหญ่", "sub": None, "count": 1},
     ],
     ("group", "montipa", None): [
-        {"value": "bkk", "label": "กรุงเทพฯ และปริมณฑล", "sub": None, "count": 2},
-        {"value": "north", "label": "ภาคเหนือ", "sub": None, "count": 1},
+        # Montipa แบ่งตามเขตของ Area Manager (ตารางทีมขาย ต.ค. 2026) เหมือน Motta — ไม่ใช่ภูมิภาคแล้ว
+        {"value": "pui", "label": "ทีมปุ้ย", "sub": "ROM: ปุ้มปุ้ย · เซ็นทรัล พระราม 2, เซ็นทรัล ศาลายา", "count": 2},
+        {"value": "tubtim", "label": "ทีมทับทิม", "sub": None, "count": 1},
     ],
-    ("branch", "montipa", "bkk"): [
+    ("branch", "montipa", "pui"): [
         {"value": "เซ็นทรัล พระราม 2", "label": "เซ็นทรัล พระราม 2", "sub": None, "count": 1},
         {"value": "เซ็นทรัล ศาลายา", "label": "เซ็นทรัล ศาลายา", "sub": None, "count": 1},
     ],
@@ -163,6 +164,10 @@ class FakeBackend:
         self.confirms: list[tuple] = []
         self.fail_confirm = False
         self.confirm_result: dict | None = None
+        # การให้คะแนน/ความเห็น: [{"ticket_code", "line_user_id", "score", "comment", "viewer_name"}]
+        self.rates: list[dict] = []
+        self.fail_rate = False
+        self.rate_result: dict | None = None
         # รหัส -> รายการเครื่องทั้งหมดที่ใช้รหัสนั้น (ใช้ทดสอบเคสรหัสซ้ำ)
         self.extra_equipment: dict[str, list[dict]] = extra_equipment or {}
         self.my_assets: dict = {"found": True, "linked": True, "holder_name": "สมชาย ใจดี",
@@ -170,6 +175,19 @@ class FakeBackend:
         # ทะเบียนผู้แจ้งที่ผูกกับบัญชี LINE — None = ยังไม่เคยผูก (บอทจะถามชื่อ)
         self.bound_requester: dict | None = None
         self.bind_calls: list[tuple[str, str]] = []
+        # ทีม IT ที่สั่งเปิด/ปิดบอทได้ (อนุมัติในหน้าเว็บ "บอท LINE"): line_user_id -> {"status", "name"}
+        self.staff: dict[str, dict] = {}
+        self.staff_calls: list[tuple[str, str]] = []
+        self.fail_staff = False
+
+    async def line_staff(self, *, line_user_id: str, display_name: str = "", action: str = "check"):
+        if self.fail_staff:
+            raise BackendError("หลังบ้านล่ม")
+        self.staff_calls.append((line_user_id, action))
+        hit = self.staff.get(line_user_id)
+        if action == "request" and hit is None:
+            hit = self.staff[line_user_id] = {"status": "pending", "name": display_name or None}
+        return dict(hit) if hit else {"status": "none", "name": None}
 
     async def get_requester(self, line_user_id: str):
         return self.bound_requester
@@ -252,6 +270,17 @@ class FakeBackend:
             "ticket_code": ticket_code,
             "status": "completed" if action == "confirm" else "in_progress",
         }
+
+    async def rate_ticket(self, *, ticket_code, line_user_id, score=None, comment=None, viewer_name=""):
+        if self.fail_rate:
+            raise BackendError("หลังบ้านล่ม")
+        self.rates.append({"ticket_code": ticket_code, "line_user_id": line_user_id,
+                           "score": score, "comment": comment, "viewer_name": viewer_name})
+        if self.rate_result is not None:
+            return self.rate_result
+        # เลียนแบบหลังบ้าน: ขอความเห็นเฉพาะตอนกดดาวต่ำ (1–3) และยังไม่มีความเห็น
+        return {"ok": True, "ticket_code": ticket_code, "score": score, "comment": comment,
+                "ask_comment": score is not None and score <= 3 and not comment}
 
     async def record_ticket_view(self, **kwargs):
         if self.fail_record_view:
@@ -1569,13 +1598,13 @@ async def test_ไล่เลือก_บริษัท_กลุ่ม_ส�
     await handle(postback({"a": "start"}), st, backend)
 
     r = await handle(postback({"a": "bk_co", "i": "0"}), st, backend)  # Montipa
-    assert "ภูมิภาค" in r[0].text
+    assert "เลือกเขต (Area Manager)" in r[0].text
     assert "Montipa" in r[0].text
     assert ("group", "montipa", None) in backend.branch_option_calls
 
-    r = await handle(postback({"a": "bk_grp", "i": "0"}), st, backend)  # กรุงเทพฯ
+    r = await handle(postback({"a": "bk_grp", "i": "0"}), st, backend)  # ทีมปุ้ย
     assert "เลือกสาขา" in r[0].text
-    assert ("branch", "montipa", "bkk") in backend.branch_option_calls
+    assert ("branch", "montipa", "pui") in backend.branch_option_calls
 
     r = await handle(postback({"a": "bk_branch", "i": "0"}), st, backend)
     assert "เซ็นทรัล พระราม 2" in r[0].text
@@ -1584,14 +1613,17 @@ async def test_ไล่เลือก_บริษัท_กลุ่ม_ส�
 
 
 @pytest.mark.asyncio
-async def test_ชื่อกลุ่มเปลี่ยนตามบริษัท_Montipa_ภูมิภาค_Motta_ทีม():
-    """ถ้าใช้คำกลางๆ ว่า 'กลุ่ม' ทั้งคู่ ผู้ใช้จะไม่รู้ว่ากำลังเลือกอะไรอยู่"""
-    backend = FakeBackend()
-    st = store()
-    await handle(postback({"a": "start"}), st, backend)
-    r = await handle(postback({"a": "bk_co", "i": "1"}), st, backend)  # Motta
-    assert "ทีม" in r[0].text
-    assert "Motta" in r[0].text
+async def test_ชั้นกลางของเมนูสาขาเรียกว่าเขต_AM_ทั้ง_Montipa_และ_Motta():
+    """ถ้าใช้คำกลางๆ ว่า 'กลุ่ม' ผู้ใช้จะไม่รู้ว่ากำลังเลือกอะไรอยู่ — ทั้งสองบริษัทแบ่งตามเขตของ Area Manager
+    (Montipa เลิกแบ่งตามภูมิภาคเมื่อ 15 ต.ค. 2026 ตามตารางทีมขาย ต.ค. 2026)"""
+    for index, company in (("0", "Montipa"), ("1", "Motta")):
+        backend = FakeBackend()
+        st = store()
+        await handle(postback({"a": "start"}), st, backend)
+        r = await handle(postback({"a": "bk_co", "i": index}), st, backend)
+        assert r[0].text.startswith("เลือกเขต (Area Manager)"), company
+        assert company in r[0].text
+        assert "ภูมิภาค" not in r[0].text
 
 
 @pytest.mark.asyncio
@@ -1603,7 +1635,7 @@ async def test_ปุ่มย้อนกลับล้างตัวกร�
     await handle(postback({"a": "bk_grp", "i": "0"}), st, backend)
 
     session = await st.get(USER)
-    assert session.pick_group == "bkk"
+    assert session.pick_group == "pui"
 
     r = await handle(postback({"a": "bk_back", "to": "company"}), st, backend)
     assert "เลือกบริษัท" in r[0].text

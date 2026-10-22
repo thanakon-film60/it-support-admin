@@ -1,0 +1,37 @@
+[
+  {
+    "at": "2026-10-13T08:00:03.782Z",
+    "by": "Administrator@WIN-QRB8CPGC62I",
+    "action": "สร้างบัญชี",
+    "username": "jobpvp7412",
+    "detail": "ผู้ดูแลระบบ · ทุกหน้า"
+  },
+  {
+    "at": "2026-10-13T08:02:33.455Z",
+    "by": "Administrator@WIN-QRB8CPGC62I",
+    "action": "สร้างบัญชี",
+    "username": "user",
+    "detail": "เจ้าหน้าที่ · หน้า: ฝากข้อความ, คลังไฟล์"
+  },
+  {
+    "at": "2026-10-16T04:50:54.221Z",
+    "by": "Administrator@WIN-QRB8CPGC62I",
+    "action": "ตั้งรหัสผ่านใหม่",
+    "username": "user",
+    "detail": "ทุกเครื่องที่ล็อกอินค้างอยู่ถูกออกจากระบบ"
+  },
+  {
+    "at": "2026-10-16T04:51:18.550Z",
+    "by": "Administrator@WIN-QRB8CPGC62I",
+    "action": "บังคับออกจากระบบ",
+    "username": "admin",
+    "detail": "cookie ทุกใบของบัญชีนี้ใช้ไม่ได้แล้ว"
+  },
+  {
+    "at": "2026-10-16T04:58:38.077Z",
+    "by": "Administrator@WIN-QRB8CPGC62I",
+    "action": "สร้างบัญชี",
+    "username": "Film",
+    "detail": "ผู้ดูแลระบบ · ทุกหน้า"
+  }
+]
