@@ -23,9 +23,9 @@ class Knowledge:
     ยังทำงานอยู่ ซึ่งเป็นสิ่งที่ต้องรับประกันสำหรับเว็บรุ่นเก่าที่ยังไม่ส่ง employees มา
     """
 
-    def __init__(self):
+    def __init__(self, employees: list[dict] | None = None):
         kb = build_knowledge()
-        kb.employees = EMPLOYEES
+        kb.employees = EMPLOYEES if employees is None else employees
         kb.departments = DEPARTMENTS
         self._kb = kb
 
@@ -115,6 +115,72 @@ async def test_ไม่เจอในทะเบียนต้องแจ�
     assert session.requester_department == "ฝ่ายขาย"
     assert session.requester_user_id is None, "คนนอกทะเบียนต้องไม่ถูกผูกกับแถวใดแถวหนึ่ง"
     assert backend.bind_calls == []
+
+
+# ------------------------------------------------------------------ พนักงานสาขา: หาตัวเองให้เจอ
+#
+# แถวจริงจากรายงานตารางเวลาการทำงาน ต.ค. 2026 (ชื่อ · ชื่อเล่น · ตำแหน่ง ตามไฟล์) — ชุดที่ค้นแบบเดิมแล้ว
+# "พิมพ์ชื่อตัวเองถูกแต่หาตัวเองไม่เจอ" หรือ "เจอแต่แยกไม่ออกว่าคนไหนคือตัวเอง"
+# เลือกผิดคนครั้งเดียว = บัญชี LINE ผูกกับคนอื่นถาวร ticket ทุกใบหลังจากนั้นขึ้นชื่อคนอื่น
+
+BRANCH_STAFF = [
+    {"id": "u-cream-spk", "code": "AS68012", "name": "วนิดา พันเพ็ง", "nickname": "ครีม",
+     "department": "ฝ่ายขาย", "position": "พนักงานขายสาขาโรบินสันสมุทรปราการ"},
+    {"id": "u-cream-imp", "code": "AS69091", "name": "แพรวรรณ ผาชา", "nickname": "ครีม",
+     "department": "ฝ่ายขาย", "position": "พนักงานขายสาขาอิมพิเรียลเวิลด์สำโรง"},
+    {"id": "u-namfon-nick", "code": "AS66019", "name": "วิจิตรา วงศ์เขียว", "nickname": "น้ำฝน",
+     "department": "ฝ่ายขาย", "position": "พนักงานขายสาขาเซ็นทรัลลำปาง"},
+    {"id": "u-namfon-first", "code": "AS67129", "name": "น้ำฝน หน่อคำ", "nickname": "ฝน",
+     "department": "ฝ่ายขาย", "position": "พนักงานขายสาขาฟิวเจอร์พาร์ครังสิต"},
+    {"id": "u-saetan", "code": "AS69063", "name": "รัชดาภรณ์ เเซ่ตั๋น", "nickname": "โมเมย์",
+     "department": "ฝ่ายขาย", "position": "พนักงานขายสาขาเซ็นทรัลสุราษฎร์ธานี"},
+]
+
+
+@pytest.mark.asyncio
+async def test_ชื่อเล่นซ้ำกัน_ต้องเห็นสาขาของแต่ละคน_และปุ่มต้องไม่หน้าตาเหมือนกัน():
+    """"ครีม" 2 คนอยู่ฝ่ายขายทั้งคู่ — ถ้าโชว์แค่ฝ่าย 2 บรรทัดต่างกันแค่ชื่อจริง และปุ่มเป็น
+    "1. ครีม" "2. ครีม" ผู้ใช้ต้องเดาว่าปุ่มไหนคือตัวเอง"""
+    s, backend, kb = store(), FakeBackend(), Knowledge(EMPLOYEES + BRANCH_STAFF)
+    await _to_requester_step(s, backend, kb)
+
+    r = await handle(text("ครีม"), s, backend, knowledge=kb)
+
+    assert "เจอ 2 คน" in r[0].text
+    assert "พนักงานขายสาขาโรบินสันสมุทรปราการ" in r[0].text
+    assert "พนักงานขายสาขาอิมพิเรียลเวิลด์สำโรง" in r[0].text
+    assert [label for label, data in r[0].quick if data.startswith("a=rq_pick")] == ["1. วนิดา", "2. แพรวรรณ"]
+
+    await handle(postback({"a": "rq_pick", "i": "1"}), s, backend, knowledge=kb)
+    assert backend.bind_calls == [(USER, "u-cream-imp")]
+
+
+@pytest.mark.asyncio
+async def test_พิมพ์ชื่อจริงตัวเอง_ต้องเจอตัวเองแม้ชื่อนี้จะเป็นชื่อเล่นของคนอื่น():
+    """"น้ำฝน" เป็นชื่อเล่นของคนหนึ่งและชื่อจริงของอีกคน — เดิมชั้น "ตรงเป๊ะ" นับแค่ชื่อเล่นแล้วหยุด
+    เจ้าของชื่อจริงพิมพ์ชื่อตัวเองทีไรได้การ์ด "คือคนนี้ใช่ไหม" ของคนอื่นทุกครั้ง"""
+    s, backend, kb = store(), FakeBackend(), Knowledge(EMPLOYEES + BRANCH_STAFF)
+    await _to_requester_step(s, backend, kb)
+
+    r = await handle(text("น้ำฝน"), s, backend, knowledge=kb)
+
+    assert "เจอ 2 คน" in r[0].text
+    assert "น้ำฝน หน่อคำ" in r[0].text
+    assert "วิจิตรา วงศ์เขียว" in r[0].text
+
+
+@pytest.mark.asyncio
+async def test_นามสกุลที่ทะเบียนสะกดด้วยสระเอสองตัว_พิมพ์ด้วยสระแอก็ต้องเจอ():
+    """"เเซ่ตั๋น" (เ+เ) กับ "แซ่ตั๋น" (แ) บนจอเหมือนกันทุกจุด เจ้าตัวไม่มีทางรู้ว่าทะเบียนสะกดแบบไหน
+    — พิมพ์แค่นามสกุลเพราะชื่อเต็มยังพอให้ fuzzy เดาถูกได้ แต่คำสั้นๆ หลุด threshold"""
+    s, backend, kb = store(), FakeBackend(), Knowledge(EMPLOYEES + BRANCH_STAFF)
+    await _to_requester_step(s, backend, kb)
+
+    r = await handle(text("แซ่ตั๋น"), s, backend, knowledge=kb)
+
+    assert "ใช่ไหมครับ" in r[0].text
+    assert "รัชดาภรณ์ เเซ่ตั๋น" in r[0].text
+    assert "พนักงานขายสาขาเซ็นทรัลสุราษฎร์ธานี" in r[0].text, "การ์ดยืนยันต้องบอกสาขาด้วย ไม่ใช่แค่ฝ่าย"
 
 
 # ------------------------------------------------------------------ จำไว้ครั้งหน้า

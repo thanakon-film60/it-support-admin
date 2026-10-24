@@ -1,21 +1,30 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    ทะเบียนพนักงาน — ที่มาของ "ผู้แจ้ง" ทั้งระบบ
 
-   ที่มาของข้อมูล: ไฟล์ "รายชื่อพนักงานฝ่าย ตามผังองค์กร สำหรับนำเข้า.xlsx" ของ HR
-   (ผังองค์กร H2-2026 · ส่งให้ไอที 24/9/69) แปลงเป็น employees.seed.json 326 คน
-     • 133 คน มีฝ่ายตามผังองค์กร
-     • 193 คน ยังไม่ถูกจัดฝ่าย (ส่วนใหญ่เป็นพนักงานขายหน้าร้าน/สาขา) -> department = null
-       แสดงผลเป็น "อื่นๆ" และ HR เติมฝ่ายให้ทีหลังได้
+   ที่มาของข้อมูล (employees.seed.json 338 คน · มีฝ่าย 282 · ยังไม่ถูกจัดฝ่าย 56 -> department = null
+   แสดงผลเป็น "อื่นๆ" และ HR เติมฝ่ายให้ทีหลังได้) มาจาก 2 ไฟล์ของ HR แยกตามกลุ่มรหัส:
+     • ทุกกลุ่มรหัสยกเว้น AS: "รายชื่อพนักงานฝ่าย ตามผังองค์กร สำหรับนำเข้า.xlsx"
+       (ผังองค์กร H2-2026 · ส่งให้ไอที 24/9/69)
+     • AS = พนักงานขายสาขา Motta 150 คน: "รายงานตารางเวลาการทำงานประจำเดือน 2026-10" (24 ต.ค. 69)
+       ใช้แค่บรรทัดหัวของแต่ละคน "รหัส : ชื่อ นามสกุล (ชื่อเล่น) แผนก: SALE ตำแหน่ง: …"
+         - ตำแหน่งเก็บตามไฟล์ทุกตัวอักษร (รวมคำสะกดผิดของ HR) — ชื่อสาขาอยู่ในตำแหน่ง และเป็นสิ่งเดียว
+           ที่แยก "ครีม" 5 คนออกจากกันตอนค้นหาในบอท
+         - แผนก SALE -> "ฝ่ายขาย" (ชื่อตามผังใน DEPARTMENTS) — ถ้าเก็บ "SALE" ตรงๆ departmentSummary()
+           จะไม่นับคนกลุ่มนี้เลย เพราะนับเฉพาะชื่อที่อยู่ในผัง
+         - ไฟล์นี้ไม่มีคำนำหน้า/บริษัท/ระดับ -> คนที่เพิ่มใหม่ 12 คนเป็น null ไม่เดาจากกลุ่มรหัส
+         - AS69096 อยู่ในทะเบียน ก.ย. แต่ไม่อยู่ในรายงาน ต.ค. — คงข้อมูลเดิม ไม่ปิดใช้งานเอง
+           (หายจากรายงานเวลาทำงานไม่ได้แปลว่าลาออก ให้ HR/แอดมินตัดสินที่หน้า /employees)
 
    ทำไมต้อง "ซิงก์" ไม่ใช่แค่ seed:
      store.readCollection() รัน seedFn เฉพาะตอน "ยังไม่มีไฟล์" เท่านั้น
      แต่ระบบที่รันอยู่จริงมี data/users.json อยู่แล้ว (และอยู่บน docker volume ที่ไม่ถูกลบ
      เวลา deploy) การแก้ seed() เฉยๆ จึงไม่มีผลกับเครื่องที่ใช้งานอยู่เลยแม้แต่คนเดียว
      — อาการคือ "อัปเดตโค้ดแล้วแต่รายชื่อยังเป็นชุดเดิม" ซึ่งหาสาเหตุยากมาก
+     ไฟล์ HR 2 ชุดข้างบนซิงก์แยกเวอร์ชันกัน (REGISTRY_SYNCS) — ขยับชุดไหนก็ซิงก์แค่แถวของชุดนั้น
 
    กติกาการเขียนทับ (สำคัญ):
      ช่องที่ทะเบียนมีค่า -> ทะเบียนชนะ (HR เป็นเจ้าของข้อมูลฝ่าย/ตำแหน่ง/ระดับ)
-     ช่องที่ทะเบียนเป็น null -> ไม่แตะของเดิม (ไม่งั้นฝ่ายที่แอดมินเพิ่งเติมให้ 193 คนนั้น
+     ช่องที่ทะเบียนเป็น null -> ไม่แตะของเดิม (ไม่งั้นฝ่ายที่แอดมินเพิ่งเติมให้คนที่ทะเบียนยังไม่จัดฝ่าย
      จะถูกล้างกลับเป็นค่าว่างทุกครั้งที่ซิงก์)
      line_user_id / email / id / created_at -> ไม่แตะเด็ดขาด เป็นของฝั่งระบบ ไม่ใช่ของ HR
    ───────────────────────────────────────────────────────────────────────────── */
@@ -37,8 +46,13 @@ import {
 const COLLECTION = "users";
 const META_COLLECTION = "registry_meta";
 
-/** ขยับค่านี้ทุกครั้งที่แก้ employees.seed.json ไม่งั้นเครื่องที่ซิงก์ไปแล้วจะข้ามการซิงก์รอบใหม่ */
+/** ขยับค่านี้ทุกครั้งที่แก้ employees.seed.json ส่วนผังองค์กร (ทุกกลุ่มรหัสยกเว้น BRANCH_STAFF_PREFIXES)
+ *  ไม่งั้นเครื่องที่ซิงก์ไปแล้วจะข้ามการซิงก์รอบใหม่ */
 export const EMPLOYEE_REGISTRY_VERSION = "2026-09-25";
+/** แบบเดียวกันของพนักงานสาขาที่มาจากรายงานตารางเวลาการทำงาน — แก้แถวกลุ่มนี้แล้วขยับค่านี้แทน */
+export const BRANCH_STAFF_REGISTRY_VERSION = "2026-10-24";
+/** กลุ่มรหัสที่ข้อมูลมาจากรายงานตารางเวลาการทำงานประจำเดือน ไม่ใช่ทะเบียนผังองค์กร */
+export const BRANCH_STAFF_PREFIXES: ReadonlySet<string> = new Set(["AS"]);
 
 /** ป้ายของคนที่ยังไม่ถูกจัดฝ่าย — ใช้ทั้งในเมนู LINE และหน้าแอดมิน ห้ามพิมพ์ค่านี้ซ้ำที่อื่น */
 export const OTHER_DEPARTMENT = "อื่นๆ";
@@ -110,9 +124,12 @@ export function seedUsersFromRegistry(): User[] {
   return EMPLOYEE_REGISTRY.map((row) => toUser(row, now));
 }
 
-/** รวมทะเบียนเข้ากับ users ที่มีอยู่ — รันซ้ำได้ ผลลัพธ์เหมือนเดิมทุกครั้ง */
-export function syncEmployeeRegistry(): { added: number; updated: number } {
-  const rows = readCollection<User>(COLLECTION, seedUsersFromRegistry);
+type RegistryScope = (row: EmployeeSeed) => boolean;
+
+const isBranchStaff: RegistryScope = (row) => BRANCH_STAFF_PREFIXES.has(codePrefix(normalizeCode(row.code)));
+
+/** รวมแถวทะเบียน (เฉพาะที่ scope ยอม) เข้ากับ users ที่อ่านมาแล้ว — แก้ rows ในที่ ไม่เขียนไฟล์ */
+function mergeRegistry(rows: User[], scope: RegistryScope): { added: number; updated: number } {
   const byCode = new Map<string, User>();
   for (const u of rows) if (u.employee_id) byCode.set(u.employee_id.trim().toUpperCase(), u);
 
@@ -121,6 +138,7 @@ export function syncEmployeeRegistry(): { added: number; updated: number } {
   let updated = 0;
 
   for (const row of EMPLOYEE_REGISTRY) {
+    if (!scope(row)) continue;
     const hit = byCode.get(row.code.trim().toUpperCase());
     if (!hit) {
       rows.push(toUser(row, now));
@@ -142,28 +160,43 @@ export function syncEmployeeRegistry(): { added: number; updated: number } {
       updated += 1;
     }
   }
-
-  if (added > 0 || updated > 0) writeCollection(COLLECTION, rows);
   return { added, updated };
 }
 
-/** ซิงก์ให้เองครั้งเดียวต่อ 1 เวอร์ชันทะเบียน — ถูกเรียกจากทุกทางเข้าที่ต้องใช้รายชื่อ
+/** รวมทะเบียนเข้ากับ users ที่มีอยู่ — รันซ้ำได้ ผลลัพธ์เหมือนเดิมทุกครั้ง (ไม่ระบุ scope = ทั้งทะเบียน) */
+export function syncEmployeeRegistry(scope: RegistryScope = () => true): { added: number; updated: number } {
+  const rows = readCollection<User>(COLLECTION, seedUsersFromRegistry);
+  const result = mergeRegistry(rows, scope);
+  if (result.added > 0 || result.updated > 0) writeCollection(COLLECTION, rows);
+  return result;
+}
+
+/** ทะเบียนแต่ละชุดซิงก์แยกเวอร์ชัน (และแถวใน registry_meta) — แบบเดียวกับ AREA_SYNCS ใน branches.ts
  *
- *  ราคาของการเรียกซ้ำคืออ่านไฟล์เล็ก 1 ไฟล์ + เทียบสตริง 1 ครั้ง จึงเรียกได้ทุก request
- *  โดยไม่ต้องกลัว ส่วนที่แพงจริง (เทียบ 326 แถว + เขียนไฟล์) รันแค่รอบแรกของแต่ละเวอร์ชัน */
+ *  ขยับชุดพนักงานสาขาแล้วต้องไม่ไปซิงก์ชุดผังองค์กรซ้ำ: ชุดนั้นเป็นข้อมูล ก.ย. ถ้าซิงก์ซ้ำจะเขียนทับ
+ *  ชื่อ/ฝ่ายที่นำเข้าจากทะเบียน HR รุ่นใหม่กว่า (020) และที่แอดมินแก้ในหน้าเว็บ กลับเป็นค่าเดือน ก.ย.
+ *  ทั้งบริษัทโดยไม่มีอะไรเตือน (id "employees" คือชุดผังองค์กรมาตั้งแต่ก่อนแยก — คงไว้ เครื่องที่ซิงก์ไปแล้ว
+ *  จะได้ไม่ซิงก์ซ้ำ) · export ไว้ให้เทสต์ประกาศว่า "ซิงก์ครบแล้ว" ได้โดยไม่ต้องรู้จัก id ทีละตัว */
+export const REGISTRY_SYNCS: readonly { id: string; version: string; scope: RegistryScope }[] = [
+  { id: "employees", version: EMPLOYEE_REGISTRY_VERSION, scope: (row) => !isBranchStaff(row) },
+  { id: "employees-branch-staff", version: BRANCH_STAFF_REGISTRY_VERSION, scope: isBranchStaff },
+];
+
+/** ซิงก์ให้เองครั้งเดียวต่อ 1 เวอร์ชันของแต่ละชุด — ถูกเรียกจากทุกทางเข้าที่ต้องใช้รายชื่อ
+ *
+ *  ราคาของการเรียกซ้ำคืออ่านไฟล์เล็ก 1 ไฟล์ + เทียบสตริง จึงเรียกได้ทุก request
+ *  โดยไม่ต้องกลัว ส่วนที่แพงจริง (เทียบ 338 แถว + เขียนไฟล์) รันแค่รอบแรกของแต่ละเวอร์ชัน */
 export function ensureEmployeeRegistry(): void {
   const meta = readCollection<RegistryMeta>(META_COLLECTION, () => []);
-  const hit = meta.find((m) => m.id === "employees");
-  if (hit?.version === EMPLOYEE_REGISTRY_VERSION) return;
+  const pending = REGISTRY_SYNCS.filter((s) => meta.find((m) => m.id === s.id)?.version !== s.version);
+  if (pending.length === 0) return;
 
-  const result = syncEmployeeRegistry();
-  const row: RegistryMeta = {
-    id: "employees",
-    version: EMPLOYEE_REGISTRY_VERSION,
-    synced_at: new Date().toISOString(),
-    ...result,
-  };
-  upsertOne<RegistryMeta>(META_COLLECTION, row, () => []);
+  const rows = readCollection<User>(COLLECTION, seedUsersFromRegistry);
+  const results = pending.map((s) => ({ id: s.id, version: s.version, result: mergeRegistry(rows, s.scope) }));
+  if (results.some(({ result }) => result.added > 0 || result.updated > 0)) writeCollection(COLLECTION, rows);
+  for (const { id, version, result } of results) {
+    upsertOne<RegistryMeta>(META_COLLECTION, { id, version, synced_at: new Date().toISOString(), ...result }, () => []);
+  }
 }
 
 // ---------------------------------------------------------------- อ่านรายชื่อ

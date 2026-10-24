@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
         .map((b) => ({ company: b.company, name: b.name, group: b.group, floor: b.floor })),
       // ทะเบียนพนักงาน: บอทเอาไปค้นหา "ผู้แจ้ง" เองในหน่วยความจำ ไม่ต้องยิงถามทุกตัวอักษรที่พิมพ์
       //
-      // ส่งทั้ง 326 คน (~40 KB) เพราะบอท cache ก้อนนี้ไว้ 5 นาทีอยู่แล้ว การย้ายการค้นหาไปฝั่งบอท
+      // ส่งทั้ง 338 คน (~110 KB) เพราะบอท cache ก้อนนี้ไว้ 5 นาทีอยู่แล้ว การย้ายการค้นหาไปฝั่งบอท
       // ทำให้ใช้ rapidfuzz จับคำที่พิมพ์ผิดได้ด้วย ซึ่งทำฝั่งนี้ไม่ได้ (ไม่มีไลบรารีและจะช้ากว่า)
       employees: listEmployees().map((u) => ({
         id: u.id,
@@ -281,6 +281,7 @@ export async function GET(request: NextRequest) {
         full_name: fullName(u),
         nickname: u.nickname ?? null,
         department: departmentLabel(u),
+        // บอทโชว์ใต้ชื่อในผลค้นหา — ตำแหน่งพนักงานสาขามีชื่อสาขาอยู่ในตัว เป็นสิ่งเดียวที่แยกคนชื่อเล่นซ้ำกันได้
         position: u.position ?? null,
       })),
       departments: departmentSummary(),

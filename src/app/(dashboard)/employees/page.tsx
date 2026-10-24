@@ -12,7 +12,7 @@ export default async function EmployeesPage() {
   await requireSession("employees");
   const employees = listEmployees(true);
 
-  // นับประวัติต่อคนไว้ล่วงหน้าฝั่งเซิร์ฟเวอร์ครั้งเดียว (พนักงาน 326 คน × ticket ทั้งหมด
+  // นับประวัติต่อคนไว้ล่วงหน้าฝั่งเซิร์ฟเวอร์ครั้งเดียว (พนักงาน 338 คน × ticket ทั้งหมด
   // ถ้าให้หน้าเว็บนับเองจะกลายเป็นวนซ้อนกันทุกครั้งที่ re-render)
   // หน้าเว็บใช้ตัวเลขนี้บอกว่า "คนไหนลบไม่ได้" ก่อนที่แอดมินจะกดลบแล้วเจอ error
   const ticketCounts: Record<string, number> = {};

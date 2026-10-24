@@ -59,9 +59,9 @@ const user = (over) => ({
   position: null, level: null, company: null, active: true, ...over,
 });
 
-// ทุกเทสต์เริ่มจากทะเบียนสมมติชุดเดียวกัน + บอกว่า seed ซิงก์แล้ว (ไม่งั้นรายชื่อจริง 326 คนจาก seed จะถูกผสมเข้ามา)
+// ทุกเทสต์เริ่มจากทะเบียนสมมติชุดเดียวกัน + บอกว่า seed ซิงก์ครบทุกชุดแล้ว (ไม่งั้นรายชื่อจริง 338 คนจาก seed จะถูกผสมเข้ามา)
 beforeEach(() => {
-  writeData('registry_meta', [{ id: 'employees', version: emp.EMPLOYEE_REGISTRY_VERSION, synced_at: 'x', added: 0, updated: 0 }]);
+  writeData('registry_meta', emp.REGISTRY_SYNCS.map(({ id, version }) => ({ id, version, synced_at: 'x', added: 0, updated: 0 })));
   writeData('users', [
     user({ employee_id: 'A60001', display_name: 'สำนักงาน หนึ่ง', department: 'ฝ่ายขาย', line_user_id: 'U-a1',
       email: 'one@example.com', company: 'motta' }),

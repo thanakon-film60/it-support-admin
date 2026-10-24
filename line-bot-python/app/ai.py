@@ -209,6 +209,10 @@ class Knowledge:
 
         ชั้นสุดท้ายใช้ fuzzy เพื่อรับคำพิมพ์ผิด แต่ตั้ง threshold ไว้สูง (86) เพราะเดาผิด
         แล้วผู้ใช้กดยืนยันผ่านไป = ticket ไปอยู่ชื่อคนอื่นถาวร แก้ได้แต่ในหน้าแอดมินเท่านั้น
+
+        ชั้น "ตรงเป๊ะ" นับชื่อจริง/นามสกุลที่ตรงทั้งคำด้วย ไม่ใช่แค่ชื่อเต็มกับชื่อเล่น — เดิมคนที่ชื่อจริง
+        ไปตรงกับชื่อเล่นของคนอื่น (พิมพ์ "น้ำฝน" = ชื่อเล่นของ 4 คน และชื่อจริงของอีก 2 คน) ได้แต่รายชื่อ
+        คนอื่น เพราะชั้นนี้หยุดก่อนถึงชั้น "มีคำนี้อยู่ในชื่อ" คือพิมพ์ชื่อตัวเองถูกแต่หาตัวเองไม่เจอ
         """
         query = _normalize_search(text)
         if len(query) < 2:
@@ -217,13 +221,16 @@ class Knowledge:
         def norm(emp: dict[str, Any], key: str) -> str:
             return _normalize_search(str(emp.get(key) or ""))
 
+        def name_words(emp: dict[str, Any]) -> set[str]:
+            return {_normalize_search(word) for word in str(emp.get("name") or "").split()}
+
         exact_code = [e for e in self.employees if norm(e, "code") == query]
         if exact_code:
             return exact_code[:limit]
 
         exact_name = [
             e for e in self.employees
-            if norm(e, "name") == query or norm(e, "nickname") == query
+            if norm(e, "name") == query or norm(e, "nickname") == query or query in name_words(e)
         ]
         if exact_name:
             return exact_name[:limit]
@@ -424,12 +431,20 @@ _MAX_ENTITY_WINDOW = 5  # ชื่อสาขา/ชื่อของยา�
 
 
 def _normalize_search(value: str) -> str:
-    """ตัดช่องว่างทั้งหมดทิ้งแล้วทำเป็นตัวพิมพ์เล็ก
+    """ตัดช่องว่างทั้งหมดทิ้ง ทำเป็นตัวพิมพ์เล็ก และรวมตัวสะกดไทยที่หน้าตาเหมือนกันให้เป็นแบบเดียว
 
     ตัดช่องว่าง "ทั้งหมด" ไม่ใช่แค่หัวท้าย เพราะคนพิมพ์ชื่อ-นามสกุลไทยเว้นวรรคไม่เหมือนกัน
     ("ธนากร โฮงทอง" / "ธนากรโฮงทอง" / "ธนากร  โฮงทอง") ถ้าไม่ตัดจะกลายเป็นคนละคำทันที
+
+    "เเ" (สระเอ 2 ตัว) กับ "แ" และ "ํา" กับ "ำ" บนจอเหมือนกันทุกจุด คนพิมพ์ดูไม่ออกว่าตัวเองพิมพ์แบบไหน
+    และทะเบียนของ HR ก็มีแบบนี้จริง ("เเซ่ตั๋น" ในรายงานเวลาทำงาน ต.ค. 2026) — ถ้าไม่รวม เจ้าตัวพิมพ์
+    นามสกุลตัวเองถูกทุกตัวอักษรที่มองเห็นแล้วยังได้คำตอบว่า "ไม่พบในทะเบียน"
+
+    ไม่ใช้ thai_text.normalize ทั้งชุดโดยตั้งใจ: มันยุบตัวซ้ำ 3 ตัวขึ้นไป (รหัส "M60001" กลายเป็น "M601"
+    จนพิมพ์รหัสบางส่วนแล้วค้นไม่เจอ) และตัดคำลงท้ายอย่าง "จ้า" ซึ่งเป็นชื่อเล่นของคนได้
     """
-    return "".join((value or "").split()).lower()
+    text = "".join((value or "").split()).lower()
+    return text.replace("เเ", "แ").replace("ํา", "ำ")
 
 
 def _fuzzy_best(query: str, candidates: Iterable[str], threshold: int) -> tuple[str | None, float]:

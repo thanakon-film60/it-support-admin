@@ -958,7 +958,7 @@ def _picker_button() -> list[tuple[str, str]]:
 def ask_requester(ticket_type: str) -> Reply:
     """ถามว่า "ใครแจ้ง" — ถามครั้งเดียวต่อ 1 บัญชี LINE เท่านั้น
 
-    ทำไมให้พิมพ์ค้นหาเป็นทางหลัก ไม่ใช่กดเมนูฝ่าย: ทะเบียนมีพนักงาน 326 คน
+    ทำไมให้พิมพ์ค้นหาเป็นทางหลัก ไม่ใช่กดเมนูฝ่าย: ทะเบียนมีพนักงาน 338 คน
     การกดเมนูแปลว่าต้องเลื่อนหาตัวเองในฝ่ายที่อาจมีเป็นสิบๆ คน ส่วนการพิมพ์ชื่อเล่นของตัวเอง
     ใช้เวลาไม่ถึง 2 วินาทีและแทบไม่มีทางเลือกผิดคน — เมนูจึงเป็นทางสำรองสำหรับคนที่
     ไม่แน่ใจว่าชื่อตัวเองในระบบสะกดยังไง
@@ -975,14 +975,23 @@ def ask_requester(ticket_type: str) -> Reply:
     )
 
 
+def _employee_where(emp: dict) -> str:
+    """ฝ่าย · ตำแหน่ง ของพนักงาน 1 คน
+    ตำแหน่งต้องมาด้วยเสมอ: ตำแหน่งของพนักงานสาขามีชื่อสาขาอยู่ในตัว ("พนักงานขายสาขาเซ็นทรัลหาดใหญ่")
+    ซึ่งเป็นสิ่งเดียวที่แยกคนชื่อเล่นซ้ำกันได้ — ทะเบียนมี "ครีม" 5 คนอยู่ฝ่ายขายทั้งหมด ถ้าโชว์แค่ฝ่าย
+    ผู้ใช้จะเห็น 5 บรรทัดที่ต่างกันแค่ชื่อจริง แล้วต้องเดาว่าคนไหนคือตัวเอง"""
+    dept = emp.get("department") or "-"
+    position = emp.get("position")
+    return f"{dept} · {position}" if position else dept
+
+
 def _employee_line(emp: dict) -> str:
-    """บรรทัดสรุปพนักงาน 1 คน — ใส่ชื่อเล่นกับฝ่ายด้วยเพราะชื่อจริงอย่างเดียวแยกคนไม่ออก
-    (ในทะเบียนมีชื่อจริงคล้ายกันหลายคู่ แต่พอมีชื่อเล่น+ฝ่ายแล้วแทบไม่มีทางสับสน)"""
+    """บรรทัดสรุปพนักงาน 1 คน — ใส่ชื่อเล่น ฝ่าย และตำแหน่งด้วยเพราะชื่อจริงอย่างเดียวแยกคนไม่ออก
+    (ในทะเบียนมีชื่อจริงคล้ายกันหลายคู่ แต่พอมีชื่อเล่น+ฝ่าย+ตำแหน่งแล้วแทบไม่มีทางสับสน)"""
     name = emp.get("full_name") or emp.get("name") or "-"
     nick = emp.get("nickname")
-    dept = emp.get("department") or "-"
     head = f"{name} ({nick})" if nick else name
-    return f"{head}\n🏷 {dept}"
+    return f"{head}\n🏷 {_employee_where(emp)}"
 
 
 # บอกไว้บนการ์ดเมื่อการกดยืนยันคือการ "ส่งเรื่อง" (การเบิกจบที่ขั้นผู้เบิก — ดู flow._ends_at_requester)
@@ -1022,13 +1031,19 @@ def requester_confirm(
 def requester_choices(matches: list[dict], ticket_type: str, *, final: bool = False) -> Reply:
     """เจอหลายคน -> ให้เลือก (ส่งกลับมาเป็น "ลำดับที่" เพราะ postback จำกัด 300 ไบต์)"""
     who = PERSON_LABEL.get(ticket_type, "ผู้แจ้ง")
+    shown = matches[:MAX_QUICK_REPLY_ITEMS - 2]
+    nicks = [emp.get("nickname") for emp in shown]
     lines = [f"เจอ {len(matches)} คนที่ใกล้เคียงครับ เลือก{who}ด้วยนะครับ", ""]
     quick: list[tuple[str, str]] = []
-    for index, emp in enumerate(matches[:MAX_QUICK_REPLY_ITEMS - 2]):
+    for index, emp in enumerate(shown):
         nick = emp.get("nickname")
         name = emp.get("name") or "-"
-        lines.append(f"{index + 1}. {name}{f' ({nick})' if nick else ''} · {emp.get('department') or '-'}")
-        quick.append((truncate_label(f"{index + 1}. {nick or name}"), f"a=rq_pick&i={index}"))
+        lines.append(f"{index + 1}. {name}{f' ({nick})' if nick else ''}")
+        lines.append(f"   {_employee_where(emp)}")
+        # ปุ่มใช้ชื่อเล่นเพราะสั้นพอดีปุ่ม — แต่พิมพ์ "ครีม" แล้วได้ปุ่ม "1. ครีม" "2. ครีม" … ทุกปุ่มหน้าตาเหมือนกัน
+        # ต้องย้อนไปนับบรรทัดในข้อความเอง จึงใช้ชื่อจริงแทนเมื่อชื่อเล่นซ้ำกันในผลชุดนี้
+        label = nick if nick and nicks.count(nick) == 1 else name.split()[0]
+        quick.append((truncate_label(f"{index + 1}. {label}"), f"a=rq_pick&i={index}"))
     if final:
         lines += ["", SENDS_ON_PICK]
     quick.append(("🔁 ค้นใหม่", "a=rq_again"))

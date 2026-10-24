@@ -1,7 +1,7 @@
 // ทะเบียนพนักงาน: ซิงก์เข้า users.json, ค้นหา, และผูกบัญชี LINE
 //
 // จุดที่ห่วงที่สุดคือ "ซิงก์แล้วทับของเดิม" — ทะเบียนถูกรันทับข้อมูลจริงที่ใช้งานอยู่
-// ถ้าเผลอล้าง line_user_id หรือฝ่ายที่แอดมินเพิ่งเติมให้ 193 คนที่ HR ยังไม่ได้จัด
+// ถ้าเผลอล้าง line_user_id หรือฝ่ายที่แอดมินเพิ่งเติมให้คนที่ HR ยังไม่ได้จัดฝ่าย
 // จะไม่มีอะไรฟ้องเลย รู้ตัวอีกทีคือผู้ใช้ทุกคนถูกถามชื่อใหม่หมดพร้อมกัน
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
@@ -57,7 +57,7 @@ test('ติดตั้งใหม่ได้รายชื่อครบ�
   reset();
   const rows = emp.listEmployees();
   assert.equal(rows.length, emp.EMPLOYEE_REGISTRY.length);
-  assert.equal(rows.length, 326);
+  assert.equal(rows.length, 338);
   assert.ok(rows.every((u) => u.employee_id), 'ทุกคนต้องมีรหัสพนักงาน');
   assert.equal(new Set(rows.map((u) => u.employee_id)).size, rows.length, 'รหัสต้องไม่ซ้ำ');
 });
@@ -98,7 +98,7 @@ test('ซิงก์ต้องไม่แตะ line_user_id ที่ผู
 });
 
 test('ฝ่ายที่แอดมินเติมให้คนที่ทะเบียนยังว่าง ต้องไม่ถูกล้างตอนซิงก์', () => {
-  // 193 คนในทะเบียนมี department = null ("อื่นๆ") ถ้าปล่อยให้ทะเบียนทับทุกช่องเสมอ
+  // คนที่ทะเบียนยังไม่จัดฝ่ายมี department = null ("อื่นๆ") ถ้าปล่อยให้ทะเบียนทับทุกช่องเสมอ
   // งานที่แอดมินนั่งเติมฝ่ายให้ทีละคนจะหายหมดทุกครั้งที่ซิงก์ โดยไม่มีอะไรเตือน
   reset();
   emp.listEmployees();
@@ -115,10 +115,54 @@ test('เมนูเลือกฝ่าย: เรียงตามผัง
   reset();
   const summary = emp.departmentSummary();
   assert.equal(summary.at(-1).name, emp.OTHER_DEPARTMENT);
-  assert.equal(summary.at(-1).count, 193);
+  assert.equal(summary.at(-1).count, 56);
   assert.equal(summary[0].name, emp.DEPARTMENTS[0]);
   assert.ok(summary.every((d) => d.count > 0), 'ห้ามมีฝ่ายที่กดเข้าไปแล้วว่างเปล่า');
-  assert.equal(summary.reduce((sum, d) => sum + d.count, 0), 326);
+  // ผลรวมต้องเท่าทั้งทะเบียน — ฝ่ายที่ไม่อยู่ในผัง (เช่นเก็บ "SALE" ตามไฟล์ตรงๆ) จะทำให้คนหายจากเมนูเงียบๆ
+  assert.equal(summary.reduce((sum, d) => sum + d.count, 0), 338);
+});
+
+test('เครื่องที่ซิงก์ทะเบียน ก.ย. ไปแล้ว ได้ข้อมูลพนักงานสาขาจากรายงานเวลาทำงาน ต.ค. โดยไม่ซิงก์ชุดผังองค์กรซ้ำ', () => {
+  // สภาพเครื่องจริงตอน deploy รอบนี้: marker ชุดผังองค์กรเป็นเวอร์ชันปัจจุบันแล้ว แต่ยังไม่มี marker ของพนักงานสาขา
+  // ชุดผังองค์กรห้ามรันซ้ำ — ฝ่ายของ A69048 ในเครื่องใหม่กว่า seed (นำเข้า 020/แอดมินแก้) ถ้ารันซ้ำจะถูกทับกลับเป็นค่า ก.ย.
+  reset();
+  writeData('registry_meta', [{ id: 'employees', version: emp.EMPLOYEE_REGISTRY_VERSION, synced_at: 'x', added: 0, updated: 0 }]);
+  writeData('users', [
+    { id: 'u-film', display_name: 'ธนากร โฮงทอง', employee_id: 'A69048', department: 'ฝ่ายขาย',
+      line_user_id: 'U_film', email: null, created_at: '2026-09-25T00:00:00.000Z' },
+    { id: 'u-piyada', display_name: 'ชื่อเดิม ก่อนรายงานตุลา', employee_id: 'AS67006', department: null, position: null,
+      title: 'นางสาว', nickname: 'ดา', company: 'motta', active: true,
+      line_user_id: 'U_piyada', email: null, created_at: '2026-09-25T00:00:00.000Z' },
+  ]);
+
+  emp.listEmployees();
+
+  assert.equal(emp.getEmployeeByCode('A69048').department, 'ฝ่ายขาย', 'ชุดผังองค์กรซิงก์ไปแล้ว ห้ามรันซ้ำ');
+  const all = emp.listEmployees(true);
+  assert.ok(all.every((u) => u.employee_id === 'A69048' || u.employee_id.startsWith('AS')), 'รอบนี้ต้องแตะแค่กลุ่ม AS');
+  assert.equal(all.length, 1 + emp.EMPLOYEE_REGISTRY.filter((r) => r.code.startsWith('AS')).length);
+
+  const piyada = emp.getEmployeeByCode('AS67006');
+  assert.equal(piyada.id, 'u-piyada', 'ต้องแก้แถวเดิม ไม่สร้างคนใหม่ — ticket เก่าอ้าง id นี้อยู่');
+  const fromReport = emp.EMPLOYEE_REGISTRY.find((r) => r.code === 'AS67006');
+  assert.equal(piyada.display_name, fromReport.name, 'ชื่อ-นามสกุลต้องเป็นตามรายงาน ต.ค. (คนนี้นามสกุลเปลี่ยน)');
+  assert.equal(piyada.position, 'พนักงานขายสาขาเซ็นทรัลขอนแก่น');
+  assert.equal(piyada.department, 'ฝ่ายขาย', 'แผนก SALE ต้องเป็นชื่อฝ่ายตามผัง ไม่งั้นหายจากเมนูเลือกฝ่าย');
+  assert.equal(piyada.line_user_id, 'U_piyada', 'การผูก LINE หาย = เจ้าตัวถูกถามชื่อใหม่');
+  assert.equal(piyada.title, 'นางสาว', 'รายงานไม่มีคำนำหน้า — ต้องคงของเดิม ไม่ล้าง');
+
+  const newcomer = emp.getEmployeeByCode('AS69121');
+  assert.equal(newcomer.position, 'พนักงานขายสาขาโรบินสันตรัง');
+  assert.equal(newcomer.title, null, 'รายงานไม่มีคำนำหน้า — ห้ามเดา');
+  assert.equal(newcomer.company, null, 'รายงานไม่มีบริษัท — ห้ามเดาจากกลุ่มรหัส');
+
+  const meta = readData('registry_meta');
+  assert.equal(meta.find((m) => m.id === 'employees-branch-staff').version, emp.BRANCH_STAFF_REGISTRY_VERSION);
+
+  // ครั้งเดียวต่อเวอร์ชัน: ที่แอดมินแก้ต่อหลังจากนี้ต้องไม่ถูกรายงานเดิมทับซ้ำทุก request
+  emp.updateEmployee(piyada.id, { position: 'หน่วยวิ่ง' });
+  emp.listEmployees();
+  assert.equal(emp.getEmployeeByCode('AS67006').position, 'หน่วยวิ่ง');
 });
 
 test('ค้นหา: รหัสพนักงานมาก่อนชื่อเล่น และชื่อเล่นมาก่อนชื่อที่แค่คล้าย', () => {
