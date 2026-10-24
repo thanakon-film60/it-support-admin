@@ -1,0 +1,51 @@
+[
+  {
+    "id": "a6654cbb-5b4e-497d-8981-56ec4ee48dc6",
+    "username": "admin",
+    "password_hash": "$2b$10$znDDxECR9q2cPthx4pti2uKQkEebKjPHW60oDRjphnX.pfPgBlS82",
+    "display_name": "ผู้ดูแลระบบ IT",
+    "role": "admin",
+    "created_at": "2026-10-02T09:43:08.099Z",
+    "updated_at": "2026-10-16T04:51:18.550Z",
+    "session_version": 1
+  },
+  {
+    "id": "5f529cbf-ac80-41a6-acc9-945a5574a91d",
+    "username": "jobpvp7412",
+    "password_hash": "$2b$10$OZxmA47ew3ka5JS.z0G4veXFZJDGE3tTmJ8pn0Fzi.3GyGOOJOuZC",
+    "display_name": "JoBโครตHardWare",
+    "role": "admin",
+    "created_at": "2026-10-13T08:00:03.701Z",
+    "pages": [],
+    "active": true,
+    "session_version": 0,
+    "updated_at": "2026-10-13T08:00:03.701Z"
+  },
+  {
+    "id": "af93c851-b6bb-4cc7-81a9-ed21631bc4a4",
+    "username": "user",
+    "password_hash": "$2b$10$wTi2GIXwLI4Ah6XnlOZyVuE47jt68/73OuQY0ITsQatXPd03d7ArG",
+    "display_name": "คลังแสงIt-support",
+    "role": "it_staff",
+    "created_at": "2026-10-13T08:02:33.364Z",
+    "pages": [
+      "notes",
+      "files"
+    ],
+    "active": true,
+    "session_version": 1,
+    "updated_at": "2026-10-16T04:50:54.221Z"
+  },
+  {
+    "id": "0fdc401e-4a5d-4e3a-8fa2-182690283109",
+    "username": "Film",
+    "password_hash": "$2b$10$81V/qzm.O4uHdc9QvdI2Seg5KbWRjNa2eWZ.NWpCZl39gvOGlWUxC",
+    "display_name": "Film_Developer",
+    "role": "admin",
+    "created_at": "2026-10-16T04:58:38.008Z",
+    "pages": [],
+    "active": true,
+    "session_version": 1,
+    "updated_at": "2026-10-16T05:53:41.165Z"
+  }
+]

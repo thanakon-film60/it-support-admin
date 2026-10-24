@@ -1,0 +1,3887 @@
+[
+  {
+    "id": "0c2a93bf-05dd-4fa3-9b21-a3df1059de6f",
+    "ticket_code": "ITRQ2026090003",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "fedc08b3-1e5f-4219-a234-bb2636aa02c4",
+    "equipment_id": null,
+    "description": "ขอเบิก Adapter สำรองเผื่อเครื่องสำรองไฟดับกะทันหัน",
+    "repair_cost": null,
+    "created_at": "2026-09-14T16:22:45.061Z",
+    "resolved_at": "2026-10-13T05:59:25.389Z",
+    "meta": {
+      "items": [
+        {
+          "name": "เครื่องสำรองไฟ",
+          "qty": 1
+        }
+      ],
+      "status_history": [
+        {
+          "id": "19c584af-c19d-484c-8f1e-ed7dcf79f09e",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:59:25.389Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:59:25.389Z"
+  },
+  {
+    "id": "c1f40b10-b4ad-4ccb-b21d-b7ab17b36774",
+    "ticket_code": "ITSV2026090003",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "01cc2029-30c6-46f8-95a7-28a820dfdec3",
+    "equipment_id": null,
+    "description": "ขอเข้าถึงระบบ VPN สำหรับทำงานนอกสถานที่",
+    "repair_cost": null,
+    "created_at": "2026-09-14T16:22:45.061Z",
+    "resolved_at": "2026-10-13T05:59:40.189Z",
+    "meta": {
+      "status_history": [
+        {
+          "id": "616878b8-52c6-4053-ba17-3db7bb503502",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:59:40.189Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:59:40.189Z"
+  },
+  {
+    "id": "5668f14f-ce35-4f59-abbb-e019623d31c4",
+    "ticket_code": "ITSR2026090004",
+    "type": "repair",
+    "status": "closed",
+    "location": "สาขาแฟชั่นไอส์แลนด์",
+    "requester_id": "574f93a8-3bf4-4beb-b407-607d893a4195",
+    "equipment_id": null,
+    "description": "จอไม่ติดซ้ำอีกครั้งหลังซ่อมไปเมื่อเดือนก่อน",
+    "repair_cost": null,
+    "created_at": "2026-09-13T16:22:45.061Z",
+    "resolved_at": "2026-10-13T05:59:52.061Z",
+    "meta": {
+      "status_history": [
+        {
+          "id": "98b2cb80-2f72-48d6-8881-bc75cf02792b",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:59:52.061Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:59:52.061Z"
+  },
+  {
+    "id": "798d87fd-8c97-42e1-bfac-8f86fd64aa54",
+    "ticket_code": "ITSV2026090005",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "fedc08b3-1e5f-4219-a234-bb2636aa02c4",
+    "equipment_id": null,
+    "description": "ขอย้ายข้อมูลจากเครื่องเก่าไปเครื่องใหม่",
+    "repair_cost": null,
+    "created_at": "2026-09-13T16:22:45.061Z",
+    "resolved_at": "2026-10-16T12:58:42.716Z",
+    "meta": {
+      "status_history": [
+        {
+          "id": "4f9716d4-0590-4416-8ad0-c4cfc56bf63a",
+          "from": "in_progress",
+          "to": "closed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:58:42.716Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:58:42.716Z"
+  },
+  {
+    "id": "fb094cc6-2b14-44f4-8052-9ee300b0dde9",
+    "ticket_code": "ITSR2026090005",
+    "type": "repair",
+    "status": "closed",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "69c2e1e3-37c7-43c3-91ef-3d8e0bc14373",
+    "equipment_id": null,
+    "description": "เครื่องพิมพ์ใบเสร็จที่สาขากระดาษติดบ่อย",
+    "repair_cost": null,
+    "created_at": "2026-09-12T16:22:45.061Z",
+    "resolved_at": "2026-10-16T12:58:51.832Z",
+    "meta": {
+      "status_history": [
+        {
+          "id": "5139844f-a780-4afa-b5a7-a5cf2e395a86",
+          "from": "in_progress",
+          "to": "closed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:58:51.832Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:58:51.832Z"
+  },
+  {
+    "id": "6280dcca-eaf7-43f3-be63-867990e56095",
+    "ticket_code": "ITSV2026090004",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "39a7559c-c46c-4e1a-b171-1f458b31832e",
+    "equipment_id": null,
+    "description": "อีเมลส่งไม่ออก ต้องการให้ตรวจสอบเพิ่มเติม (รอข้อมูล error เพิ่มจากผู้แจ้ง)",
+    "repair_cost": null,
+    "created_at": "2026-09-12T16:22:45.061Z",
+    "resolved_at": "2026-10-16T12:59:03.517Z",
+    "meta": {
+      "status_history": [
+        {
+          "id": "97341d58-9f7a-42f2-95fd-08245f482e8d",
+          "from": "waiting_info",
+          "to": "closed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:59:03.517Z",
+          "note": "",
+          "notified": false,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:59:03.517Z"
+  },
+  {
+    "id": "ca401221-ea5f-49e2-96fb-19750374fdf1",
+    "ticket_code": "ITSV2026090001",
+    "type": "it_service",
+    "status": "cancelled",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "acd60361-6739-452d-99c2-d48487eda43d",
+    "equipment_id": null,
+    "description": "ขอให้ติดตั้งโปรแกรมบัญชีเพิ่มในเครื่องใหม่",
+    "repair_cost": null,
+    "created_at": "2026-09-11T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": {
+      "status_history": [
+        {
+          "id": "d567230f-0410-477b-9248-a40aaa6f4b9d",
+          "from": "resolved",
+          "to": "cancelled",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T13:00:44.061Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T13:00:44.061Z"
+  },
+  {
+    "id": "27e98dc3-4a6e-40f4-afef-fe7a7e7e7fd0",
+    "ticket_code": "ITSR2026090007",
+    "type": "repair",
+    "status": "completed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "39a7559c-c46c-4e1a-b171-1f458b31832e",
+    "equipment_id": null,
+    "description": "เครื่องพิมพ์ลูกกลิ้งดึงกระดาษเสีย ส่งซ่อมนอกสถานที่ รออะไหล่",
+    "repair_cost": null,
+    "created_at": "2026-09-09T16:22:45.061Z",
+    "resolved_at": "2026-10-16T12:59:37.466Z",
+    "meta": {
+      "status_history": [
+        {
+          "id": "f4cab132-98bf-4a11-9b03-80b3c1dc6a30",
+          "from": "waiting_delivery",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:59:37.466Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T12:59:37.466Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:59:37.466Z"
+  },
+  {
+    "id": "5e24ab15-9a93-44b8-861c-95eb14746eef",
+    "ticket_code": "ITRQ2026090006",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "ขอเบิกสมุดเคลมสินค้าเพิ่ม",
+    "repair_cost": null,
+    "created_at": "2026-09-09T16:22:45.061Z",
+    "resolved_at": "2026-09-10T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "สมุดเคลมสินค้า",
+          "qty": 3
+        }
+      ]
+    }
+  },
+  {
+    "id": "02b92595-4be0-479c-bee7-2ad282ad08cf",
+    "ticket_code": "ITSV2026090007",
+    "type": "it_service",
+    "status": "cancelled",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "a1f9ff69-8b66-4cc3-b858-f62c283f6268",
+    "equipment_id": null,
+    "description": "wifi ที่สาขาหลุดบ่อย ขอให้เข้าตรวจสอบ",
+    "repair_cost": null,
+    "created_at": "2026-09-08T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": {
+      "status_history": [
+        {
+          "id": "1d0fda70-9a84-44dc-ab8b-230845a3fd2a",
+          "from": "resolved",
+          "to": "cancelled",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T13:00:35.507Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T13:00:35.507Z"
+  },
+  {
+    "id": "feda4c0d-c57f-4c48-bc4b-a6de58cca23e",
+    "ticket_code": "ITRQ2026090004",
+    "type": "withdraw",
+    "status": "cancelled",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "69c2e1e3-37c7-43c3-91ef-3d8e0bc14373",
+    "equipment_id": null,
+    "description": "ขอเบิกหมึกปริ้นเตอร์ M3870FW",
+    "repair_cost": null,
+    "created_at": "2026-09-06T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": {
+      "items": [
+        {
+          "name": "หมึกเครื่อง M3870FW",
+          "qty": 1
+        }
+      ],
+      "status_history": [
+        {
+          "id": "4618f844-420e-48cd-b451-bb324489eaff",
+          "from": "resolved",
+          "to": "cancelled",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T13:00:25.929Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T13:00:25.929Z"
+  },
+  {
+    "id": "6ea2bdc2-d8a7-4878-a8c7-b2e8ac0c1714",
+    "ticket_code": "ITSV2026090002",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "ขอรีเซ็ตรหัสผ่านระบบ POS",
+    "repair_cost": null,
+    "created_at": "2026-09-04T16:22:45.061Z",
+    "resolved_at": "2026-09-05T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "61b0dbd3-0202-4030-9579-4346d7ea07bc",
+    "ticket_code": "ITSR2026090003",
+    "type": "repair",
+    "status": "cancelled",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "เครื่องสแกนบาร์โค้ดอ่านไม่ติด ต้องเปลี่ยนสาย USB",
+    "repair_cost": 250,
+    "created_at": "2026-09-02T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": {
+      "status_history": [
+        {
+          "id": "4022fea8-c282-4a82-8ee2-47f8ab3b8cfc",
+          "from": "resolved",
+          "to": "cancelled",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T13:00:17.761Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T13:00:17.761Z"
+  },
+  {
+    "id": "318d280b-0a3e-46d1-a7e8-46a2f23fdcf0",
+    "ticket_code": "ITRQ2026090005",
+    "type": "withdraw",
+    "status": "cancelled",
+    "location": "สาขาแฟชั่นไอส์แลนด์",
+    "requester_id": "574f93a8-3bf4-4beb-b407-607d893a4195",
+    "equipment_id": null,
+    "description": "ขอเบิกจอมอนิเตอร์เพิ่ม 1 จอ (ยกเลิกเนื่องจากมีของเดิมเพียงพอ)",
+    "repair_cost": null,
+    "created_at": "2026-08-30T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "d05d0a9c-8252-4420-ad91-f2275c9567f5",
+    "ticket_code": "ITSV2026090006",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1258068a-7fc0-4a76-9b34-c591dd5d26bb",
+    "equipment_id": null,
+    "description": "ขอเพิ่มสิทธิ์เข้าถึงโฟลเดอร์ใช้งานร่วมกันของแผนก",
+    "repair_cost": null,
+    "created_at": "2026-08-27T16:22:45.061Z",
+    "resolved_at": "2026-08-28T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "e628d2b8-fe72-444d-bb01-cf44fa630ef5",
+    "ticket_code": "ITSR2026090006",
+    "type": "repair",
+    "status": "cancelled",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "01cc2029-30c6-46f8-95a7-28a820dfdec3",
+    "equipment_id": null,
+    "description": "แจ้งซ่อมคีย์บอร์ด แต่พบว่าใช้งานได้ปกติ ปิดงาน",
+    "repair_cost": null,
+    "created_at": "2026-08-25T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "6332feec-d241-4560-af70-6cf3e8c39bfe",
+    "ticket_code": "ITSV2026090008",
+    "type": "it_service",
+    "status": "cancelled",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "10013bc0-ee34-4cbb-b266-d04131926bc0",
+    "equipment_id": null,
+    "description": "ขอเปลี่ยนเมาส์ (ซ้ำกับ ticket เบิกอุปกรณ์ที่แจ้งไปแล้ว)",
+    "repair_cost": null,
+    "created_at": "2026-08-23T16:22:45.061Z",
+    "resolved_at": null,
+    "meta": null
+  },
+  {
+    "id": "9deb4ad2-d6ad-4d23-aa49-889903a51b6e",
+    "ticket_code": "ITRQ2026090002",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาขอนแก่น",
+    "requester_id": "10013bc0-ee34-4cbb-b266-d04131926bc0",
+    "equipment_id": null,
+    "description": "ขอเบิกสาย USB Type-C สำหรับเครื่อง POS",
+    "repair_cost": null,
+    "created_at": "2026-08-20T16:22:45.061Z",
+    "resolved_at": "2026-08-21T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "USB Type C",
+          "qty": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "a5867f61-2e3b-4b8f-86d0-450be7fee984",
+    "ticket_code": "ITRQ2026090001",
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สาขาเซ็นทรัล",
+    "requester_id": "acd60361-6739-452d-99c2-d48487eda43d",
+    "equipment_id": null,
+    "description": "ขอเบิกเมาส์และคีย์บอร์ดสำรอง 1 ชุด",
+    "repair_cost": null,
+    "created_at": "2026-08-15T16:22:45.061Z",
+    "resolved_at": "2026-08-16T16:22:45.061Z",
+    "meta": {
+      "items": [
+        {
+          "name": "เมาส์",
+          "qty": 1
+        },
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "ef7051f8-739d-428a-8891-325775c1d5fb",
+    "ticket_code": "ITRT2026090002",
+    "type": "return",
+    "status": "closed",
+    "location": "สาขาแฟชั่นไอส์แลนด์",
+    "requester_id": "f1ba82fb-9c5c-42fe-af79-dc511f25dddb",
+    "equipment_id": null,
+    "description": "คืนอุปกรณ์หลังพนักงานลาออก",
+    "repair_cost": null,
+    "created_at": "2026-08-10T16:22:45.061Z",
+    "resolved_at": "2026-08-11T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "967346d1-60f8-4dc0-a452-814d22d92ec1",
+    "ticket_code": "ITSR2026090002",
+    "type": "repair",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "equipment_id": null,
+    "description": "จอโน้ตบุ๊คมีเส้นแนวตั้ง คาดว่าสายแพจอหลวม",
+    "repair_cost": 1800,
+    "created_at": "2026-08-05T16:22:45.061Z",
+    "resolved_at": "2026-08-06T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "fee5fcea-eb53-4b87-8272-354012bf3241",
+    "ticket_code": "ITSR2026090001",
+    "type": "repair",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1258068a-7fc0-4a76-9b34-c591dd5d26bb",
+    "equipment_id": null,
+    "description": "โน้ตบุ๊คเปิดไม่ติด กดปุ่ม power ไม่มีไฟเข้า",
+    "repair_cost": 1200,
+    "created_at": "2026-07-31T16:22:45.061Z",
+    "resolved_at": "2026-08-01T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "42434040-f2f5-4b30-a20e-604f6d1f23ca",
+    "ticket_code": "ITRT2026090001",
+    "type": "return",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "equipment_id": null,
+    "description": "คืนโน้ตบุ๊คเครื่องเก่าหลังได้เครื่องใหม่",
+    "repair_cost": null,
+    "created_at": "2026-07-16T16:22:45.061Z",
+    "resolved_at": "2026-07-17T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "5c9c91cf-5c86-4132-ad2d-868af5665579",
+    "ticket_code": "ITSR2026090008",
+    "type": "repair",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "c9e8eb8b-f9a8-43ec-a58d-7403def7bf09",
+    "equipment_id": null,
+    "description": "โปรเจคเตอร์ภาพเพี้ยนสี",
+    "repair_cost": 0,
+    "created_at": "2026-07-06T16:22:45.061Z",
+    "resolved_at": "2026-07-07T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "id": "2d0257b3-3183-4581-a874-d58bce343c14",
+    "ticket_code": "ITSV2026090009",
+    "type": "it_service",
+    "status": "closed",
+    "location": "สาขาเชียงใหม่",
+    "requester_id": "ff48c6dc-ca46-4cdd-bdb3-ade2dd9173a9",
+    "equipment_id": null,
+    "description": "ขอให้ตั้งค่าเครื่องพิมพ์เครือข่ายใหม่หลังย้ายออฟฟิศ",
+    "repair_cost": null,
+    "created_at": "2026-06-16T16:22:45.061Z",
+    "resolved_at": "2026-06-17T16:22:45.061Z",
+    "meta": null
+  },
+  {
+    "type": "withdraw",
+    "status": "cancelled",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "85b29e46-53c2-4275-bb8b-2cfcb58d2368",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:34:06.838Z",
+          "note": "",
+          "notified": null
+        }
+      ]
+    },
+    "id": "10fd4fa2-062b-4c67-8a1e-30a8bef2da47",
+    "ticket_code": "ITRQ2026090007",
+    "created_at": "2026-09-14T16:26:03.152Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:34:06.838Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "cancelled",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "942849ad-9a48-4b58-8bf5-cea76f66bba9",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:34:15.657Z",
+          "note": "",
+          "notified": null
+        }
+      ]
+    },
+    "id": "d08429c9-316f-4242-8f65-ff7e6202ec6a",
+    "ticket_code": "ITRQ2026090008",
+    "created_at": "2026-09-14T16:27:02.146Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:34:15.657Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "cancelled",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "387ac807-7117-4594-846d-fd9e57b421a2",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:34:23.078Z",
+          "note": "",
+          "notified": null
+        }
+      ]
+    },
+    "id": "c8585a4c-4806-4b82-8c69-6f11adb36643",
+    "ticket_code": "ITRQ2026090009",
+    "created_at": "2026-09-14T16:28:26.650Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:34:23.078Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "70c85093-1f40-4add-88b3-2dca954cc8fe",
+    "equipment_id": null,
+    "description": "ขอเบิก คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "items": [
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U_e2e_00000000000000000000000000001",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "cf1211ef-7402-4f26-a971-1325fa5330c8",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:59:06.586Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "0a4930f2-b60b-4434-8574-dd6deafc7d11",
+    "ticket_code": "ITRQ2026090010",
+    "created_at": "2026-09-14T16:28:40.324Z",
+    "resolved_at": "2026-10-13T05:59:06.586Z",
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:59:06.586Z"
+  },
+  {
+    "type": "repair",
+    "status": "closed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "a475ea24-60b2-41ec-9362-ac0772096294",
+    "equipment_id": null,
+    "description": "จอมีเส้น",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "line_user_id": "U4b1f0cde4a4cfa3ab2333bf6dd92575d",
+      "line_display_name": "Lydia➰🌹",
+      "status_history": [
+        {
+          "id": "c9e51574-f9a9-47f9-b416-d4fe0d306709",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:58:53.505Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "cf3fd144-6808-4bfc-b13d-0d887c790f02",
+    "ticket_code": "ITSR2026090009",
+    "created_at": "2026-09-15T08:47:13.990Z",
+    "resolved_at": "2026-10-13T05:58:53.505Z",
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:58:53.505Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1bb9c0c8-be5d-404a-b76c-d03e6348ca89",
+    "equipment_id": null,
+    "description": "จอมีเส้น",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "d631a5fc-1291-4fa4-9176-2430c2022dd6",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:33:32.906Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "c278ba42-a3d3-407e-a721-13c7a56d0f85",
+    "ticket_code": "ITSR2026090010",
+    "created_at": "2026-09-16T01:45:16.403Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:33:32.906Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "d4ce8034-5407-4968-815d-38f3e8556cdc",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nเปิดไม่ติด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "863a0985-fbfd-441c-9262-bf24eb1410dc",
+      "requester_name": "ธนากร​ โฮงทอง",
+      "requester_department": null,
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "acknowledged_at": "2026-09-16T09:38:22.835Z",
+      "acknowledged_by": "Film",
+      "status_history": [
+        {
+          "id": "3fc74133-06e2-45e7-8237-cc301960948b",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T11:16:14.410Z",
+          "note": "ทดสอบสำเร็จกดตรวจสอบให้ด้วยครับ",
+          "notified": true
+        },
+        {
+          "id": "1b06a679-f1f7-4118-b839-0fbcb1e7a5bc",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Film",
+          "at": "2026-09-22T11:16:21.665Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T11:16:21.665Z",
+      "completed_by": "Film",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Film",
+        "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+        "at": "2026-09-22T11:16:21.667Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "46f10fa4-77c2-4a66-9fb9-065a598602e0",
+    "ticket_code": "ITSR2026090011",
+    "created_at": "2026-09-16T05:27:58.423Z",
+    "resolved_at": "2026-09-22T11:16:14.410Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T11:16:14.410Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "d4ce8034-5407-4968-815d-38f3e8556cdc",
+    "equipment_id": "2972ae0b-1660-4a9c-9041-6aaa83463aa0",
+    "description": "เสียงดังผิดปกติ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ โฮงทอง",
+      "requester_department": null,
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "asset_code_input": "PT2101001",
+      "acknowledged_at": "2026-09-16T12:41:05.608Z",
+      "acknowledged_by": "Film",
+      "status_history": [
+        {
+          "id": "e2cd2260-0094-4e13-912d-73b7656e9c42",
+          "from": "pending",
+          "to": "waiting_delivery",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T08:05:50.193Z",
+          "note": "test2",
+          "notified": true
+        },
+        {
+          "id": "f57d63e9-9961-41a6-bf8d-bf76e76db140",
+          "from": "waiting_delivery",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T08:07:11.143Z",
+          "note": "",
+          "notified": true
+        },
+        {
+          "id": "9adf1053-34a7-406f-8003-82e5eaf3e7f0",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Film",
+          "at": "2026-09-22T08:07:17.860Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T08:07:17.860Z",
+      "completed_by": "Film",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Film",
+        "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+        "at": "2026-09-22T08:07:17.861Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "93dc1291-2057-42e2-a111-13329e131637",
+    "ticket_code": "ITSR2026090012",
+    "created_at": "2026-09-16T12:40:37.656Z",
+    "resolved_at": "2026-09-22T08:07:11.143Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T08:07:11.143Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "046ac3a8-776d-4b49-b842-efb3f5347dce",
+    "equipment_id": "0d39a613-17be-49a8-934a-61f6376cf99c",
+    "description": "จอมีเส้นๆ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ โฮงทอง​",
+      "requester_department": "​สารสนเทศ​",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "asset_code_input": "NB2604003",
+      "acknowledged_at": "2026-09-16T15:16:07.398Z",
+      "acknowledged_by": "Film",
+      "status_history": [
+        {
+          "id": "0c5191af-4ef0-4a21-955e-6285ab2e0478",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T08:04:19.168Z",
+          "note": "test",
+          "notified": true
+        },
+        {
+          "id": "d44d401d-360e-4f75-85b7-240153a8a8db",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Film",
+          "at": "2026-09-22T08:04:37.794Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        },
+        {
+          "id": "446fb044-587a-42f9-9c71-de504605fd25",
+          "from": "completed",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T08:05:06.101Z",
+          "note": "test",
+          "notified": true
+        },
+        {
+          "id": "79a5e808-f823-4217-a180-f17f801c971f",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Film",
+          "at": "2026-09-22T08:05:14.970Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T08:05:14.970Z",
+      "completed_by": "Film",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Film",
+        "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+        "at": "2026-09-22T08:05:14.972Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "a97c45e8-0c33-4ef2-8f45-4daf9cbdc2e5",
+    "ticket_code": "ITSR2026090013",
+    "created_at": "2026-09-16T15:15:59.421Z",
+    "resolved_at": "2026-09-22T08:05:06.101Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T08:05:06.101Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "b118e513-f07c-4231-b2c8-3b3dc7c59169",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nสร้างบาร์โค้ดกล่องเครื่องประดับ รหัส MOTTA-BOX",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "62853ca469574e5295fecd40d80960c6",
+      "requester_name": "พรรณฎา คงพินิจ แผนก Bi",
+      "requester_department": null,
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "U0f48dd5fc45e13306132b1c8fd5f1c3f",
+      "line_display_name": "กกกกกกกกกกก",
+      "acknowledged_at": "2026-09-21T07:25:07.791Z",
+      "acknowledged_by": "กกกกกกกกกกก",
+      "status_history": [
+        {
+          "from": "resolved",
+          "to": "waiting_delivery",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T03:23:52.248Z",
+          "note": "แก้ไขสำเร็จ มีโปรแกรมให้ทำbarcode เองด้วยครับ สามารถติดต่อทางIt-support ได้",
+          "notified": true
+        },
+        {
+          "id": "6d078600-6c5d-4f29-bc00-f5789b336525",
+          "from": "waiting_delivery",
+          "to": "waiting_delivery",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T08:03:49.466Z",
+          "note": "ทำให้เรียบร้อยแล้วนะครับ รบกวนกดยืนยันให้ด้วยครับ",
+          "notified": true
+        },
+        {
+          "id": "ac66fffe-9376-4efb-aec4-0ec8ab706673",
+          "from": "waiting_delivery",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T11:14:17.375Z",
+          "note": "",
+          "notified": true
+        },
+        {
+          "id": "c26b99a0-a71f-4703-9220-99b89485e0b7",
+          "from": "resolved",
+          "to": "completed",
+          "by": "กกกกกกกกกกก",
+          "at": "2026-09-22T11:15:52.900Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T11:15:52.900Z",
+      "completed_by": "กกกกกกกกกกก",
+      "confirmation": {
+        "confirmed": true,
+        "by": "กกกกกกกกกกก",
+        "line_user_id": "U0f48dd5fc45e13306132b1c8fd5f1c3f",
+        "at": "2026-09-22T11:15:52.901Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "d97c80dc-59ec-4fea-91ee-a01a3dfe2dc6",
+    "ticket_code": "ITSV2026090010",
+    "created_at": "2026-09-21T07:25:02.340Z",
+    "resolved_at": "2026-09-22T11:14:17.375Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T11:14:17.375Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "563fbf13-8394-4d72-9f19-e15bf236e6e4",
+    "equipment_id": null,
+    "description": "ทดสอบTest",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ กอนประตู​ ไอที",
+      "requester_department": null,
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "bc3c84c8-c74e-4bf7-906a-fcac1272ded1",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T10:14:03.700Z",
+          "note": "test ครับ test",
+          "notified": true
+        },
+        {
+          "id": "31864278-1469-46df-9c03-f8ee582ce395",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Film",
+          "at": "2026-09-22T10:14:30.016Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T10:14:30.016Z",
+      "completed_by": "Film",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Film",
+        "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+        "at": "2026-09-22T10:14:30.018Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "c7262c93-1d76-4937-b3c0-a650ed75c468",
+    "ticket_code": "ITSR2026090014",
+    "created_at": "2026-09-22T10:13:24.186Z",
+    "resolved_at": "2026-09-22T10:14:03.700Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T10:14:03.700Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "d4ce8034-5407-4968-815d-38f3e8556cdc",
+    "equipment_id": null,
+    "description": "ฟีล์มเทส",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ โฮงทอง",
+      "requester_department": null,
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "a1e4c43e-be9b-4905-b931-b4c324401b79",
+          "from": "pending",
+          "to": "waiting_delivery",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T11:12:01.758Z",
+          "note": "Test",
+          "notified": true
+        },
+        {
+          "id": "51b78c0e-9bc6-417c-8826-218463c3fb7e",
+          "from": "waiting_delivery",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T11:12:51.600Z",
+          "note": "",
+          "notified": true
+        },
+        {
+          "id": "70e5d3be-1ad5-4527-978c-62698e1de6e4",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Film",
+          "at": "2026-09-22T11:13:02.664Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T11:13:02.665Z",
+      "completed_by": "Film",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Film",
+        "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+        "at": "2026-09-22T11:13:02.666Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "a8a23d63-215b-47c1-a60f-e7adb0344e6d",
+    "ticket_code": "ITSR2026090015",
+    "created_at": "2026-09-22T11:08:06.994Z",
+    "resolved_at": "2026-09-22T11:12:51.600Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T11:12:51.600Z"
+  },
+  {
+    "type": "return",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "44dd665c-18f2-442c-a773-6d586f5dc29d",
+    "equipment_id": null,
+    "description": "ต้องการรู้ว่าทดสอบระบบได้หรือไม่",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธนากร​ กอนประตู",
+      "requester_department": null,
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "acknowledged_at": "2026-09-22T11:17:48.463Z",
+      "acknowledged_by": "Film",
+      "status_history": [
+        {
+          "id": "c921262b-8249-4dac-a836-c903ec3c6d39",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T11:18:29.819Z",
+          "note": "เสร็จแล้วนะค้าบ",
+          "notified": true
+        },
+        {
+          "id": "b3a0b525-6811-4819-a3ea-1b0fe02758e3",
+          "from": "resolved",
+          "to": "cancelled",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T13:00:57.829Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "resolution_note": "เสร็จแล้วนะค้าบ"
+    },
+    "id": "28a87992-870d-45d1-af48-814d342598c5",
+    "ticket_code": "ITRT2026090003",
+    "created_at": "2026-09-22T11:17:37.235Z",
+    "resolved_at": null,
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T13:00:57.829Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "18158f6b-bb7f-4248-8d4f-ed07c0fd31c4",
+    "equipment_id": null,
+    "description": "โน๊ตบุ้คเสียเปิดไม่ติด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธีรภัทร บัวหอม it",
+      "requester_department": null,
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "acknowledged_at": "2026-09-22T11:20:41.963Z",
+      "acknowledged_by": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "7045c4aa-f7b6-4e8d-b0a5-75a054545f45",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T11:21:18.084Z",
+          "note": "แก้ไขแล้วครับ",
+          "notified": true
+        },
+        {
+          "id": "f9a5a0df-b809-4e9b-91cf-6f62b578a47a",
+          "from": "resolved",
+          "to": "completed",
+          "by": "JOB🐻🥰",
+          "at": "2026-09-22T11:21:23.955Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T11:21:23.955Z",
+      "completed_by": "JOB🐻🥰",
+      "confirmation": {
+        "confirmed": true,
+        "by": "JOB🐻🥰",
+        "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+        "at": "2026-09-22T11:21:23.957Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "0ce95198-4b41-445c-a242-67f3e72fb02b",
+    "ticket_code": "ITSR2026090016",
+    "created_at": "2026-09-22T11:20:39.086Z",
+    "resolved_at": "2026-09-22T11:21:18.084Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T11:21:18.084Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "22170176-37ca-4c82-9149-c04963c319b7",
+    "equipment_id": null,
+    "description": "คอมดับเปิดไม่ติด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "แชมป์",
+      "requester_department": "IT",
+      "line_user_id": "Ude94aae12848c8e3ca308fc892361183",
+      "line_display_name": "Satapat.champ",
+      "status_history": [
+        {
+          "id": "6dea9077-d516-4783-aece-b7ab513e63dd",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:33:14.674Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "3d1195a4-d055-4d05-b39e-a3079cf55cf2",
+    "ticket_code": "ITSR2026090017",
+    "created_at": "2026-09-22T11:21:21.069Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:33:14.674Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9eaba786-eb81-4bd7-84b1-8d62ba5814cd",
+    "equipment_id": null,
+    "description": "test",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "นาย ธนากร โฮงทอง it",
+      "requester_department": "support",
+      "line_user_id": "U46fc9b357968466899ea7b8854dab5a1",
+      "line_display_name": "Red Soda",
+      "acknowledged_at": "2026-09-22T22:49:57.802Z",
+      "acknowledged_by": "Red Soda",
+      "status_history": [
+        {
+          "id": "37860362-0985-432f-9928-d75e92509f73",
+          "from": "pending",
+          "to": "waiting_delivery",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T22:52:52.588Z",
+          "note": "test 1",
+          "notified": true
+        },
+        {
+          "id": "83ce76b8-8bf2-42f7-a9f3-9f6edba5a2d8",
+          "from": "waiting_delivery",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-22T22:57:01.627Z",
+          "note": "สามารถแก้ไขได้แล้ว",
+          "notified": true
+        },
+        {
+          "id": "659c6afb-92ac-4216-bbb3-63dc2317c231",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Red Soda",
+          "at": "2026-09-22T23:00:55.855Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-09-22T23:00:55.855Z",
+      "completed_by": "Red Soda",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Red Soda",
+        "line_user_id": "U46fc9b357968466899ea7b8854dab5a1",
+        "at": "2026-09-22T23:00:55.859Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "0aa6b9ea-cd87-4e92-afce-52a2e4eb09bd",
+    "ticket_code": "ITSR2026090018",
+    "created_at": "2026-09-22T22:49:09.956Z",
+    "resolved_at": "2026-09-22T22:57:01.627Z",
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-22T22:57:01.627Z"
+  },
+  {
+    "type": "repair",
+    "status": "closed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "badd1f5b-122c-47b2-86cc-be9ae542f7f1",
+    "equipment_id": "de561e58-3988-4b59-a1d2-22e73fb5ae06",
+    "description": "จอค้าง",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "สนั่น นวยฮา",
+      "requester_department": null,
+      "line_user_id": "U46fc9b357968466899ea7b8854dab5a1",
+      "line_display_name": "Red Soda",
+      "asset_code_input": "NB2604004",
+      "status_history": [
+        {
+          "id": "a4b20f34-1d84-4a69-a1bd-32e94653687c",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:58:36.688Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "29e8a221-c812-4512-a922-f7a693263968",
+    "ticket_code": "ITSR2026090019",
+    "created_at": "2026-09-22T23:07:14.497Z",
+    "resolved_at": "2026-10-13T05:58:36.688Z",
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:58:36.688Z"
+  },
+  {
+    "type": "repair",
+    "status": "closed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "083793a2-9f94-4604-9d61-813e5948acea",
+    "equipment_id": null,
+    "description": "คอมเสีย เปิดไม่ติด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "มนตรี ทวีทรัพย์",
+      "requester_department": "ไอที",
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "acknowledged_at": "2026-09-25T15:32:59.481Z",
+      "acknowledged_by": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "8620d8df-57d0-41c2-b6dd-382d1f89b6e2",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T05:58:16.062Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "59b5c4b7-5241-47be-982b-f7ecce2cf3c7",
+    "ticket_code": "ITSR2026090020",
+    "created_at": "2026-09-25T15:14:50.032Z",
+    "resolved_at": "2026-10-13T05:58:16.062Z",
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-13T05:58:16.062Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1af56451-b0e5-464c-997a-8c601e00c651",
+    "equipment_id": null,
+    "description": "เมาส์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "requester_name": "ธีรภัทร it",
+      "requester_department": null,
+      "items": [
+        {
+          "name": "เมาส์",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "43ad9c82-0dd3-4971-9ceb-758cb90d7c10",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:33:05.049Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "a8e02455-373e-4e3b-8a82-d6025fa5fa60",
+    "ticket_code": "ITRQ2026090011",
+    "created_at": "2026-09-25T15:58:44.219Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:33:05.049Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9eaba786-eb81-4bd7-84b1-8d62ba5814cd",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nTest",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "31d7d979c1a748e5b5ade8c52fe80745",
+      "requester_name": "นาย ธนากร โฮงทอง it",
+      "requester_department": "support",
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "acknowledged_at": "2026-09-25T18:57:24.965Z",
+      "acknowledged_by": "Film",
+      "status_history": [
+        {
+          "id": "981a691d-d9cc-4195-9cb7-fa225a45d900",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:35:29.156Z",
+          "note": "",
+          "notified": null
+        }
+      ]
+    },
+    "id": "779a03c9-b556-4b93-a585-570aea20da14",
+    "ticket_code": "ITSR2026090021",
+    "created_at": "2026-09-25T18:56:38.403Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:35:29.156Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9a4cfb85-a74d-4cd0-98ee-583ac74f1068",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nปวดหัวกับตัวเองเมื่อใหล่ผมจะว่างไปทำงาน​it-support",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "9da2ca4943284300a4537c8c2e444379",
+      "requester_name": "Motta-สุพรรณบุรี",
+      "requester_department": "อื่นๆ",
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "acknowledged_at": "2026-09-25T19:07:51.638Z",
+      "acknowledged_by": "Film",
+      "status_history": [
+        {
+          "id": "c53a5337-50b0-4602-a928-c86ef48d8b94",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "ธนากร(ฟีล์ม )",
+          "at": "2026-09-28T02:28:54.615Z",
+          "note": "",
+          "notified": true
+        }
+      ]
+    },
+    "id": "143929fa-8491-4136-b618-df451711c850",
+    "ticket_code": "ITSR2026090022",
+    "created_at": "2026-09-25T19:07:40.520Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม )",
+    "status_updated_at": "2026-09-28T02:28:54.615Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9365a72a-8bc3-4353-a675-9c98e1917511",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nคอมเสีย",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "5f0902f2d665423a9881990d78721d46",
+      "requester_name": "ธีรภัทร บัวหอม",
+      "requester_department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "acknowledged_at": "2026-09-28T08:09:49.287Z",
+      "acknowledged_by": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "9ebe8989-cf30-4001-bad6-ebd03c646de0",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:33:23.012Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "2ecaa5a8-e577-4b73-8bf9-537a1d06dde5",
+    "ticket_code": "ITSR2026090023",
+    "created_at": "2026-09-28T08:09:32.102Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:33:23.012Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1af56451-b0e5-464c-997a-8c601e00c651",
+    "equipment_id": null,
+    "description": "ึอมเสีย",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "6ef4a62ebbae4b56bfc6771028e1d332",
+      "requester_name": "ธีรภัทร it",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "400786a0-d840-45ab-87e5-f522f6d1150c",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:32:57.321Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "92c32d05-d199-410e-81e4-f1dfa7ce0203",
+    "ticket_code": "ITSR2026090024",
+    "created_at": "2026-09-28T09:19:40.942Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:32:57.321Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9365a72a-8bc3-4353-a675-9c98e1917511",
+    "equipment_id": null,
+    "description": "เบิกอุปกรณ์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "1c02aaac04e24e27a1a32ed729140349",
+      "requester_name": "ธีรภัทร บัวหอม",
+      "requester_department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+      "initial_message": "เบิกอุปกรณ์",
+      "items": [
+        {
+          "name": "ขาตั้งกล้อง",
+          "qty": 3
+        }
+      ],
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "99c0b997-df7b-46e5-bc30-4a2be66fffdf",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:32:35.749Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "2f3bb057-22a7-409b-9eff-3064194660d8",
+    "ticket_code": "ITRQ2026090012",
+    "created_at": "2026-09-28T09:21:44.930Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:32:35.749Z"
+  },
+  {
+    "type": "return",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9365a72a-8bc3-4353-a675-9c98e1917511",
+    "equipment_id": null,
+    "description": "คืนอุปกรณ์\n\nคืนเมาส์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "06b64a582a3a4191af859af6a022d37e",
+      "requester_name": "ธีรภัทร บัวหอม",
+      "requester_department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+      "initial_message": "คืนอุปกรณ์",
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "caafa7b4-3cab-456d-88c3-b65455079129",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:32:23.708Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "56ff3e9c-c56b-4d91-bf0a-2aba24692b35",
+    "ticket_code": "ITRT2026090004",
+    "created_at": "2026-09-28T09:33:49.473Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:32:23.708Z"
+  },
+  {
+    "type": "it_service",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9365a72a-8bc3-4353-a675-9c98e1917511",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nลงโปรแกรม word",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "6c439ebf1083484ba495ccc199670c1c",
+      "requester_name": "ธีรภัทร บัวหอม",
+      "requester_department": "ฝ่ายเทคโนโลยีสารสนเทศ",
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "9ba2dab6-1a3b-46ea-baff-9ae29012596b",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:32:14.312Z",
+          "note": "เทสระบบ",
+          "notified": true
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "f0d55bd3-1c82-41f8-bca1-d811b30cd5e4",
+    "ticket_code": "ITSV2026090011",
+    "created_at": "2026-09-28T09:34:51.848Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:32:14.312Z"
+  },
+  {
+    "type": "return",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1af56451-b0e5-464c-997a-8c601e00c651",
+    "equipment_id": null,
+    "description": "คืนอุปกรณ์\n\nเมาส์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "6a032bfb777a445fbf347bc14a7f493f",
+      "requester_name": "ธีรภัทร it",
+      "requester_department": "อื่นๆ",
+      "initial_message": "คืนอุปกรณ์",
+      "line_user_id": "U817d82459aa0d495be3c4c8c4490a78b",
+      "line_display_name": "JOB🐻🥰",
+      "acknowledged_at": "2026-09-29T10:45:21.907Z",
+      "acknowledged_by": "JOB🐻🥰",
+      "status_history": [
+        {
+          "id": "074cf98e-2ca5-42c3-b954-b17072e6dcce",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:32:46.839Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "18d1463c-e713-497d-b6be-cd616ed7e683",
+    "ticket_code": "ITRT2026090005",
+    "created_at": "2026-09-29T10:44:51.188Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:32:46.839Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "9a4cfb85-a74d-4cd0-98ee-583ac74f1068",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nคอมฉันมีปัญหาหนักมาก",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "a828a7e7003d401cabd8838d5f8b1809",
+      "requester_name": "Motta-สุพรรณบุรี",
+      "requester_department": "อื่นๆ",
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "e288eee1-eec5-411e-b241-4e0e8b85c8ad",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:34:37.652Z",
+          "note": "เทสระบบ",
+          "notified": null
+        }
+      ],
+      "resolution_note": "เทสระบบ"
+    },
+    "id": "09883066-657d-4a7b-b115-c25de814e41d",
+    "ticket_code": "ITSR2026100001",
+    "created_at": "2026-10-01T02:26:02.862Z",
+    "resolved_at": null,
+    "status_updated_by": "จ๊อบ",
+    "status_updated_at": "2026-10-12T12:34:37.652Z"
+  },
+  {
+    "type": "repair",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1bb9c0c8-be5d-404a-b76c-d03e6348ca89",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nคอมมีปัญหา",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "01b36101a8974312877186819d3dd458",
+      "requester_name": "ธนากร​ โฮงทอง​ สารสนเทศ​",
+      "requester_department": "อื่นๆ",
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "97544e0b-6e1e-446a-b836-87c6c6dc879a",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:21:32.152Z",
+          "note": "",
+          "notified": null
+        },
+        {
+          "id": "69bb5c30-5f3c-4922-a78e-58be87bc737b",
+          "from": "closed",
+          "to": "cancelled",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-13T10:49:33.599Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "d68058b4-0c41-4935-8595-509802f083ed",
+    "ticket_code": "ITSR2026100002",
+    "created_at": "2026-10-01T03:01:14.278Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-13T10:49:33.599Z"
+  },
+  {
+    "type": "repair",
+    "status": "in_progress",
+    "company": "montipa",
+    "location": "เซ็นทรัล อุบล",
+    "requester_id": "d6d0e5d1-5439-40f6-a9f5-8796b5d30f0a",
+    "equipment_id": null,
+    "description": "กล้องวงจรปิดไม่ติด1ตัว",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "9d5d933d752e4410b5b2d7d66e1337bf",
+      "requester_name": "ทรรศนีย์ รัตนกูล",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "U7d6c0e0ff566e8425036e582e72ca274",
+      "line_display_name": "🌻Koii🌻",
+      "status_history": [
+        {
+          "id": "b7a0d26a-cac3-471d-ae57-4a617531585a",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-08T08:14:14.650Z",
+          "note": "",
+          "notified": true
+        }
+      ]
+    },
+    "id": "abd866fd-1b4d-4fd7-bad1-a7a41a2ecf94",
+    "ticket_code": "ITSR2026100003",
+    "created_at": "2026-10-08T03:21:35.075Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-08T08:14:14.650Z"
+  },
+  {
+    "type": "repair",
+    "status": "in_progress",
+    "company": "montipa",
+    "location": "โรบินสัน สระบุรี",
+    "requester_id": "d6d0e5d1-5439-40f6-a9f5-8796b5d30f0a",
+    "equipment_id": null,
+    "description": "มี2สาขานะคะ สระบุรี และอุบล ขอบคุณค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "fe1ef733a1fe4d72aaeb7ede2de4ea80",
+      "requester_name": "ทรรศนีย์ รัตนกูล",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "U7d6c0e0ff566e8425036e582e72ca274",
+      "line_display_name": "🌻Koii🌻",
+      "status_history": [
+        {
+          "id": "7d063e47-66a6-4c62-8585-fcef1723bfd0",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-08T08:12:17.061Z",
+          "note": "กำลังจะดำเนินการแก้ๆขครับ",
+          "notified": true
+        }
+      ],
+      "resolution_note": "กำลังจะดำเนินการแก้ๆขครับ"
+    },
+    "id": "26a67d74-79ef-4353-8fbb-aed4d9ac456c",
+    "ticket_code": "ITSR2026100004",
+    "created_at": "2026-10-08T03:31:19.013Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-08T08:12:17.061Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "pending",
+    "company": "montipa",
+    "location": "เซ็นทรัล พระราม 9",
+    "requester_id": "d822c846-ae3c-4692-8543-6e1f60b13e38",
+    "equipment_id": null,
+    "description": "เบิกอุปกรณ์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "011e9e7335064e4985d22e24302d3991",
+      "requester_name": "ชฎาพร  • ป๊อป • M67035",
+      "requester_department": null,
+      "initial_message": "เบิกอุปกรณ์",
+      "items": [
+        {
+          "name": "เมาส์",
+          "qty": 1
+        },
+        {
+          "name": "แผ่นรองเมาส์",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อป."
+    },
+    "id": "6e6952e8-fd66-4aeb-8ae1-67aa728a06f0",
+    "ticket_code": "ITRQ2026100001",
+    "created_at": "2026-10-08T12:07:30.672Z",
+    "resolved_at": null
+  },
+  {
+    "type": "return",
+    "status": "in_progress",
+    "company": "montipa",
+    "location": "โรบินสัน ตรัง",
+    "requester_id": "11f6afd8-6da5-4c8d-9213-bd8096f04e66",
+    "equipment_id": null,
+    "description": "คืนอุปกรณ์\n\nกล้อง CCTV ดูไม่ได้ ทั้ง 3 ตัวค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "d901f2ed62844e54af0ccfcd7ba11c8c",
+      "requester_name": "สกุลเกตุ แซ่จุ้ง",
+      "requester_department": "ฝ่ายขาย",
+      "initial_message": "คืนอุปกรณ์",
+      "line_user_id": "Ubc5e6fd80c714029299113fe06f9a6f1",
+      "line_display_name": "🤍ชื่อว่า\"เกตุ\"🤍",
+      "status_history": [
+        {
+          "id": "317128dc-0ae7-4b6d-b602-94f38ffb81c1",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:31:54.445Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "673b2e73-d4db-41bd-9fe4-8a4062216766",
+    "ticket_code": "ITRT2026100001",
+    "created_at": "2026-10-08T15:41:15.247Z",
+    "resolved_at": null,
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:31:54.445Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "motta",
+    "location": "เดอะมอลล์โคราช",
+    "requester_id": "3b4a94a1-745e-4447-bb42-95bd069b4be1",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nคอมค้างยิงขายตีบิลไม่ได้ตั้งแต่เช้าค่ะ ขึ้นว่าไม่พบรหัสบุคคล",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "8216111fb0264541947467d36b0b82c8",
+      "requester_name": "บีม A68043",
+      "requester_department": null,
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+      "line_display_name": "Beaming_Ray🌹",
+      "acknowledged_at": "2026-10-11T12:20:21.652Z",
+      "acknowledged_by": "Beaming_Ray🌹",
+      "status_history": [
+        {
+          "id": "f146e3ee-70ad-4552-bf8e-c158ca35a864",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-11T12:38:55.900Z",
+          "note": "ผมได้ทำการส่งมอบเรียบร้อยแล้วนะครับ",
+          "notified": true
+        },
+        {
+          "id": "c8f69e22-1d1d-4b16-acc0-034ffe9cd957",
+          "from": "resolved",
+          "to": "completed",
+          "by": "Beaming_Ray🌹",
+          "at": "2026-10-11T12:48:08.868Z",
+          "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+          "notified": null
+        }
+      ],
+      "resolution_note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว",
+      "completed_at": "2026-10-11T12:48:08.868Z",
+      "completed_by": "Beaming_Ray🌹",
+      "confirmation": {
+        "confirmed": true,
+        "by": "Beaming_Ray🌹",
+        "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+        "at": "2026-10-11T12:48:08.870Z",
+        "note": "ผู้แจ้งยืนยันว่าใช้งานได้แล้ว"
+      }
+    },
+    "id": "c66072bf-bbb9-4b26-b363-5414d24feacd",
+    "ticket_code": "ITSR2026100005",
+    "created_at": "2026-10-10T04:18:02.147Z",
+    "resolved_at": "2026-10-11T12:38:55.900Z",
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-11T12:38:55.900Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "in_progress",
+    "company": "montipa",
+    "location": "เซ็นทรัล ชลบุรี",
+    "requester_id": "7895c945-d050-4017-9518-8c6a581ed6cb",
+    "equipment_id": null,
+    "description": "เบิกอุปกรณ์\n\nกล้องวงจรปิด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "328bc08ace2a404db7f8220384a68e17",
+      "requester_name": "ชฎาพร ป๊อป M67035",
+      "requester_department": null,
+      "initial_message": "เบิกอุปกรณ์",
+      "items": [
+        {
+          "name": "กล้องวงจรปิด",
+          "qty": 2
+        },
+        {
+          "name": "เราเตอร์",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อป.",
+      "status_history": [
+        {
+          "id": "ecf21c69-e45f-47bf-b8cb-2b5ff70726a9",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-11T08:21:56.358Z",
+          "note": "ทางทีมIT จะเปิดใบPR ในวันจันทร์นี้นะครับ",
+          "notified": true
+        }
+      ],
+      "resolution_note": "ทางทีมIT จะเปิดใบPR ในวันจันทร์นี้นะครับ"
+    },
+    "id": "aceac3dc-18c5-4b45-a613-95a095f2ad01",
+    "ticket_code": "ITRQ2026100002",
+    "created_at": "2026-10-10T09:03:43.569Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-11T08:21:56.358Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "in_progress",
+    "company": "montipa",
+    "location": "เซ็นทรัล พระราม 9",
+    "requester_id": "0f0ba404-a4ce-4c6c-bb7f-2408d4ccb187",
+    "equipment_id": null,
+    "description": "รายการอุปกรณ์ กล้องวงจรปิด x1, คีย์บอร์ด x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "16f4e0eeb4f54b7bb10f82a3bdf900c0",
+      "requester_name": "ชฎาพร ตนศิริ",
+      "requester_department": "ฝ่ายขาย",
+      "items": [
+        {
+          "name": "กล้องวงจรปิด",
+          "qty": 1
+        },
+        {
+          "name": "คีย์บอร์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อป.",
+      "status_history": [
+        {
+          "id": "8bbf619b-041c-4c5b-97c5-07c4d9be6871",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-11T11:13:23.967Z",
+          "note": "ทางทีมIT กำลังดำเนินการแก้ไขปัญหานี้ให้นะครับ",
+          "notified": true
+        }
+      ],
+      "resolution_note": "ทางทีมIT กำลังดำเนินการแก้ไขปัญหานี้ให้นะครับ"
+    },
+    "id": "801eceeb-623e-40f5-8ca5-9c9822c03fe2",
+    "ticket_code": "ITRQ2026100003",
+    "created_at": "2026-10-10T09:06:14.386Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-11T11:13:23.967Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "e1208612-5000-4ea2-8a22-3de0d213caa8",
+    "equipment_id": null,
+    "description": "เบิกอุปกรณ์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "dd3cfb86b6694028bdb55a09c2c7fe37",
+      "requester_name": "บุศรา ศรีบ้าน",
+      "requester_department": "ฝ่ายขาย",
+      "initial_message": "เบิกอุปกรณ์",
+      "items": [
+        {
+          "name": "ชุดคอมพิวเตอร์เปิดสาขาใหม่",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U4e2cd2159aa06450fc7fed622caad873",
+      "line_display_name": "ชื่อเล่นชื่อเอ็ม",
+      "status_history": [
+        {
+          "id": "338c9084-2a3b-44f7-b703-59714d8884b7",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-14T09:09:40.370Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-14T09:09:40.371Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "a07210f4-eb5e-4d1e-8935-c0550cbddb96",
+    "ticket_code": "ITRQ2026100004",
+    "created_at": "2026-10-11T06:46:04.950Z",
+    "resolved_at": "2026-10-14T09:09:40.370Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-14T09:09:40.370Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "resolved",
+    "company": "motta",
+    "location": "งามวงศ์วาน",
+    "requester_id": "e1208612-5000-4ea2-8a22-3de0d213caa8",
+    "equipment_id": null,
+    "description": "เบิกอุปกรณ์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "9bbd2936f4ae4f8eae58d18fdd13a456",
+      "requester_name": "บุศรา ศรีบ้าน",
+      "requester_department": "ฝ่ายขาย",
+      "initial_message": "เบิกอุปกรณ์",
+      "items": [
+        {
+          "name": "ซิมการ์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U4e2cd2159aa06450fc7fed622caad873",
+      "line_display_name": "ชื่อเล่นชื่อเอ็ม",
+      "acknowledged_at": "2026-10-11T06:51:23.524Z",
+      "acknowledged_by": "ชื่อเล่นชื่อเอ็ม",
+      "status_history": [
+        {
+          "id": "094e8892-a3e2-47e0-ae12-69a1e996856d",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-11T08:15:56.864Z",
+          "note": "กำลังประสานงานให้นะครับ",
+          "notified": true
+        },
+        {
+          "id": "bfb68704-71e4-4149-881a-c73bcd49212d",
+          "from": "in_progress",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-11T11:11:22.902Z",
+          "note": "ทางทีมIT ได้ทำการส่งมอบ SIM ให้เรียบร้อยแล้วนะครับ",
+          "notified": true
+        }
+      ],
+      "resolution_note": "ทางทีมIT ได้ทำการส่งมอบ SIM ให้เรียบร้อยแล้วนะครับ"
+    },
+    "id": "8615bb30-623d-45cf-b131-f81c7b2e5397",
+    "ticket_code": "ITRQ2026100005",
+    "created_at": "2026-10-11T06:51:11.454Z",
+    "resolved_at": "2026-10-11T11:11:22.902Z",
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-11T11:11:22.902Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "motta",
+    "location": "เชียงราย",
+    "requester_id": "728a4027-5aa2-483c-a4ef-d1036c16c14f",
+    "equipment_id": null,
+    "description": "กล้องวงจรปิดใช้งานไม่ได้ 1 ตัว",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "001ad39bdc18483eb546e6b96a5d517d",
+      "requester_name": "สิริวรรณ แก้วสว่าง",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "U9f22c06a7bc2076478999e817b239f25",
+      "line_display_name": "Ann6162",
+      "acknowledged_at": "2026-10-12T07:29:29.542Z",
+      "acknowledged_by": "Ann6162",
+      "status_history": [
+        {
+          "id": "29c0e1c3-6d74-407d-852b-7d318d7909db",
+          "from": "pending",
+          "to": "waiting_delivery",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:23:57.701Z",
+          "note": "",
+          "notified": true
+        },
+        {
+          "id": "3cd024e1-45ea-4d83-9251-0872e375de4c",
+          "from": "waiting_delivery",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:59:18.851Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T12:59:18.852Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "de8495f9-8210-483b-87e7-68d1d93cb6a7",
+    "ticket_code": "ITSR2026100006",
+    "created_at": "2026-10-11T10:41:16.699Z",
+    "resolved_at": "2026-10-16T12:59:18.851Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:59:18.851Z"
+  },
+  {
+    "type": "it_service",
+    "status": "resolved",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "c74b14f8-f3e5-4a52-bf3d-9a4af19eabac",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nโหลด adobe illustrator",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "6c99b37e71ff4a42b91ffee1526e767f",
+      "requester_name": "ใช้ชื่อที่พิมพ์",
+      "requester_department": null,
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "Ud1bd13b00839c8d9a9dccfd08c6c797a",
+      "line_display_name": "Benjamin 🍒",
+      "status_history": [
+        {
+          "id": "c436fe21-3990-40eb-9295-2ffb20a52e0d",
+          "from": "pending",
+          "to": "resolved",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-12T06:22:48.883Z",
+          "note": "ทางทีมIT ได้ทำการติดตั้งโปรแกรม adobe illustrator ให้แล้วนะครับ",
+          "notified": true
+        }
+      ],
+      "resolution_note": "ทางทีมIT ได้ทำการติดตั้งโปรแกรม adobe illustrator ให้แล้วนะครับ"
+    },
+    "id": "43056391-b067-429c-8ee3-6f099ba91705",
+    "ticket_code": "ITSV2026100001",
+    "created_at": "2026-10-12T04:24:50.153Z",
+    "resolved_at": "2026-10-12T06:22:48.883Z",
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-12T06:22:48.883Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "142e079e-bce6-4277-a48a-ed29e3d8973a",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nการเข้าใช้งานระบบ บริษัทของพนักงานฝึกงานแผนกบัญชี\n1.เข้าใช้ Email acc@atfavourite.com\n2.ลง Express \n3.ต่อเครื่องปริ๊น",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "a2769e948f634423b532e3e280f1f269",
+      "requester_name": "ปภัชรา บึงมุม",
+      "requester_department": "ฝ่ายบัญชีและการเงิน",
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "U914984d38d560f475a633432d131c706",
+      "line_display_name": "Por office",
+      "status_history": [
+        {
+          "id": "8be1f3b6-4c4e-42b2-8d26-84b4ed201215",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:29:58.697Z",
+          "note": "",
+          "notified": true
+        },
+        {
+          "id": "037ea093-fdc9-4132-9f1a-51a3e922e640",
+          "from": "closed",
+          "to": "completed",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-13T10:25:41.730Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-13T10:25:41.730Z",
+      "completed_by": "ธนากร(ฟีล์ม)สารสนเทศ"
+    },
+    "id": "693c1dbf-284a-4332-815b-66a4e66f8e8d",
+    "ticket_code": "ITSV2026100002",
+    "created_at": "2026-10-12T06:15:40.685Z",
+    "resolved_at": "2026-10-12T12:29:58.697Z",
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-13T10:25:41.730Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "bf901f99-bcfe-4694-95c6-e6e224b3e083",
+    "equipment_id": null,
+    "description": "สมัครบัญชี Gmail ของบริษัท BU Skincare แบรนด์ Acnetta",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "9d24f99241d14adb960aabe8a7103e16",
+      "requester_name": "ผู้แจ้งคือใครครับ?\n\nพิมพ์ชื่อจริง ชื่อเล่น มิ้น . อินทร์อุบล \nเช่น: ธนากร · ฟิล์ม · A69048",
+      "requester_department": null,
+      "line_user_id": "U4588615838b6e5a29117c3f70470cad2",
+      "line_display_name": "Innubol",
+      "status_history": [
+        {
+          "id": "a7fad013-9bda-44e3-b324-f31ea1df848a",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T08:23:56.598Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T08:23:56.598Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "94ad20b4-d42c-4c28-863c-6d76af943b8b",
+    "ticket_code": "ITSV2026100003",
+    "created_at": "2026-10-12T06:29:38.661Z",
+    "resolved_at": "2026-10-20T08:23:56.598Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T08:23:56.598Z"
+  },
+  {
+    "type": "repair",
+    "status": "in_progress",
+    "company": "motta",
+    "location": "บางแค",
+    "requester_id": "f993c8f3-91af-49a9-a0b8-52c0e4e4b76e",
+    "equipment_id": null,
+    "description": "แจ้งซ่อม\n\nกล้องใช้งานไม่ได้ทั้ง 2 ตัว",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "8c11e749bbcc4b81b2a907958694d071",
+      "requester_name": "นันทมาศ A69047",
+      "requester_department": null,
+      "initial_message": "แจ้งซ่อม",
+      "line_user_id": "U13dfeadfcd873ceca4e63ae9949206f5",
+      "line_display_name": "NUN",
+      "acknowledged_at": "2026-10-12T07:27:05.437Z",
+      "acknowledged_by": "NUN",
+      "status_history": [
+        {
+          "id": "fd395ed8-842d-4f14-9a10-70769f1ecf5c",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:31:38.707Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "6c37ed52-c0e1-4ae6-bb37-373e262fe4db",
+    "ticket_code": "ITSR2026100007",
+    "created_at": "2026-10-12T07:26:59.565Z",
+    "resolved_at": null,
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:31:38.707Z"
+  },
+  {
+    "type": "repair",
+    "status": "in_progress",
+    "company": "motta",
+    "location": "ปิ่นเกล้า",
+    "requester_id": "f993c8f3-91af-49a9-a0b8-52c0e4e4b76e",
+    "equipment_id": null,
+    "description": "กล้องใช้งานไม่ได้ทั้งหมดค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "71e05f39d2cf443fbbcee4f1d3ed49d0",
+      "requester_name": "นันทมาศ A69047",
+      "requester_department": null,
+      "line_user_id": "U13dfeadfcd873ceca4e63ae9949206f5",
+      "line_display_name": "NUN",
+      "status_history": [
+        {
+          "id": "401a639e-8ae9-4d0c-bd72-9c06a6e1781f",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:19:52.769Z",
+          "note": "",
+          "notified": null
+        },
+        {
+          "id": "57d616dd-d3e8-427b-91c6-4d3889779f9d",
+          "from": "closed",
+          "to": "pending",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:20:12.400Z",
+          "note": "",
+          "notified": null
+        },
+        {
+          "id": "3f16199b-fa25-498c-ae6e-417161b0dbe6",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:30:58.237Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "b2240794-a3ba-4a2d-9459-7abf4570ce86",
+    "ticket_code": "ITSR2026100008",
+    "created_at": "2026-10-12T07:28:10.775Z",
+    "resolved_at": null,
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:30:58.237Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "motta",
+    "location": "พิษณุโลก",
+    "requester_id": "728a4027-5aa2-483c-a4ef-d1036c16c14f",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nแก้ไข excel เนื่องจากยิงสต๊อกสินค้าแล้วตัวอักษรไม่ตรงกับบาร์โค้ดที่ยิว",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "c548a6a89a484706829b848cf620bf72",
+      "requester_name": "สิริวรรณ แก้วสว่าง",
+      "requester_department": "ฝ่ายขาย",
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "U9f22c06a7bc2076478999e817b239f25",
+      "line_display_name": "Ann6162",
+      "status_history": [
+        {
+          "id": "403ca824-6b96-4732-b02a-0e8cec30cb11",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:56:23.639Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T12:56:23.639Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "db3590c3-7f5c-4558-b6b0-9064b95f0254",
+    "ticket_code": "ITSV2026100004",
+    "created_at": "2026-10-12T07:29:12.936Z",
+    "resolved_at": "2026-10-16T12:56:23.639Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:56:23.639Z"
+  },
+  {
+    "type": "repair",
+    "status": "in_progress",
+    "company": "motta",
+    "location": "กาญจนบุรี",
+    "requester_id": "f993c8f3-91af-49a9-a0b8-52c0e4e4b76e",
+    "equipment_id": null,
+    "description": "กล้องใช้งานไม่ได้ค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "cd30981659974b878d353207ff8eece9",
+      "requester_name": "นันทมาศ A69047",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "U13dfeadfcd873ceca4e63ae9949206f5",
+      "line_display_name": "NUN",
+      "status_history": [
+        {
+          "id": "3a309fb4-fd51-4eb7-814b-053511e468aa",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:31:20.250Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "27dca71d-aa63-45a0-8d0c-dfdb2e5ed2f7",
+    "ticket_code": "ITSR2026100009",
+    "created_at": "2026-10-12T07:29:52.197Z",
+    "resolved_at": null,
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:31:20.250Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "motta",
+    "location": "หาดใหญ่",
+    "requester_id": "3e565f97-ea83-4568-8d98-48450be59e75",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nรบกวนตรวจสอบ ระบบpos ของสาขาเซ็นทรัลหาดใหญ่หน่อยค่ะ \nเนื่องจากลูกค้าสมัครสมาชิกแล้ว เซิร์ชเบอร์ขึ้นไม่พบบุคคลทุกเคส \nแต่ใส่เบอร์นี้ สาขาอื่น ขึ้นชื่อลูกค้าปกติค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "15741150a2a74bde905e008bdf0152de",
+      "requester_name": "ปอ A65010",
+      "requester_department": null,
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "U96e3de1d253451c260e76ad3fe48cdeb",
+      "line_display_name": "Malangpor🧸",
+      "status_history": [
+        {
+          "id": "b6f94f63-9857-432a-9b79-178fde1100f4",
+          "from": "pending",
+          "to": "resolved",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:17:51.112Z",
+          "note": "เป็นปํญหาระบบ CRM",
+          "notified": null
+        },
+        {
+          "id": "b382d4a7-52a0-448b-b20e-58e23f497a17",
+          "from": "resolved",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:19:06.346Z",
+          "note": "",
+          "notified": null
+        },
+        {
+          "id": "4e516abe-e089-4a92-b2bb-4c3c50845861",
+          "from": "closed",
+          "to": "completed",
+          "by": "job",
+          "at": "2026-10-13T07:31:49.286Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "resolution_note": "เป็นปํญหาระบบ CRM",
+      "completed_at": "2026-10-13T07:31:49.286Z",
+      "completed_by": "job"
+    },
+    "id": "733d6f6a-9fc0-47fa-940c-b121a1e44cd7",
+    "ticket_code": "ITSV2026100005",
+    "created_at": "2026-10-12T10:30:14.624Z",
+    "resolved_at": "2026-10-12T12:19:06.346Z",
+    "status_updated_by": "job",
+    "status_updated_at": "2026-10-13T07:31:49.286Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "0f0ba404-a4ce-4c6c-bb7f-2408d4ccb187",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "efaeeda55b3d4bf6b8d76b5c64c6650f",
+      "requester_name": "ชฎาพร ตนศิริ",
+      "requester_department": "ฝ่ายขาย",
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อป.",
+      "status_history": [
+        {
+          "id": "39e13d13-0923-42ec-89e6-df11b5f21c80",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:18:52.553Z",
+          "note": "",
+          "notified": null
+        },
+        {
+          "id": "0f15c22e-e64e-405d-a9a0-31f5cce1a5b4",
+          "from": "closed",
+          "to": "completed",
+          "by": "job",
+          "at": "2026-10-13T07:32:16.408Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "acknowledged_at": "2026-10-12T13:42:53.348Z",
+      "acknowledged_by": "ป๊อป.",
+      "completed_at": "2026-10-13T07:32:16.408Z",
+      "completed_by": "job"
+    },
+    "id": "eb40e4ba-128c-4fc0-a910-beec8560f0d6",
+    "ticket_code": "ITSV2026100006",
+    "created_at": "2026-10-12T10:47:55.102Z",
+    "resolved_at": "2026-10-12T12:18:52.553Z",
+    "status_updated_by": "job",
+    "status_updated_at": "2026-10-13T07:32:16.408Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "montipa",
+    "location": "อิมพีเรียลเวิลด์ สำโรง",
+    "requester_id": "0f0ba404-a4ce-4c6c-bb7f-2408d4ccb187",
+    "equipment_id": null,
+    "description": "Commerzy น้องเข้าไม่ได้สาขาสำโรง",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "69816d3daf9d403fb0f5b83752b72add",
+      "requester_name": "ชฎาพร ตนศิริ",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อป.",
+      "status_history": [
+        {
+          "id": "5d3a8349-f8a9-4c9b-9a4b-f4c656badd21",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-12T12:27:23.708Z",
+          "note": "",
+          "notified": true
+        },
+        {
+          "id": "a842ceff-f487-45c2-b145-488c98707672",
+          "from": "closed",
+          "to": "completed",
+          "by": "job",
+          "at": "2026-10-13T07:31:30.405Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-13T07:31:30.405Z",
+      "completed_by": "job",
+      "rating": {
+        "score": 5,
+        "comment": null,
+        "by": "ป๊อป.",
+        "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+        "at": "2026-10-13T07:32:45.240Z"
+      }
+    },
+    "id": "1f96d96b-c732-4de5-a5a2-8f00ca333d4e",
+    "ticket_code": "ITSV2026100007",
+    "created_at": "2026-10-12T10:50:21.193Z",
+    "resolved_at": "2026-10-12T12:27:23.708Z",
+    "status_updated_by": "job",
+    "status_updated_at": "2026-10-13T07:31:30.405Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "motta",
+    "location": "กระบี่",
+    "requester_id": "3e565f97-ea83-4568-8d98-48450be59e75",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nรบกวนช่วยเข้าดูระบบสมาชิกของสาขาเซ็นทรัลกระบี่เนื่องจากยิงเมมเบอร์ลูกค้าที่สมัครสมาชิกใหม่แล้วขึ้นไม่พบบุคคลค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "3ab8e38bc7064bc7b1584b0db5247e86",
+      "requester_name": "ปอ A65010",
+      "requester_department": "อื่นๆ",
+      "initial_message": "ขอใช้บริการ IT",
+      "line_user_id": "U96e3de1d253451c260e76ad3fe48cdeb",
+      "line_display_name": "Malangpor🧸",
+      "status_history": [
+        {
+          "id": "808a31a9-9a10-457d-b8d0-1a021d20550a",
+          "from": "pending",
+          "to": "closed",
+          "by": "จ๊อบ",
+          "at": "2026-10-13T07:18:55.062Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        },
+        {
+          "id": "09b6c911-741d-4807-a55f-f310aa12e257",
+          "from": "closed",
+          "to": "completed",
+          "by": "job",
+          "at": "2026-10-13T07:31:12.077Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-13T07:31:12.077Z",
+      "completed_by": "job"
+    },
+    "id": "188d404b-7a4c-4bdd-91ea-c553921ef0be",
+    "ticket_code": "ITSV2026100008",
+    "created_at": "2026-10-13T06:32:46.131Z",
+    "resolved_at": "2026-10-13T07:18:55.062Z",
+    "status_updated_by": "job",
+    "status_updated_at": "2026-10-13T07:31:12.077Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "motta",
+    "location": "นครปฐม",
+    "requester_id": "e1208612-5000-4ea2-8a22-3de0d213caa8",
+    "equipment_id": null,
+    "description": "เบิกอุปกรณ์",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "d8246ba6a8f740f289b5ec90b9a76bac",
+      "requester_name": "บุศรา ศรีบ้าน",
+      "requester_department": "ฝ่ายขาย",
+      "initial_message": "เบิกอุปกรณ์",
+      "items": [
+        {
+          "name": "ซิมการ์ด",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U4e2cd2159aa06450fc7fed622caad873",
+      "line_display_name": "ชื่อเล่นชื่อเอ็ม",
+      "status_history": [
+        {
+          "id": "0ac48355-422f-41af-9023-c70f6e4b988a",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:55:59.263Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        },
+        {
+          "id": "82b4565e-c5e8-419c-a385-c41a17665d0d",
+          "from": "in_progress",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T14:58:47.656Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T14:58:47.656Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "118de5a8-c863-4cce-9389-df466bdfefc4",
+    "ticket_code": "ITRQ2026100006",
+    "created_at": "2026-10-13T07:02:15.493Z",
+    "resolved_at": "2026-10-20T14:58:47.656Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T14:58:47.656Z"
+  },
+  {
+    "type": "it_service",
+    "status": "pending",
+    "company": "motta",
+    "location": "ภูเก็ต",
+    "requester_id": "3e565f97-ea83-4568-8d98-48450be59e75",
+    "equipment_id": null,
+    "description": "ขอใช้บริการ IT\n\nกล้องขึ้นออฟไลน์แต่กล้องเสียบแล้วหมุนปกติ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "eefdefe159494cbb94246becbb5c6b44",
+      "requester_name": "ปอ A65010",
+      "requester_department": "อื่นๆ",
+      "initial_message": "ขอใช้บริการ IT",
+      "image_urls": [
+        "/uploads/tickets/882e4e88-4c31-400c-af94-8a5884549635.jpg"
+      ],
+      "line_user_id": "U96e3de1d253451c260e76ad3fe48cdeb",
+      "line_display_name": "Malangpor🧸"
+    },
+    "id": "477ebcb3-0c11-4927-854c-522d3731a44c",
+    "ticket_code": "ITSV2026100009",
+    "created_at": "2026-10-13T08:48:12.574Z",
+    "resolved_at": null
+  },
+  {
+    "type": "withdraw",
+    "status": "cancelled",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1bb9c0c8-be5d-404a-b76c-d03e6348ca89",
+    "equipment_id": null,
+    "description": "ขอเบิก เม้าส์ไร้สาย x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "4bf39aef44a841ffbb4f94af08f7b30e",
+      "requester_name": "ธนากร​ โฮงทอง​ สารสนเทศ​",
+      "requester_department": "อื่นๆ",
+      "items": [
+        {
+          "name": "เม้าส์ไร้สาย",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film",
+      "status_history": [
+        {
+          "id": "435b2197-ee6a-4cc4-b3bf-1c867dad0490",
+          "from": "pending",
+          "to": "cancelled",
+          "by": "ธนากร(ฟีล์ม)สารสนเทศ",
+          "at": "2026-10-13T14:20:35.582Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ]
+    },
+    "id": "8643df9f-22bc-4138-9d7b-20853f8ef327",
+    "ticket_code": "ITRQ2026100007",
+    "created_at": "2026-10-13T13:39:07.013Z",
+    "resolved_at": null,
+    "status_updated_by": "ธนากร(ฟีล์ม)สารสนเทศ",
+    "status_updated_at": "2026-10-13T14:20:35.582Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "039ff25c-b87c-4248-96db-db1e477593dc",
+    "equipment_id": null,
+    "description": "ปริ้นเอกสารไม่ออก",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "bfc796fb44b54e2e9c6895255137f2bc",
+      "requester_name": "อ้อม A69010",
+      "requester_department": null,
+      "line_user_id": "Ueb7cbeef2e4201f075d17a62697574d5",
+      "line_display_name": "「ⲱäruⲛⲉⲉ  」ヅ",
+      "status_history": [
+        {
+          "id": "d232d5b4-06c7-4895-99c3-2095b8f93d11",
+          "from": "pending",
+          "to": "completed",
+          "by": "ผู้ดูแลระบบ IT",
+          "at": "2026-10-14T03:21:14.933Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-14T03:21:14.933Z",
+      "completed_by": "ผู้ดูแลระบบ IT"
+    },
+    "id": "21c9073e-a51f-4bb1-ba1d-83bc3c5b110b",
+    "ticket_code": "ITSV2026100010",
+    "created_at": "2026-10-14T02:11:10.723Z",
+    "resolved_at": "2026-10-14T03:21:14.933Z",
+    "status_updated_by": "ผู้ดูแลระบบ IT",
+    "status_updated_at": "2026-10-14T03:21:14.933Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "b6855d43-bc4a-4508-b9ce-13f1465c6c07",
+    "equipment_id": null,
+    "description": "ไม่สามารถใช้โปรแกรมออกแบบ Aillus ได้",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "03ea9f3badc1419f82933ccd5ca2fb07",
+      "requester_name": "ระพีพร A68009",
+      "requester_department": null,
+      "image_urls": [
+        "/uploads/tickets/620f6ae1-6318-4b54-99ba-32987481e41f.jpg"
+      ],
+      "line_user_id": "U4dfc0e3ec04c4a13e46b7ac026ee3c3e",
+      "line_display_name": "Fonnnnnn.gp💝",
+      "status_history": [
+        {
+          "id": "c42ecb6f-0f07-4069-b9eb-43213295180a",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "ผู้ดูแลระบบ IT",
+          "at": "2026-10-14T02:29:04.976Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        },
+        {
+          "id": "f2a6cdac-a6bb-4e5b-92f0-59993c03aa89",
+          "from": "in_progress",
+          "to": "completed",
+          "by": "ผู้ดูแลระบบ IT",
+          "at": "2026-10-14T03:02:58.750Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-14T03:02:58.750Z",
+      "completed_by": "ผู้ดูแลระบบ IT",
+      "rating": {
+        "score": 5,
+        "comment": null,
+        "by": "Fonnnnnn.gp💝",
+        "line_user_id": "U4dfc0e3ec04c4a13e46b7ac026ee3c3e",
+        "at": "2026-10-14T03:03:06.607Z"
+      }
+    },
+    "id": "fb44879c-b3b0-4517-af9b-823252b3a4ea",
+    "ticket_code": "ITSR2026100010",
+    "created_at": "2026-10-14T02:23:44.089Z",
+    "resolved_at": "2026-10-14T03:02:58.750Z",
+    "status_updated_by": "ผู้ดูแลระบบ IT",
+    "status_updated_at": "2026-10-14T03:02:58.750Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "039ff25c-b87c-4248-96db-db1e477593dc",
+    "equipment_id": null,
+    "description": "ขอรหัสผ่านอีเมล์ mottashop2@gmail.com",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "a119e356eefa4dd189039f1e2b652c73",
+      "requester_name": "อ้อม A69010",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "Ueb7cbeef2e4201f075d17a62697574d5",
+      "line_display_name": "「ⲱäruⲛⲉⲉ  」ヅ",
+      "status_history": [
+        {
+          "id": "7f8202c3-c7a7-4e4f-bcba-eba24e76563e",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-14T10:09:24.313Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-14T10:09:24.313Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "5a8b07d6-bd85-4834-9ef6-d93cfd599de9",
+    "ticket_code": "ITSV2026100011",
+    "created_at": "2026-10-14T04:20:44.824Z",
+    "resolved_at": "2026-10-14T10:09:24.313Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-14T10:09:24.313Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "044f8fc3-f0ea-4434-83e8-fcf1f2f491fd",
+    "equipment_id": null,
+    "description": "ขอรหัสผ่านปัจจุบันของอีเมบ Mottashop2@gmail.com เพื่อจะเข้าใช้ Google drive",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "de46101b2685465590056c3978a0082a",
+      "requester_name": "ศศิกานต์ แสงศรีจันทร์",
+      "requester_department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+      "line_user_id": "Ube3859901783b40c1208e54db6bd2995",
+      "line_display_name": "JUNE",
+      "status_history": [
+        {
+          "id": "ce84383f-f6dc-43ad-9644-8b9b2717fa49",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-14T10:09:08.510Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-14T10:09:08.510Z",
+      "completed_by": "JoBโครตHardWare",
+      "acknowledged_at": "2026-10-14T10:15:20.324Z",
+      "acknowledged_by": "JUNE"
+    },
+    "id": "27d5e281-25f9-4238-8d3e-6c81cf31c9b9",
+    "ticket_code": "ITSV2026100012",
+    "created_at": "2026-10-14T09:54:09.241Z",
+    "resolved_at": "2026-10-14T10:09:08.510Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-14T10:09:08.510Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "pending",
+    "company": "motta",
+    "location": "นครปฐม",
+    "requester_id": "e1208612-5000-4ea2-8a22-3de0d213caa8",
+    "equipment_id": null,
+    "description": "ขอเบิก กล้องวงจรปิด x3\n\nเบิกกล้องวงจรปิด 3 ตัว",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "62bdf6b8babc4d8e8d7d2d67561ed558",
+      "requester_name": "บุศรา ศรีบ้าน",
+      "requester_department": "ฝ่ายขาย",
+      "items": [
+        {
+          "name": "กล้องวงจรปิด",
+          "qty": 3
+        }
+      ],
+      "line_user_id": "U4e2cd2159aa06450fc7fed622caad873",
+      "line_display_name": "ชื่อเล่นชื่อเอ็ม"
+    },
+    "id": "99097d01-83fd-4643-976d-9cd8a300a418",
+    "ticket_code": "ITRQ2026100008",
+    "created_at": "2026-10-15T09:06:07.669Z",
+    "resolved_at": null
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "c67e3df0-6de8-4e79-8d52-5f27f2a7377b",
+    "equipment_id": null,
+    "description": "ขอรหัสอนุมัติสินค้า Commerzy กับ Promax อนุมัติของคืน",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "ecc676e95d1343378aa6ee8a0328565f",
+      "requester_name": "โบว์ M69025",
+      "requester_department": null,
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อป.",
+      "status_history": [
+        {
+          "id": "31736cc5-fb02-4e1f-ae60-bb328d3c79f8",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:44:52.171Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        },
+        {
+          "id": "fde6b4ea-adc7-4dce-ae54-ab2d9c468e2a",
+          "from": "in_progress",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:55:38.036Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T12:55:38.036Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "7c3b1a91-b74c-44a9-b4cf-2132c96a8236",
+    "ticket_code": "ITSV2026100013",
+    "created_at": "2026-10-15T09:49:21.827Z",
+    "resolved_at": "2026-10-16T12:55:38.036Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:55:38.036Z"
+  },
+  {
+    "type": "it_service",
+    "status": "pending",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "5d0a10bc-d74f-4932-a97a-bcc6848613e7",
+    "equipment_id": null,
+    "description": "เปลี่ยนซับหมึกค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "5193363809734c5aa2ee347eed2e25db",
+      "requester_name": "สาธิดา หน่ายทุกข์",
+      "requester_department": "ฝ่ายวิชวลเมอร์แชนไดซ์",
+      "line_user_id": "U21435cbb7d7faa0feeb50b2be5bc483f",
+      "line_display_name": "iiituay(*´꒳`*)"
+    },
+    "id": "2e3dadba-35b5-477c-92f7-073ee60f8fa4",
+    "ticket_code": "ITSV2026100014",
+    "created_at": "2026-10-16T03:07:14.435Z",
+    "resolved_at": null
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "motta",
+    "location": "ฉะเชิงเทรา",
+    "requester_id": "9c6905bb-0e30-49a3-88a8-c609fb956246",
+    "equipment_id": null,
+    "description": "เมื่อเช้าน้องถอดซิมมาเช็ควันหมดอายุแล้วก็วงจรปิดดับทั้ง  3 ตัวค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "31af61baad3d474796d2c7fc01cff945",
+      "requester_name": "ภณิดา ร่มพุฒตาล",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "U83af5075e1bf5a7d8daa8a4499ba5ccc",
+      "line_display_name": "Nan Nan 🌿💗🎪",
+      "status_history": [
+        {
+          "id": "fb0a2b05-c270-442f-be2a-a7ca3902385f",
+          "from": "pending",
+          "to": "completed",
+          "by": "ผู้ดูแลระบบ IT",
+          "at": "2026-10-16T05:56:10.310Z",
+          "note": "",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T05:56:10.311Z",
+      "completed_by": "ผู้ดูแลระบบ IT",
+      "rating": {
+        "score": 5,
+        "comment": null,
+        "by": "Nan Nan 🌿💗🎪",
+        "line_user_id": "U83af5075e1bf5a7d8daa8a4499ba5ccc",
+        "at": "2026-10-16T06:12:29.847Z"
+      }
+    },
+    "id": "16834e6a-5b1d-443b-b931-52c80d6895f7",
+    "ticket_code": "ITSV2026100015",
+    "created_at": "2026-10-16T05:41:32.738Z",
+    "resolved_at": "2026-10-16T05:56:10.310Z",
+    "status_updated_by": "ผู้ดูแลระบบ IT",
+    "status_updated_at": "2026-10-16T05:56:10.310Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "motta",
+    "location": "ชลบุรี",
+    "requester_id": "9c6905bb-0e30-49a3-88a8-c609fb956246",
+    "equipment_id": null,
+    "description": "ขอเบิก เมมโมรี่กล้อง x1\n\nเมม กล้องวงจรปิดเสียดูย้อนหลังไม่ได้",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "ad2f59c7c06540678880dd10a88654a7",
+      "requester_name": "ภณิดา ร่มพุฒตาล",
+      "requester_department": "ฝ่ายขาย",
+      "items": [
+        {
+          "name": "เมมโมรี่กล้อง",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U83af5075e1bf5a7d8daa8a4499ba5ccc",
+      "line_display_name": "Nan Nan 🌿💗🎪",
+      "status_history": [
+        {
+          "id": "d8188cd0-4a92-4c1f-baa7-4d3126f6ee07",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-21T02:36:37.353Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-21T02:36:37.353Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "03081bdf-7afe-4ddd-a91a-84aadf6596c1",
+    "ticket_code": "ITRQ2026100009",
+    "created_at": "2026-10-16T05:47:14.464Z",
+    "resolved_at": "2026-10-21T02:36:37.353Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-21T02:36:37.353Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "motta",
+    "location": "ฉะเชิงเทรา",
+    "requester_id": "9c6905bb-0e30-49a3-88a8-c609fb956246",
+    "equipment_id": null,
+    "description": "ขอเบิก เครื่องปริ้นสลิป x1",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "85e45d7e313049ac91ca99be9d2556a2",
+      "requester_name": "ภณิดา ร่มพุฒตาล",
+      "requester_department": "ฝ่ายขาย",
+      "items": [
+        {
+          "name": "เครื่องปริ้นสลิป",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U83af5075e1bf5a7d8daa8a4499ba5ccc",
+      "line_display_name": "Nan Nan 🌿💗🎪",
+      "status_history": [
+        {
+          "id": "9185fa1e-12c9-4573-b924-f7e412756b90",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-21T02:36:23.710Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-21T02:36:23.710Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "91e7d8c0-eae0-4055-9fff-b0d53831be7f",
+    "ticket_code": "ITRQ2026100010",
+    "created_at": "2026-10-16T05:48:35.717Z",
+    "resolved_at": "2026-10-21T02:36:23.710Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-21T02:36:23.710Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "motta",
+    "location": "อุดรธานี",
+    "requester_id": "3b4a94a1-745e-4447-bb42-95bd069b4be1",
+    "equipment_id": null,
+    "description": "ขอเบิก เครื่องสำรองไฟ x1, สมุดเคลมสินค้า x1\n\nเครื่องสำรองไฟและสมุดเคลมสินค้า",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "b4043b7bba234730a507570f3ba742df",
+      "requester_name": "บีม A68043",
+      "requester_department": "อื่นๆ",
+      "items": [
+        {
+          "name": "เครื่องสำรองไฟ",
+          "qty": 1
+        },
+        {
+          "name": "สมุดเคลมสินค้า",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+      "line_display_name": "Beaming_Ray🌹",
+      "status_history": [
+        {
+          "id": "1c04e28c-d12f-4926-ae99-bbde176e12d9",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T08:19:46.797Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T08:19:46.797Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "6e187bf0-08b7-40cc-90f9-053f6b1cb9f8",
+    "ticket_code": "ITRQ2026100011",
+    "created_at": "2026-10-16T07:59:05.742Z",
+    "resolved_at": "2026-10-20T08:19:46.797Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T08:19:46.797Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "motta",
+    "location": "นครราชสีมา",
+    "requester_id": "3b4a94a1-745e-4447-bb42-95bd069b4be1",
+    "equipment_id": null,
+    "description": "ขอเบิก สายเชื่อมยิงนับสต๊อก x1\n\nสายยิงนับสต๊อก",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "7e9791980eaf45f0947d0454c26d699f",
+      "requester_name": "บีม A68043",
+      "requester_department": "อื่นๆ",
+      "items": [
+        {
+          "name": "สายเชื่อมยิงนับสต๊อก",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+      "line_display_name": "Beaming_Ray🌹",
+      "status_history": [
+        {
+          "id": "48ac9ae6-e29f-4165-8295-7eac31311fa1",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T08:24:36.439Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T08:24:36.439Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "184e9b43-8d78-4eaf-864a-d059d1bca3dc",
+    "ticket_code": "ITRQ2026100012",
+    "created_at": "2026-10-16T08:03:28.379Z",
+    "resolved_at": "2026-10-20T08:24:36.439Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T08:24:36.439Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "38e04936-9df4-4f89-807f-c6b55e6b6f9f",
+    "equipment_id": null,
+    "description": "เพิ่มเครื่องปริ้นลงคอม และในexpressด้วย",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "912df1f089954db5a10f6715b239071f",
+      "requester_name": "พรณภัส กิจวิบูลย์",
+      "requester_department": "ฝ่ายบัญชีและการเงิน",
+      "line_user_id": "Uf5c676f5140e179330e36db8737556f2",
+      "line_display_name": "iceza.Pornnapas❄️",
+      "status_history": [
+        {
+          "id": "d556de4e-d011-4aee-951f-5b15a4180355",
+          "from": "pending",
+          "to": "in_progress",
+          "by": "Film_Developer",
+          "at": "2026-10-16T10:11:40.401Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        },
+        {
+          "id": "4cbc9e26-4797-4125-98c5-65dc1ecce6c6",
+          "from": "in_progress",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:57:43.150Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T12:57:43.150Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "3e81ec45-decf-46dd-8919-962d7d78f080",
+    "ticket_code": "ITSV2026100016",
+    "created_at": "2026-10-16T08:16:42.393Z",
+    "resolved_at": "2026-10-16T12:57:43.150Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:57:43.150Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "5ab4570f-4036-427d-8cbe-ba1ab9b1d372",
+    "equipment_id": null,
+    "description": "ขอเบิก เครื่องสำรองไฟ x1\n\nเครื่องสำรองไฟ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "fb82be080a0b4991941697543dcf9f8b",
+      "requester_name": "อัญธิญาน์ ชมพักตร์",
+      "requester_department": "ฝ่ายคลังสินค้า",
+      "items": [
+        {
+          "name": "เครื่องสำรองไฟ",
+          "qty": 1
+        }
+      ],
+      "line_user_id": "Ucfada133f8fb40913e89ab141c0792f5",
+      "line_display_name": "New",
+      "status_history": [
+        {
+          "id": "fd3dfa70-11b5-4101-9442-fb82cd759580",
+          "from": "pending",
+          "to": "completed",
+          "by": "Film_Developer",
+          "at": "2026-10-16T10:10:55.963Z",
+          "note": "ได้ทำการเปลี่ยนเป็นตัวใหม่แล้วครับ UPS2610001",
+          "notified": true,
+          "role": "admin"
+        }
+      ],
+      "resolution_note": "ได้ทำการเปลี่ยนเป็นตัวใหม่แล้วครับ UPS2610001",
+      "completed_at": "2026-10-16T10:10:55.963Z",
+      "completed_by": "Film_Developer",
+      "rating": {
+        "score": 5,
+        "comment": null,
+        "by": "New",
+        "line_user_id": "Ucfada133f8fb40913e89ab141c0792f5",
+        "at": "2026-10-16T10:28:57.523Z"
+      }
+    },
+    "id": "65ccc14a-15e6-47f8-b436-496e528bfe5b",
+    "ticket_code": "ITRQ2026100013",
+    "created_at": "2026-10-16T10:05:15.900Z",
+    "resolved_at": "2026-10-16T10:10:55.963Z",
+    "status_updated_by": "Film_Developer",
+    "status_updated_at": "2026-10-16T10:10:55.963Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "motta",
+    "location": "แจ้งวัฒนะ",
+    "requester_id": "0dabe9f1-4258-4407-94c5-c70e5a6b5b87",
+    "equipment_id": null,
+    "description": "เปลี่ยนซิมอินเตอร์เน็ต และเก็บวายกล้องวงจรปิด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "29ea7a13ca084f4abb681ef7d775a3e7",
+      "requester_name": "ศรัณญา•เมย์•A63003",
+      "requester_department": null,
+      "line_user_id": "Ua4d51291bf448e04078ebaf7d0e617a0",
+      "line_display_name": "Momay03",
+      "status_history": [
+        {
+          "id": "43508118-0214-4e8e-a44d-15a868006507",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-16T12:26:35.672Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-16T12:26:35.672Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "5af6e7a0-5b94-4e33-9f6d-4ef3eea19a53",
+    "ticket_code": "ITSR2026100011",
+    "created_at": "2026-10-16T11:01:07.933Z",
+    "resolved_at": "2026-10-16T12:26:35.672Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-16T12:26:35.672Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "motta",
+    "location": "The Street",
+    "requester_id": "e1208612-5000-4ea2-8a22-3de0d213caa8",
+    "equipment_id": null,
+    "description": "ติดตั้งระบบเครื่องปลิ้นใหม่",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "fde1cca6b76c46d5a9c3d58c0dad0a75",
+      "requester_name": "บุศรา ศรีบ้าน",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "U4e2cd2159aa06450fc7fed622caad873",
+      "line_display_name": "ชื่อเล่นชื่อเอ็ม",
+      "status_history": [
+        {
+          "id": "22e28398-e62b-4fd5-9af5-732ac39b0148",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-17T13:47:19.132Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-17T13:47:19.132Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "4129ab43-cd9a-4ae5-908e-4376ec197b7e",
+    "ticket_code": "ITSV2026100017",
+    "created_at": "2026-10-17T09:01:49.360Z",
+    "resolved_at": "2026-10-17T13:47:19.132Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-17T13:47:19.132Z"
+  },
+  {
+    "type": "withdraw",
+    "status": "completed",
+    "company": "motta",
+    "location": "นครศรี",
+    "requester_id": "3e565f97-ea83-4568-8d98-48450be59e75",
+    "equipment_id": null,
+    "description": "ขอเบิก กล้องวงจรปิด x3\n\nขอเบิกกล้องวงจรปิดใหม่3ตัว ร้านรีโนเวท",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "435d6912880d48c1b74ca01d3b061e26",
+      "requester_name": "ปอ A65010",
+      "requester_department": "อื่นๆ",
+      "items": [
+        {
+          "name": "กล้องวงจรปิด",
+          "qty": 3
+        }
+      ],
+      "line_user_id": "U96e3de1d253451c260e76ad3fe48cdeb",
+      "line_display_name": "Malangpor🧸",
+      "status_history": [
+        {
+          "id": "b6f97c2a-2888-4f6a-b456-8b9dc376da85",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-19T08:25:27.445Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-19T08:25:27.445Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "276aa8bc-d62c-4355-ab9d-1f9f2bdc0e92",
+    "ticket_code": "ITRQ2026100014",
+    "created_at": "2026-10-17T09:18:24.814Z",
+    "resolved_at": "2026-10-19T08:25:27.445Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-19T08:25:27.445Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "motta",
+    "location": "สุราษฎร์ธานี",
+    "requester_id": "3e565f97-ea83-4568-8d98-48450be59e75",
+    "equipment_id": null,
+    "description": "ยกเลิกรายการที่เคยต้องเครื่องปริ้นออก สลิปใบเสร็จจะหมด",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "0fdd3c21a6d7468da46c10dcae7813d5",
+      "requester_name": "ปอ A65010",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "U96e3de1d253451c260e76ad3fe48cdeb",
+      "line_display_name": "Malangpor🧸",
+      "status_history": [
+        {
+          "id": "51e09901-d142-404b-ac49-a1bc59814776",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-17T13:46:40.521Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-17T13:46:40.521Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "b9510807-f8bc-499b-99af-66f102134814",
+    "ticket_code": "ITSV2026100018",
+    "created_at": "2026-10-17T09:19:22.169Z",
+    "resolved_at": "2026-10-17T13:46:40.521Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-17T13:46:40.521Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "f255ecb9-8075-4cae-9a16-24422b28803a",
+    "equipment_id": null,
+    "description": "เครื่องสแกน samsung สแกนไม่ได้ ขึ้นว่า network error ปิดเครื่องเปิดใหม่แล้ว ก็ยังสแกนไม่ได้ เป็นแบบนี้ตั้งแต่วันศุกร์ ต้องการให้แก้ไขทันที เนื่องจากต้องรีบใช้งานค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "f058177765444ed294c3ae70c6e86cbb",
+      "requester_name": "วรรณชนก สิงห์ทอง",
+      "requester_department": "ฝ่ายการตลาดและพาณิชย์",
+      "line_user_id": "U84bb26f70dee982fb38f8042874d4016",
+      "line_display_name": "sc☁️💤",
+      "status_history": [
+        {
+          "id": "632f2c05-2456-49f8-b945-239834fef218",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-19T05:49:01.549Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-19T05:49:01.549Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "70718ed4-3d5d-4472-b989-4fd5e3fa8980",
+    "ticket_code": "ITSR2026100012",
+    "created_at": "2026-10-19T02:10:13.217Z",
+    "resolved_at": "2026-10-19T05:49:01.549Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-19T05:49:01.549Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "motta",
+    "location": "นครราชสีมา",
+    "requester_id": "3b4a94a1-745e-4447-bb42-95bd069b4be1",
+    "equipment_id": null,
+    "description": "เปลี่ยนเครื่องปริ้นใบเสร็จแต่ใบเสร็จไม่ออกค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "ec803a864cf443ef998d4535c2006b69",
+      "requester_name": "บีม A68043",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+      "line_display_name": "Beaming_Ray🌹",
+      "status_history": [
+        {
+          "id": "91b57a40-b002-4275-af22-4762534beaca",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-19T08:25:05.120Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-19T08:25:05.120Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "0517aa84-5360-4270-aa8e-ca2ebea5697a",
+    "ticket_code": "ITSR2026100013",
+    "created_at": "2026-10-19T05:41:41.093Z",
+    "resolved_at": "2026-10-19T08:25:05.120Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-19T08:25:05.120Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "0f0ba404-a4ce-4c6c-bb7f-2408d4ccb187",
+    "equipment_id": null,
+    "description": "ขอรหัสเข้ากดเติมสินค้า Commerzy ของแอเรียค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "7eef40bf5e44443491be96bcf90b57c4",
+      "requester_name": "ชฎาพร ตนศิริ",
+      "requester_department": "ฝ่ายขาย",
+      "line_user_id": "Ud54fa6bbc2a4036412bede27d5af1475",
+      "line_display_name": "ป๊อปปี้.",
+      "status_history": [
+        {
+          "id": "0aff4e47-155d-492f-9b89-e62d5b7d0c94",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T08:19:17.775Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T08:19:17.775Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "b774448c-39c5-495e-ab29-2c404df17a1c",
+    "ticket_code": "ITSV2026100019",
+    "created_at": "2026-10-19T08:20:58.791Z",
+    "resolved_at": "2026-10-20T08:19:17.775Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T08:19:17.775Z"
+  },
+  {
+    "type": "it_service",
+    "status": "completed",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "028a95d6-a32f-4a6b-953b-df753766e520",
+    "equipment_id": null,
+    "description": "เครื่องปริ้น ชั้น 3 ดูบัวขึ้นสถานะออฟไลน์ปริ้นไม่ออกค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "c33f1b872be04c2da3da131e77107bbf",
+      "requester_name": "มาย : M68029",
+      "requester_department": null,
+      "line_user_id": "U09158fabfe7e0eaaba13447d6fc1eb81",
+      "line_display_name": "MILD.🪐",
+      "status_history": [
+        {
+          "id": "0ec7dc8d-4924-412b-9deb-a79192a3756d",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T08:13:21.877Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T08:13:21.877Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "64228a0a-a340-4cc1-96bb-ac657335d732",
+    "ticket_code": "ITSV2026100020",
+    "created_at": "2026-10-20T04:19:11.118Z",
+    "resolved_at": "2026-10-20T08:13:21.877Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T08:13:21.877Z"
+  },
+  {
+    "type": "repair",
+    "status": "completed",
+    "company": "motta",
+    "location": "ชัยภูมิ",
+    "requester_id": "3b4a94a1-745e-4447-bb42-95bd069b4be1",
+    "equipment_id": null,
+    "description": "เครื่องคอมไม่เชื่อมกับEDC กดสแกนไม่ได้ค่ะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "4a6756e5b5ce4d8e90d1f99e8b12bbf1",
+      "requester_name": "บีม A68043",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "U95c307d13f108a1de64493e5a9940563",
+      "line_display_name": "Beaming_Ray🌹",
+      "status_history": [
+        {
+          "id": "817893cf-4c25-460a-8bc2-3164f6917a1c",
+          "from": "pending",
+          "to": "completed",
+          "by": "JoBโครตHardWare",
+          "at": "2026-10-20T08:13:13.198Z",
+          "note": "",
+          "notified": null,
+          "role": "admin"
+        }
+      ],
+      "completed_at": "2026-10-20T08:13:13.198Z",
+      "completed_by": "JoBโครตHardWare"
+    },
+    "id": "d74bcdc3-a8fe-4a38-a5dd-d0e019ff2033",
+    "ticket_code": "ITSR2026100014",
+    "created_at": "2026-10-20T07:17:12.473Z",
+    "resolved_at": "2026-10-20T08:13:13.198Z",
+    "status_updated_by": "JoBโครตHardWare",
+    "status_updated_at": "2026-10-20T08:13:13.198Z"
+  },
+  {
+    "type": "repair",
+    "status": "pending",
+    "company": "central",
+    "location": "สำนักงานใหญ่",
+    "requester_id": "1bb9c0c8-be5d-404a-b76c-d03e6348ca89",
+    "equipment_id": null,
+    "description": "เครื่องมีปัญหาหมายถึงLine OA อะ",
+    "repair_cost": null,
+    "meta": {
+      "source": "line-bot",
+      "request_id": "22a8295e830044efb369e31ae6787c4d",
+      "requester_name": "ธนากร​ โฮงทอง​ สารสนเทศ​",
+      "requester_department": "อื่นๆ",
+      "line_user_id": "U676c0a3caf9cb792f9fc2d71bebb8248",
+      "line_display_name": "Film"
+    },
+    "id": "0ddb8645-8db6-41b2-853c-572da48a1a65",
+    "ticket_code": "ITSR2026100015",
+    "created_at": "2026-10-20T15:37:56.812Z",
+    "resolved_at": null
+  }
+]
